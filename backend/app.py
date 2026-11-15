@@ -200,6 +200,18 @@ def create_app(config: Optional[Config] = None) -> Flask:
             "database_status": db_status,
         }), (200 if is_healthy else 503)
 
+    @app.route("/api/config", methods=["GET"])
+    @app.route("/api/v1/config", methods=["GET"])
+    def get_public_config():
+        """Returns public client configuration (e.g. map settings)."""
+        cfg = get_config()
+        return jsonify({
+            "status": "ok",
+            "carto_api_key": getattr(cfg, "CARTO_API_KEY", ""),
+            "dedup_radius_meters": getattr(cfg, "DEDUP_RADIUS_METERS", 15.0),
+            "environment": cfg.ENV,
+        }), 200
+
     # ---------------------------------------------------------------------------
     # Frontend & Dashboard static file serving
     # ---------------------------------------------------------------------------

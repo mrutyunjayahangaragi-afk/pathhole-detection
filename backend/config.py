@@ -202,6 +202,9 @@ class Config:
             raise ConfigurationError(f"Invalid detection threshold configuration: {e}") from e
         self.AUTO_DETECT_ON_SUBMISSION = _bool_from_env("AUTO_DETECT_ON_SUBMISSION", True)
 
+        # Map Tiles & CARTO API Key
+        self.CARTO_API_KEY = os.environ.get("CARTO_API_KEY", "").strip()
+
 
 class DevelopmentConfig(Config):
     """Development environment configuration."""

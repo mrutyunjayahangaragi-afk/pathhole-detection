@@ -180,6 +180,21 @@ def create_app(config: Optional[Config] = None) -> Flask:
         from flask import send_from_directory
         return send_from_directory(os.path.join(_parent, "frontend"), filename)
 
+    @app.route("/municipal/<path:filename>", methods=["GET"])
+    def serve_municipal_files(filename):
+        from flask import send_from_directory
+        return send_from_directory(os.path.join(_parent, "frontend", "municipal"), filename)
+
+    @app.route("/citizen-report.html", methods=["GET"])
+    def serve_citizen_report():
+        from flask import send_from_directory
+        return send_from_directory(os.path.join(_parent, "frontend"), "citizen-report.html")
+
+    @app.route("/public-map.html", methods=["GET"])
+    def serve_public_map():
+        from flask import send_from_directory
+        return send_from_directory(os.path.join(_parent, "frontend"), "public-map.html")
+
     return app
 
 

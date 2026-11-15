@@ -609,9 +609,9 @@ if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeDrawer);
 /* ============================================================
    CONFIG
    ============================================================ */
-const API_BASE = window.location.origin && window.location.origin.startsWith('http') 
+const API_BASE = (window.location.origin && window.location.origin.startsWith('http')) 
   ? window.location.origin 
-  : "http://localhost:5000";
+  : "http://localhost:5055";
 const POLL_INTERVAL_MS = 4000;
 const CITY_CENTER = [8.5241, 76.9366]; // Thiruvananthapuram / Bengaluru demo default
 

@@ -1,0 +1,49 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environment
+.venv/
+env/
+venv/
+ENV/
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# SQLite databases generated during development and testing
+*.db-journal
+test_*.db
+/tmp/test_*.db
+
+# macOS files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build and distribution
+build/
+dist/
+*.egg-info/
+
+# Uploaded evidence in development
+uploads/*
+!uploads/.gitkeep

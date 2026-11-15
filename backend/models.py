@@ -1,78 +1,55 @@
 """
 Database layer for the pothole reporting backend.
 
-Uses SQLite for zero-config local/demo deployment. Swap the connection
-string in db.py-style fashion for PostgreSQL in production (schema is
-plain SQL, no SQLite-specific syntax used).
+Preserves full backward compatibility with original Roadstate functions:
+- init_db()
+- get_db()
+- haversine_m()
+- find_nearby_detection()
+- insert_or_merge_detection()
 """
+
+import sys
+from pathlib import Path
+_parent = str(Path(__file__).resolve().parent.parent)
+if _parent not in sys.path:
+    sys.path.insert(0, _parent)
 
 import sqlite3
 import time
 import uuid
 from contextlib import contextmanager
-from math import radians, sin, cos, sqrt, atan2
 from typing import Optional
 
-DB_PATH = "pothole_reports.db"
+from backend.config import get_config
+from backend.database import get_db as db_get_db, init_db as db_init_db, LEGACY_SCHEMA
+from backend.services.location_service import haversine_distance_m
 
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS detections (
-    id TEXT PRIMARY KEY,
-    vehicle_id TEXT NOT NULL,
-    latitude REAL NOT NULL,
-    longitude REAL NOT NULL,
-    severity TEXT NOT NULL CHECK(severity IN ('minor','moderate','severe')),
-    est_depth_cm REAL,
-    confidence REAL,
-    image_ref TEXT,
-    timestamp REAL NOT NULL,
-    status TEXT NOT NULL DEFAULT 'reported' CHECK(status IN ('reported','acknowledged','scheduled','repaired')),
-    report_count INTEGER NOT NULL DEFAULT 1,
-    address TEXT
-);
-
-CREATE INDEX IF NOT EXISTS idx_detections_location ON detections(latitude, longitude);
-CREATE INDEX IF NOT EXISTS idx_detections_status ON detections(status);
-"""
+# Dynamically resolve DB_PATH through centralized configuration
+DB_PATH = get_config().DATABASE_PATH
+SCHEMA = LEGACY_SCHEMA
+DEDUP_RADIUS_M = get_config().DEDUP_RADIUS_METERS
 
 
-@contextmanager
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    try:
-        yield conn
-        conn.commit()
-    finally:
-        conn.close()
+    """Provides a SQLite database connection with row factory and foreign keys."""
+    return db_get_db(DB_PATH)
 
 
 def init_db():
-    with get_db() as conn:
-        conn.executescript(SCHEMA)
+    """Initializes the database schema."""
+    db_init_db(DB_PATH)
 
 
-def haversine_m(lat1, lon1, lat2, lon2) -> float:
+def haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Great-circle distance between two lat/lon points, in meters."""
-    R = 6371000
-    phi1, phi2 = radians(lat1), radians(lat2)
-    dphi = radians(lat2 - lat1)
-    dlambda = radians(lon2 - lon1)
-    a = sin(dphi / 2) ** 2 + cos(phi1) * cos(phi2) * sin(dlambda / 2) ** 2
-    return 2 * R * atan2(sqrt(a), sqrt(1 - a))
+    return haversine_distance_m(lat1, lon1, lat2, lon2)
 
 
-# Two reports within this distance are treated as the same physical pothole.
-DEDUP_RADIUS_M = 15.0
-
-
-def find_nearby_detection(conn, lat: float, lon: float) -> Optional[sqlite3.Row]:
+def find_nearby_detection(conn: sqlite3.Connection, lat: float, lon: float) -> Optional[sqlite3.Row]:
     """
     Find an existing open (not yet repaired) detection within DEDUP_RADIUS_M
-    of the given coordinates. A tighter production implementation would use
-    a spatial index (e.g. PostGIS ST_DWithin) rather than scanning all rows,
-    but this is sufficient for a city-district-scale demo dataset.
+    of the given coordinates.
     """
     rows = conn.execute(
         "SELECT * FROM detections WHERE status != 'repaired'"
@@ -83,14 +60,20 @@ def find_nearby_detection(conn, lat: float, lon: float) -> Optional[sqlite3.Row]
     return None
 
 
-def insert_or_merge_detection(vehicle_id, lat, lon, severity, est_depth_cm,
-                               confidence, image_ref, address=None) -> dict:
+def insert_or_merge_detection(
+    vehicle_id: str,
+    lat: float,
+    lon: float,
+    severity: str,
+    est_depth_cm: float,
+    confidence: float,
+    image_ref: Optional[str],
+    address: Optional[str] = None,
+) -> dict:
     """
     Insert a new pothole report, or — if a matching report already exists
     nearby — merge into it (bump the report_count and refresh severity to
-    the worse of the two estimates). This is the duplicate-filtering step
-    from the system architecture: many vehicles will drive over the same
-    pothole and each would otherwise create a separate alert.
+    the worse of the two estimates).
     """
     severity_rank = {"minor": 0, "moderate": 1, "severe": 2}
     now = time.time()
@@ -98,7 +81,11 @@ def insert_or_merge_detection(vehicle_id, lat, lon, severity, est_depth_cm,
     with get_db() as conn:
         existing = find_nearby_detection(conn, lat, lon)
         if existing:
-            merged_severity = severity if severity_rank[severity] > severity_rank[existing["severity"]] else existing["severity"]
+            merged_severity = (
+                severity
+                if severity_rank[severity] > severity_rank[existing["severity"]]
+                else existing["severity"]
+            )
             conn.execute(
                 """UPDATE detections
                    SET report_count = report_count + 1,
@@ -108,7 +95,9 @@ def insert_or_merge_detection(vehicle_id, lat, lon, severity, est_depth_cm,
                    WHERE id = ?""",
                 (merged_severity, est_depth_cm, now, existing["id"]),
             )
-            row = conn.execute("SELECT * FROM detections WHERE id = ?", (existing["id"],)).fetchone()
+            row = conn.execute(
+                "SELECT * FROM detections WHERE id = ?", (existing["id"],)
+            ).fetchone()
             return {"merged": True, "detection": dict(row)}
 
         new_id = str(uuid.uuid4())

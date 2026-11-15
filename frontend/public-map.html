@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>CivicLens — Public Infrastructure Incident Map</title>
+<link rel="stylesheet" href="./static/css/civiclens.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  .public-map-layout {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    position: relative;
+    min-height: 0;
+  }
+
+  #public-leaflet-map {
+    width: 100%;
+    height: 100%;
+    min-height: 60vh;
+    background: #0f172a;
+    flex: 1;
+  }
+
+  .map-overlay-card {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 500;
+    background: rgba(30, 41, 59, 0.92);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-md);
+    padding: var(--cl-space-3) var(--cl-space-4);
+    box-shadow: var(--cl-shadow-md);
+    max-width: calc(100vw - 32px);
+  }
+
+  .map-legend {
+    position: absolute;
+    bottom: 24px;
+    right: 16px;
+    z-index: 500;
+    background: rgba(30, 41, 59, 0.92);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-md);
+    padding: var(--cl-space-3);
+    font-size: 11px;
+    box-shadow: var(--cl-shadow-md);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .legend-color-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  /* Bottom sheet on mobile for incident details */
+  .incident-bottom-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--cl-bg-surface);
+    border-top: 2px solid var(--cl-primary);
+    border-radius: 16px 16px 0 0;
+    padding: 16px 20px;
+    box-shadow: var(--cl-shadow-lg);
+    z-index: 600;
+    transform: translateY(100%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+  .incident-bottom-sheet.open {
+    transform: translateY(0);
+  }
+  .sheet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .sheet-close {
+    background: transparent;
+    border: none;
+    color: var(--cl-text-muted);
+    font-size: 20px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="cl-app-wrapper">
+  <!-- Shared Navigation Sidebar -->
+  <div id="cl-sidebar-container" data-active="map"></div>
+
+  <!-- Main Content Area -->
+  <div class="cl-main-content">
+    <!-- Mobile Header -->
+    <header class="cl-mobile-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button class="cl-hamburger-btn" id="cl-hamburger-toggle" aria-label="Toggle navigation">☰</button>
+        <span style="font-family: var(--cl-font-heading); font-size: 1.25rem; font-weight: 700; text-transform: uppercase;">CivicLens</span>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--cl-text-muted); font-family: var(--cl-font-mono);">PUBLIC MAP</div>
+    </header>
+
+    <div class="public-map-layout">
+      <!-- Overlay Filter & Title -->
+      <div class="map-overlay-card">
+        <h2 style="font-family: var(--cl-font-heading); font-size: 1.1rem; text-transform: uppercase; margin: 0 0 6px 0;">
+          Public Infrastructure Map
+        </h2>
+        <div class="cl-chip-bar" id="public-filters" style="padding: 0;">
+          <button class="cl-chip active" data-sev="all">All Incidents</button>
+          <button class="cl-chip" data-sev="severe">Severe</button>
+          <button class="cl-chip" data-sev="moderate">Moderate</button>
+          <button class="cl-chip" data-sev="minor">Minor</button>
+        </div>
+      </div>
+
+      <!-- Map Container -->
+      <div id="public-leaflet-map"></div>
+
+      <!-- Map Legend -->
+      <div class="map-legend">
+        <div style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--cl-text-muted); margin-bottom: 2px;">
+          Severity Legend
+        </div>
+        <div class="legend-item">
+          <div class="legend-color-dot" style="background: var(--cl-severe);"></div>
+          <span>Severe Pothole (&gt;5cm)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color-dot" style="background: var(--cl-moderate);"></div>
+          <span>Moderate Pothole (2-5cm)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color-dot" style="background: var(--cl-minor);"></div>
+          <span>Minor Surface Defect</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Incident Bottom Sheet -->
+    <div class="incident-bottom-sheet" id="incident-sheet">
+      <div class="sheet-header">
+        <span class="cl-badge cl-badge-severe" id="sheet-badge">Severe Defect</span>
+        <button class="sheet-close" id="sheet-close">&times;</button>
+      </div>
+      <h3 style="margin: 0 0 4px 0; font-size: 16px;" id="sheet-title">Pothole Cluster #42</h3>
+      <p style="font-size: 13px; color: var(--cl-text-secondary); margin: 0 0 8px 0;" id="sheet-address">Near 100ft Road, Ward 112</p>
+      <div style="display: flex; gap: 8px; font-size: 11px; font-family: var(--cl-font-mono); color: var(--cl-text-muted);">
+        <span id="sheet-depth">Depth: 6.2cm</span> &bull;
+        <span id="sheet-reports">3 Citizen Reports</span> &bull;
+        <span id="sheet-status">Status: Scheduled</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="./static/js/nav.js"></script>
+<script>
+const CITY_CENTER = [8.5241, 76.9366]; // Default demo center
+const map = L.map('public-leaflet-map', { zoomControl: true }).setView(CITY_CENTER, 13);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; OpenStreetMap &copy; CARTO',
+  maxZoom: 19,
+}).addTo(map);
+
+const SEVERITY_COLORS = {
+  minor: '#10b981',
+  moderate: '#f97316',
+  severe: '#ef4444'
+};
+
+const sheet = document.getElementById('incident-sheet');
+const sheetClose = document.getElementById('sheet-close');
+if (sheetClose) sheetClose.addEventListener('click', () => sheet.classList.remove('open'));
+
+function showIncidentSheet(d) {
+  document.getElementById('sheet-title').textContent = `${d.severity.toUpperCase()} Pothole`;
+  document.getElementById('sheet-address').textContent = d.address || `GPS: ${d.latitude.toFixed(4)}, ${d.longitude.toFixed(4)}`;
+  document.getElementById('sheet-depth').textContent = `Depth: ${d.est_depth_cm || 0} cm`;
+  document.getElementById('sheet-reports').textContent = `${d.report_count || 1} Reports Merged`;
+  document.getElementById('sheet-status').textContent = `Status: ${d.status}`;
+
+  const badge = document.getElementById('sheet-badge');
+  badge.className = `cl-badge cl-badge-${d.severity}`;
+  badge.textContent = d.severity;
+
+  sheet.classList.add('open');
+}
+
+// Fetch public incidents or generate demo
+async function loadIncidents() {
+  let detections = [];
+  try {
+    const res = await fetch('/api/detections?limit=200');
+    if (res.ok) detections = await res.json();
+  } catch (e) {
+    // Demo points
+    detections = [
+      { id: '1', latitude: 8.5241, longitude: 76.9366, severity: 'severe', est_depth_cm: 6.5, report_count: 5, address: 'MG Road Junction', status: 'scheduled' },
+      { id: '2', latitude: 8.5312, longitude: 76.9410, severity: 'moderate', est_depth_cm: 3.2, report_count: 2, address: 'Airport Road', status: 'reported' },
+      { id: '3', latitude: 8.5190, longitude: 76.9280, severity: 'minor', est_depth_cm: 1.5, report_count: 1, address: 'Central Avenue', status: 'acknowledged' },
+      { id: '4', latitude: 8.5400, longitude: 76.9500, severity: 'severe', est_depth_cm: 7.1, report_count: 8, address: 'Outer Ring Bypass', status: 'in_progress' },
+    ];
+  }
+
+  detections.forEach(d => {
+    const color = SEVERITY_COLORS[d.severity] || '#94a3b8';
+    const marker = L.circleMarker([d.latitude, d.longitude], {
+      radius: 8 + Math.min(d.report_count || 1, 8),
+      fillColor: color,
+      color: '#ffffff',
+      weight: 1.5,
+      opacity: 0.9,
+      fillOpacity: 0.8,
+    }).addTo(map);
+
+    marker.bindPopup(`
+      <div style="font-family: sans-serif; font-size: 12px; color: #0f172a;">
+        <b style="text-transform: uppercase;">${d.severity} Pothole</b><br/>
+        ${d.address || 'GPS verified'}<br/>
+        Depth: ${d.est_depth_cm || 0} cm<br/>
+        Reports: ${d.report_count || 1} &bull; Status: <b>${d.status}</b>
+      </div>
+    `);
+
+    marker.on('click', () => showIncidentSheet(d));
+  });
+}
+
+loadIncidents();
+</script>
+</body>
+</html>

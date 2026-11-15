@@ -1,0 +1,502 @@
+/**
+ * CivicLens Design System & Responsive Framework
+ * ===============================================
+ * Mobile-first design system with accessible contrast, 44px+ touch targets,
+ * fluid typography, dark/light theme tokens, and clean civic tech styling.
+ * Supports: Mobile (360-480px), Large Phone (481-600px), Tablet (601-1024px),
+ * Laptop (1025-1440px), and Large Desktop (>1440px).
+ */
+
+:root {
+  /* Color Palette - Civic Modern */
+  --cl-bg-canvas: #0f172a;
+  --cl-bg-surface: #1e293b;
+  --cl-bg-elevated: #283548;
+  --cl-bg-subtle: #172033;
+  --cl-border: #334155;
+  --cl-border-light: #475569;
+
+  --cl-text-primary: #f8fafc;
+  --cl-text-secondary: #94a3b8;
+  --cl-text-muted: #64748b;
+
+  --cl-primary: #2563eb;
+  --cl-primary-hover: #1d4ed8;
+  --cl-primary-light: #60a5fa;
+
+  --cl-warning: #f59e0b;
+  --cl-warning-subtle: rgba(245, 158, 11, 0.15);
+
+  --cl-severe: #ef4444;
+  --cl-severe-bg: rgba(239, 68, 68, 0.15);
+  --cl-moderate: #f97316;
+  --cl-moderate-bg: rgba(249, 115, 22, 0.15);
+  --cl-minor: #10b981;
+  --cl-minor-bg: rgba(16, 185, 129, 0.15);
+
+  /* Spacing Scale */
+  --cl-space-1: 4px;
+  --cl-space-2: 8px;
+  --cl-space-3: 12px;
+  --cl-space-4: 16px;
+  --cl-space-5: 20px;
+  --cl-space-6: 24px;
+  --cl-space-8: 32px;
+  --cl-space-10: 40px;
+
+  /* Typography Scale */
+  --cl-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --cl-font-heading: 'Oswald', -apple-system, BlinkMacSystemFont, sans-serif;
+  --cl-font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --cl-text-xs: 0.75rem;    /* 12px */
+  --cl-text-sm: 0.875rem;   /* 14px */
+  --cl-text-base: 1rem;     /* 16px */
+  --cl-text-lg: 1.125rem;   /* 18px */
+  --cl-text-xl: 1.25rem;    /* 20px */
+  --cl-text-2xl: 1.5rem;    /* 24px */
+  --cl-text-3xl: 1.875rem;  /* 30px */
+
+  /* Touch Target Constraint */
+  --cl-min-touch: 44px;
+
+  /* Elevation Shadows */
+  --cl-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.25);
+  --cl-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.35), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --cl-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
+
+  /* Border Radius */
+  --cl-radius-sm: 4px;
+  --cl-radius-md: 8px;
+  --cl-radius-lg: 12px;
+  --cl-radius-full: 9999px;
+
+  /* Sidebar width */
+  --cl-sidebar-width: 240px;
+}
+
+/* Base Reset & Mobile defaults */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--cl-font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--cl-text-primary);
+  background-color: var(--cl-bg-canvas);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: var(--cl-bg-canvas);
+  color: var(--cl-text-primary);
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* App Layout Grid (Sidebar + Main) */
+.cl-app-wrapper {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.cl-main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+/* ─── Navigation System ─────────────────────────────────────────────── */
+
+/* Desktop Sidebar */
+.cl-sidebar {
+  width: var(--cl-sidebar-width);
+  background: var(--cl-bg-surface);
+  border-right: 1px solid var(--cl-border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  z-index: 40;
+}
+
+.cl-sidebar-brand {
+  padding: var(--cl-space-4) var(--cl-space-5);
+  display: flex;
+  align-items: center;
+  gap: var(--cl-space-3);
+  border-bottom: 1px solid var(--cl-border);
+  text-decoration: none;
+  color: var(--cl-text-primary);
+}
+
+.cl-brand-logo {
+  width: 32px;
+  height: 32px;
+  background: var(--cl-primary);
+  border-radius: var(--cl-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: white;
+  font-family: var(--cl-font-heading);
+  letter-spacing: 0.05em;
+}
+
+.cl-brand-title {
+  font-family: var(--cl-font-heading);
+  font-size: var(--cl-text-lg);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  margin: 0;
+  text-transform: uppercase;
+  color: var(--cl-text-primary);
+}
+
+.cl-brand-sub {
+  font-size: var(--cl-text-xs);
+  color: var(--cl-text-secondary);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  display: block;
+}
+
+.cl-nav-list {
+  list-style: none;
+  margin: 0;
+  padding: var(--cl-space-4) var(--cl-space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--cl-space-1);
+  flex: 1;
+}
+
+.cl-nav-link {
+  display: flex;
+  align-items: center;
+  gap: var(--cl-space-3);
+  padding: var(--cl-space-3) var(--cl-space-3);
+  min-height: var(--cl-min-touch);
+  border-radius: var(--cl-radius-md);
+  color: var(--cl-text-secondary);
+  text-decoration: none;
+  font-size: var(--cl-text-sm);
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.cl-nav-link:hover {
+  background: var(--cl-bg-elevated);
+  color: var(--cl-text-primary);
+}
+
+.cl-nav-link.active {
+  background: rgba(37, 99, 235, 0.15);
+  color: var(--cl-primary-light);
+  font-weight: 600;
+  border-left: 3px solid var(--cl-primary);
+}
+
+.cl-nav-icon {
+  font-size: 1.1rem;
+  width: 22px;
+  text-align: center;
+}
+
+/* Mobile Header Bar & Hamburger */
+.cl-mobile-header {
+  display: none;
+  background: var(--cl-bg-surface);
+  border-bottom: 1px solid var(--cl-border);
+  padding: var(--cl-space-3) var(--cl-space-4);
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.cl-hamburger-btn {
+  background: transparent;
+  border: 1px solid var(--cl-border);
+  color: var(--cl-text-primary);
+  width: var(--cl-min-touch);
+  height: var(--cl-min-touch);
+  border-radius: var(--cl-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.25rem;
+}
+
+.cl-drawer-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(2px);
+  z-index: 99;
+}
+
+.cl-drawer-overlay.open {
+  display: block;
+}
+
+/* Responsive Navigation Breakpoints */
+@media (max-width: 1023px) {
+  .cl-mobile-header {
+    display: flex;
+  }
+
+  .cl-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    transform: translateX(-100%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 100;
+    box-shadow: var(--cl-shadow-lg);
+  }
+
+  .cl-sidebar.drawer-open {
+    transform: translateX(0);
+  }
+}
+
+/* ─── Responsive Grid & Layout Components ───────────────────────────── */
+
+.cl-container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--cl-space-4);
+}
+
+@media (min-width: 768px) {
+  .cl-container {
+    padding: var(--cl-space-6);
+  }
+}
+
+.cl-card {
+  background: var(--cl-bg-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: var(--cl-radius-md);
+  padding: var(--cl-space-4);
+  box-shadow: var(--cl-shadow-sm);
+}
+
+@media (min-width: 768px) {
+  .cl-card {
+    padding: var(--cl-space-6);
+  }
+}
+
+/* Stat Cards & Grid */
+.cl-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--cl-space-3);
+  margin-bottom: var(--cl-space-4);
+}
+
+@media (min-width: 1024px) {
+  .cl-stat-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--cl-space-4);
+  }
+}
+
+.cl-stat-card {
+  background: var(--cl-bg-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: var(--cl-radius-md);
+  padding: var(--cl-space-3) var(--cl-space-4);
+  display: flex;
+  flex-direction: column;
+}
+
+.cl-stat-label {
+  font-size: var(--cl-text-xs);
+  color: var(--cl-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--cl-space-1);
+}
+
+.cl-stat-val {
+  font-family: var(--cl-font-heading);
+  font-size: var(--cl-text-2xl);
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--cl-text-primary);
+}
+
+.cl-stat-val.severe { color: var(--cl-severe); }
+.cl-stat-val.moderate { color: var(--cl-moderate); }
+.cl-stat-val.minor { color: var(--cl-minor); }
+
+/* ─── Buttons & Touch-Friendly Controls ────────────────────────────── */
+
+.cl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cl-space-2);
+  min-height: var(--cl-min-touch);
+  min-width: var(--cl-min-touch);
+  padding: var(--cl-space-2) var(--cl-space-4);
+  font-family: var(--cl-font-sans);
+  font-size: var(--cl-text-sm);
+  font-weight: 600;
+  border-radius: var(--cl-radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.cl-btn:focus-visible {
+  outline: 2px solid var(--cl-primary-light);
+  outline-offset: 2px;
+}
+
+.cl-btn-primary {
+  background: var(--cl-primary);
+  color: white;
+}
+.cl-btn-primary:hover {
+  background: var(--cl-primary-hover);
+}
+
+.cl-btn-secondary {
+  background: var(--cl-bg-elevated);
+  border-color: var(--cl-border);
+  color: var(--cl-text-primary);
+}
+.cl-btn-secondary:hover {
+  background: var(--cl-border);
+}
+
+.cl-btn-warning {
+  background: var(--cl-warning);
+  color: #16181c;
+}
+
+.cl-btn-sm {
+  min-height: 36px;
+  padding: var(--cl-space-1) var(--cl-space-3);
+  font-size: var(--cl-text-xs);
+}
+
+/* ─── Form Controls ─────────────────────────────────────────────────── */
+
+.cl-form-group {
+  margin-bottom: var(--cl-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--cl-space-1);
+}
+
+.cl-label {
+  font-size: var(--cl-text-sm);
+  font-weight: 600;
+  color: var(--cl-text-primary);
+}
+
+.cl-input, .cl-select, .cl-textarea {
+  min-height: var(--cl-min-touch);
+  width: 100%;
+  padding: var(--cl-space-2) var(--cl-space-3);
+  font-family: var(--cl-font-sans);
+  font-size: var(--cl-text-base);
+  background: var(--cl-bg-subtle);
+  border: 1px solid var(--cl-border);
+  border-radius: var(--cl-radius-md);
+  color: var(--cl-text-primary);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.cl-input:focus, .cl-select:focus, .cl-textarea:focus {
+  border-color: var(--cl-primary);
+  box-shadow: 0 0 0 1px var(--cl-primary);
+}
+
+.cl-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* ─── Badges & Status Chips ────────────────────────────────────────── */
+
+.cl-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--cl-radius-sm);
+  font-size: var(--cl-text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cl-badge-severe { background: var(--cl-severe-bg); color: var(--cl-severe); border: 1px solid rgba(239, 68, 68, 0.3); }
+.cl-badge-moderate { background: var(--cl-moderate-bg); color: var(--cl-moderate); border: 1px solid rgba(249, 115, 22, 0.3); }
+.cl-badge-minor { background: var(--cl-minor-bg); color: var(--cl-minor); border: 1px solid rgba(16, 185, 129, 0.3); }
+
+/* Horizontal Scroll Container for Filter Chips on Mobile */
+.cl-chip-bar {
+  display: flex;
+  gap: var(--cl-space-2);
+  overflow-x: auto;
+  padding: var(--cl-space-2) 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.cl-chip-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.cl-chip {
+  min-height: 38px;
+  padding: var(--cl-space-1) var(--cl-space-3);
+  border-radius: var(--cl-radius-full);
+  border: 1px solid var(--cl-border);
+  background: var(--cl-bg-elevated);
+  color: var(--cl-text-secondary);
+  font-size: var(--cl-text-xs);
+  font-weight: 500;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cl-chip:hover {
+  border-color: var(--cl-border-light);
+  color: var(--cl-text-primary);
+}
+
+.cl-chip.active {
+  background: var(--cl-primary);
+  border-color: var(--cl-primary);
+  color: white;
+  font-weight: 600;
+}

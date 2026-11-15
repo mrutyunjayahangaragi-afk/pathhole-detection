@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>CivicLens — Municipal Operations & Triage Dashboard</title>
+<link rel="stylesheet" href="../static/css/civiclens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  .triage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: var(--cl-space-6);
+  }
+  .controls-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: var(--cl-space-4);
+  }
+  .triage-table-container {
+    background: var(--cl-bg-surface);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-md);
+    overflow: hidden;
+  }
+  table.cl-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: var(--cl-text-sm);
+  }
+  table.cl-table th {
+    background: var(--cl-bg-elevated);
+    padding: var(--cl-space-3) var(--cl-space-4);
+    font-weight: 600;
+    color: var(--cl-text-secondary);
+    text-transform: uppercase;
+    font-size: var(--cl-text-xs);
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--cl-border);
+  }
+  table.cl-table td {
+    padding: var(--cl-space-3) var(--cl-space-4);
+    border-bottom: 1px solid var(--cl-border);
+  }
+  table.cl-table tr:hover {
+    background: var(--cl-bg-subtle);
+  }
+
+  /* Responsive Table-to-Card transformation on Mobile */
+  @media (max-width: 768px) {
+    .triage-table-container {
+      background: transparent;
+      border: none;
+    }
+    table.cl-table, table.cl-table thead, table.cl-table tbody, table.cl-table th, table.cl-table td, table.cl-table tr {
+      display: block;
+    }
+    table.cl-table thead tr {
+      position: absolute;
+      top: -9999px;
+      left: -9999px;
+    }
+    table.cl-table tr {
+      background: var(--cl-bg-surface);
+      border: 1px solid var(--cl-border);
+      border-radius: var(--cl-radius-md);
+      margin-bottom: var(--cl-space-3);
+      padding: var(--cl-space-3);
+    }
+    table.cl-table td {
+      border: none;
+      padding: 6px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    table.cl-table td::before {
+      content: attr(data-label);
+      font-weight: 600;
+      font-size: var(--cl-text-xs);
+      color: var(--cl-text-muted);
+      text-transform: uppercase;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="cl-app-wrapper">
+  <!-- Shared Navigation Sidebar -->
+  <div id="cl-sidebar-container" data-active="municipal"></div>
+
+  <!-- Main Content Area -->
+  <div class="cl-main-content">
+    <!-- Mobile Header -->
+    <header class="cl-mobile-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button class="cl-hamburger-btn" id="cl-hamburger-toggle" aria-label="Toggle navigation">☰</button>
+        <span style="font-family: var(--cl-font-heading); font-size: 1.25rem; font-weight: 700; text-transform: uppercase;">CivicLens</span>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--cl-text-muted); font-family: var(--cl-font-mono);">MUNICIPAL</div>
+    </header>
+
+    <div class="cl-container">
+      <div class="triage-header">
+        <div>
+          <h1 style="font-family: var(--cl-font-heading); font-size: var(--cl-text-3xl); text-transform: uppercase; margin: 0 0 4px 0;">
+            Municipal Triage Console
+          </h1>
+          <p style="color: var(--cl-text-secondary); margin: 0; font-size: var(--cl-text-sm);">
+            Ward 112 (East Central Zone) &bull; Automated Defect Aggregation &amp; Department Routing
+          </p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <a href="../../dashboard/dashboard.html" class="cl-btn cl-btn-secondary cl-btn-sm">
+            ⚡ Sensor Feed
+          </a>
+          <a href="./verification.html" class="cl-btn cl-btn-primary cl-btn-sm">
+            🔍 Verification Queue (3)
+          </a>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Strip -->
+      <div class="cl-stat-grid">
+        <div class="cl-stat-card">
+          <div class="cl-stat-label">Active Incidents</div>
+          <div class="cl-stat-val">106</div>
+        </div>
+        <div class="cl-stat-card">
+          <div class="cl-stat-label">Severe Hazards</div>
+          <div class="cl-stat-val severe">28</div>
+        </div>
+        <div class="cl-stat-card">
+          <div class="cl-stat-label">In Repair</div>
+          <div class="cl-stat-val moderate">14</div>
+        </div>
+        <div class="cl-stat-card">
+          <div class="cl-stat-label">Repaired Today</div>
+          <div class="cl-stat-val minor">9</div>
+        </div>
+        <div class="cl-stat-card">
+          <div class="cl-stat-label">Citizen Reports</div>
+          <div class="cl-stat-val">247</div>
+        </div>
+      </div>
+
+      <!-- Filters & Search Toolbar -->
+      <div class="controls-row">
+        <select class="cl-select" style="max-width: 200px;">
+          <option>All Wards (East Zone)</option>
+          <option selected>Ward 112 — Indiranagar</option>
+          <option>Ward 113 — Domlur</option>
+          <option>Ward 114 — Ulsoor</option>
+        </select>
+        <select class="cl-select" style="max-width: 180px;">
+          <option>All Severities</option>
+          <option>Severe Only</option>
+          <option>Moderate &amp; Severe</option>
+        </select>
+        <input type="text" class="cl-input" placeholder="Search address, landmark or ID..." style="max-width: 280px;">
+      </div>
+
+      <!-- Triage Incident Table / Responsive Cards -->
+      <div class="triage-table-container">
+        <table class="cl-table">
+          <thead>
+            <tr>
+              <th>Incident Ref</th>
+              <th>Category</th>
+              <th>Severity</th>
+              <th>Location / Address</th>
+              <th>Reports Merged</th>
+              <th>Assigned Dept</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td data-label="Ref" class="mono">INC-00142</td>
+              <td data-label="Category">Pothole</td>
+              <td data-label="Severity"><span class="cl-badge cl-badge-severe">Severe</span></td>
+              <td data-label="Location">100 Feet Rd near 12th Main Junction</td>
+              <td data-label="Reports">7 citizen reports</td>
+              <td data-label="Dept">Major Roads Wing</td>
+              <td data-label="Status"><span style="color: var(--cl-warning); font-weight: 600;">Scheduled</span></td>
+              <td data-label="Action"><button class="cl-btn cl-btn-secondary cl-btn-sm">Assign</button></td>
+            </tr>
+            <tr>
+              <td data-label="Ref" class="mono">INC-00143</td>
+              <td data-label="Category">Road Cave-in</td>
+              <td data-label="Severity"><span class="cl-badge cl-badge-severe">Severe</span></td>
+              <td data-label="Location">CMH Road opp. Metro Pillar 42</td>
+              <td data-label="Reports">4 citizen reports</td>
+              <td data-label="Dept">BWSSB Pipeline</td>
+              <td data-label="Status"><span style="color: var(--cl-primary-light); font-weight: 600;">In Progress</span></td>
+              <td data-label="Action"><button class="cl-btn cl-btn-secondary cl-btn-sm">Details</button></td>
+            </tr>
+            <tr>
+              <td data-label="Ref" class="mono">INC-00144</td>
+              <td data-label="Category">Pothole</td>
+              <td data-label="Severity"><span class="cl-badge cl-badge-moderate">Moderate</span></td>
+              <td data-label="Location">Double Road, 2nd Stage</td>
+              <td data-label="Reports">2 citizen reports</td>
+              <td data-label="Dept">Ward Maintenance</td>
+              <td data-label="Status"><span>Reported</span></td>
+              <td data-label="Action"><button class="cl-btn cl-btn-secondary cl-btn-sm">Schedule</button></td>
+            </tr>
+            <tr>
+              <td data-label="Ref" class="mono">INC-00145</td>
+              <td data-label="Category">Drainage</td>
+              <td data-label="Severity"><span class="cl-badge cl-badge-minor">Minor</span></td>
+              <td data-label="Location">80 Feet Rd near BSNL Office</td>
+              <td data-label="Reports">1 vehicle sensor</td>
+              <td data-label="Dept">Stormwater Drain</td>
+              <td data-label="Status"><span style="color: var(--cl-minor); font-weight: 600;">Repaired</span></td>
+              <td data-label="Action"><button class="cl-btn cl-btn-secondary cl-btn-sm">Verify</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../static/js/nav.js"></script>
+</body>
+</html>

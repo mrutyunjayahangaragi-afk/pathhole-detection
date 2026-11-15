@@ -2,116 +2,331 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ROADSTATE — Live Pothole Monitor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>CivicLens — Live Pothole & Infrastructure Monitor</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --asphalt: #16181c;
-    --panel: #1f2227;
-    --panel-raised: #262a30;
-    --hairline: #34383f;
-    --chalk: #eeece2;
-    --slate: #8b92a0;
-    --slate-dim: #5c626e;
-    --safety-yellow: #ffc933;
-    --severe: #e8542e;
-    --moderate: #f2a93c;
-    --minor: #4fae7c;
+    --asphalt: #0f172a;
+    --panel: #1e293b;
+    --panel-raised: #283548;
+    --hairline: #334155;
+    --chalk: #f8fafc;
+    --slate: #94a3b8;
+    --slate-dim: #64748b;
+    --safety-yellow: #f59e0b;
+    --civic-blue: #2563eb;
+    --severe: #ef4444;
+    --moderate: #f97316;
+    --minor: #10b981;
+    --touch-min: 44px;
   }
 
   * { box-sizing: border-box; }
 
   html, body {
-    margin: 0; padding: 0; height: 100%;
+    margin: 0; padding: 0;
+    min-height: 100%;
     background: var(--asphalt);
     color: var(--chalk);
-    font-family: 'Inter', sans-serif;
-    overflow: hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Desktop viewport locking */
+  @media (min-width: 1024px) {
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+    #app {
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      height: 100vh;
+    }
+    main {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      min-height: 0;
+    }
+    #map { width: 100%; height: 100%; }
+    #side {
+      height: 100%;
+      border-left: 1px solid var(--hairline);
+    }
+  }
+
+  /* Mobile and Tablet fluid vertical flow */
+  @media (max-width: 1023px) {
+    html, body {
+      overflow-y: auto;
+    }
+    #app {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    main {
+      display: flex;
+      flex-direction: column;
+    }
+    #map {
+      width: 100%;
+      height: 48vh;
+      min-height: 320px;
+    }
+    #side {
+      width: 100%;
+      border-top: 2px solid var(--hairline);
+    }
+    #feed {
+      max-height: 65vh;
+      overflow-y: auto;
+    }
   }
 
   .mono { font-family: 'IBM Plex Mono', monospace; }
-
-  /* ---------- Layout ---------- */
-  #app {
-    display: grid;
-    grid-template-rows: auto auto 1fr;
-    height: 100vh;
-  }
 
   /* ---------- Header ---------- */
   header {
     background: var(--panel);
     border-bottom: 3px solid var(--safety-yellow);
-    padding: 14px 24px;
+    padding: 12px 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 20px;
+    gap: 12px;
+    flex-wrap: wrap;
     background-image: repeating-linear-gradient(
-      -45deg, transparent, transparent 18px, rgba(255,201,51,0.035) 18px, rgba(255,201,51,0.035) 36px
+      -45deg, transparent, transparent 18px, rgba(245,158,11,0.035) 18px, rgba(245,158,11,0.035) 36px
     );
   }
 
-  .brand { display: flex; align-items: center; gap: 12px; }
+  @media (min-width: 768px) {
+    header { padding: 14px 24px; }
+  }
+
+  .brand-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .nav-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--touch-min);
+    height: var(--touch-min);
+    background: var(--panel-raised);
+    border: 1px solid var(--hairline);
+    border-radius: 6px;
+    color: var(--chalk);
+    font-size: 20px;
+    cursor: pointer;
+  }
+
+  @media (min-width: 1024px) {
+    .nav-toggle-btn { display: none; }
+  }
+
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
   .brand-mark {
-    width: 38px; height: 38px; flex-shrink: 0;
+    width: 36px; height: 36px; flex-shrink: 0;
   }
   .brand h1 {
     font-family: 'Oswald', sans-serif;
     font-weight: 700;
-    font-size: 22px;
+    font-size: clamp(18px, 4vw, 22px);
     letter-spacing: 0.04em;
     margin: 0;
     text-transform: uppercase;
     color: var(--chalk);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .brand .tag {
+    font-size: 10px;
+    background: var(--civic-blue);
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
   }
   .brand .sub {
     font-size: 11px;
     color: var(--slate);
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     margin-top: 1px;
+    display: none;
+  }
+  @media (min-width: 480px) {
+    .brand .sub { display: block; }
+  }
+
+  /* Desktop Quick Nav */
+  .desktop-nav {
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+  @media (min-width: 1024px) {
+    .desktop-nav { display: flex; }
+  }
+  .desktop-nav a {
+    color: var(--slate);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+  }
+  .desktop-nav a:hover {
+    color: var(--chalk);
+    background: var(--panel-raised);
+    border-color: var(--hairline);
+  }
+  .desktop-nav a.active {
+    color: var(--chalk);
+    background: var(--panel-raised);
+    border-color: var(--safety-yellow);
+    font-weight: 600;
   }
 
   .conn-status {
     display: flex; align-items: center; gap: 8px;
-    font-size: 12px; color: var(--slate);
+    font-size: 11px; color: var(--slate);
     padding: 6px 12px;
     background: var(--panel-raised);
     border-radius: 20px;
     border: 1px solid var(--hairline);
+    min-height: 32px;
   }
   .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--slate-dim); flex-shrink:0; }
-  .dot.live { background: var(--minor); box-shadow: 0 0 0 0 rgba(79,174,124,0.6); animation: pulse 2s infinite; }
+  .dot.live { background: var(--minor); box-shadow: 0 0 0 0 rgba(16,185,129,0.6); animation: pulse 2s infinite; }
   .dot.demo { background: var(--safety-yellow); }
   @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(79,174,124,0.5); }
-    70% { box-shadow: 0 0 0 6px rgba(79,174,124,0); }
-    100% { box-shadow: 0 0 0 0 rgba(79,174,124,0); }
+    0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); }
+    70% { box-shadow: 0 0 0 6px rgba(16,185,129,0); }
+    100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
   }
 
-  /* ---------- Stat strip ---------- */
+  /* Mobile Slide-Out Drawer Navigation */
+  .mobile-drawer {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: 260px;
+    background: var(--panel);
+    border-right: 1px solid var(--hairline);
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 16px;
+    box-shadow: 4px 0 16px rgba(0,0,0,0.5);
+  }
+  .mobile-drawer.open {
+    transform: translateX(0);
+  }
+  .drawer-backdrop {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 999;
+  }
+  .drawer-backdrop.open { display: block; }
+  .drawer-brand {
+    font-family: 'Oswald', sans-serif;
+    font-size: 20px;
+    color: var(--chalk);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .drawer-close {
+    background: transparent;
+    border: none;
+    color: var(--slate);
+    font-size: 24px;
+    cursor: pointer;
+    width: var(--touch-min);
+    height: var(--touch-min);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .drawer-links {
+    list-style: none;
+    margin: 0; padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .drawer-links a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    color: var(--slate);
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    min-height: var(--touch-min);
+  }
+  .drawer-links a:hover, .drawer-links a.active {
+    background: var(--panel-raised);
+    color: var(--chalk);
+  }
+
+  /* ---------- Stat Strip (Responsive Grid) ---------- */
   .stats {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     background: var(--asphalt);
     border-bottom: 1px solid var(--hairline);
   }
+
+  @media (min-width: 480px) {
+    .stats {
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .stats {
+      grid-template-columns: repeat(5, 1fr);
+    }
+  }
+
   .stat {
-    padding: 14px 24px;
+    padding: 10px 14px;
     border-right: 1px solid var(--hairline);
+    border-bottom: 1px solid var(--hairline);
+  }
+  @media (min-width: 768px) {
+    .stat {
+      padding: 14px 20px;
+      border-bottom: none;
+    }
   }
   .stat:last-child { border-right: none; }
   .stat .label {
-    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--slate-dim); margin-bottom: 4px;
+    font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--slate-dim); margin-bottom: 2px;
   }
   .stat .value {
     font-family: 'Oswald', sans-serif;
-    font-size: 28px; font-weight: 600;
+    font-size: clamp(22px, 4vw, 28px);
+    font-weight: 600;
     line-height: 1;
     color: var(--chalk);
   }
@@ -119,19 +334,10 @@
   .stat .value.moderate-num { color: var(--moderate); }
   .stat .value.minor-num { color: var(--minor); }
 
-  /* ---------- Main grid ---------- */
-  main {
-    display: grid;
-    grid-template-columns: 1fr 380px;
-    min-height: 0;
-  }
-
-  #map { width: 100%; height: 100%; background: #0d0e10; }
-
   /* Leaflet dark tuning */
   .leaflet-container { background: #0d0e10; }
   .leaflet-control-attribution {
-    background: rgba(22,24,28,0.75) !important;
+    background: rgba(15,23,42,0.85) !important;
     color: var(--slate-dim) !important;
     font-size: 9px !important;
   }
@@ -140,19 +346,21 @@
     background: var(--panel-raised) !important;
     color: var(--chalk) !important;
     border-color: var(--hairline) !important;
+    width: 34px !important;
+    height: 34px !important;
+    line-height: 34px !important;
   }
 
   /* ---------- Side panel ---------- */
   #side {
     background: var(--panel);
-    border-left: 1px solid var(--hairline);
     display: flex;
     flex-direction: column;
     min-height: 0;
   }
 
   .side-header {
-    padding: 16px 18px 12px;
+    padding: 12px 16px 10px;
     border-bottom: 1px solid var(--hairline);
   }
   .side-header .title {
@@ -160,21 +368,37 @@
     font-size: 14px; font-weight: 600; letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--chalk);
-    margin-bottom: 10px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
-  .filters { display: flex; gap: 6px; flex-wrap: wrap; }
+  .filters {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .filters::-webkit-scrollbar { display: none; }
+
   .chip {
-    font-size: 11px;
-    padding: 5px 10px;
-    border-radius: 4px;
+    font-size: 12px;
+    padding: 6px 14px;
+    min-height: 36px;
+    border-radius: 20px;
     border: 1px solid var(--hairline);
     background: var(--panel-raised);
     color: var(--slate);
     cursor: pointer;
     user-select: none;
     transition: all 0.15s ease;
-    letter-spacing: 0.02em;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
   .chip:hover { border-color: var(--slate-dim); }
   .chip.active { background: var(--safety-yellow); color: #16181c; border-color: var(--safety-yellow); font-weight: 600; }
@@ -185,24 +409,24 @@
   #feed {
     flex: 1;
     overflow-y: auto;
-    padding: 6px 0;
+    padding: 4px 0;
   }
   #feed::-webkit-scrollbar { width: 6px; }
   #feed::-webkit-scrollbar-thumb { background: var(--hairline); border-radius: 3px; }
 
   .report {
-    padding: 12px 18px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--hairline);
     display: grid;
-    grid-template-columns: 34px 1fr;
-    gap: 10px;
+    grid-template-columns: 32px 1fr;
+    gap: 12px;
     cursor: pointer;
     transition: background 0.15s ease;
   }
   .report:hover { background: var(--panel-raised); }
   .report.highlight { background: var(--panel-raised); }
 
-  .sev-icon { width: 34px; height: 26px; margin-top: 2px; }
+  .sev-icon { width: 32px; height: 26px; margin-top: 2px; flex-shrink: 0; }
 
   .report .row1 {
     display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
@@ -214,26 +438,26 @@
   .report .ago { font-size: 10px; color: var(--slate-dim); flex-shrink: 0; }
   .report .meta {
     font-size: 11px; color: var(--slate);
-    display: flex; gap: 10px; margin-top: 3px; flex-wrap: wrap;
+    display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap;
   }
   .report .meta .badge {
-    padding: 1px 6px; border-radius: 3px; background: var(--panel-raised);
+    padding: 2px 6px; border-radius: 4px; background: var(--panel-raised);
     border: 1px solid var(--hairline);
   }
   .report .status-row {
-    margin-top: 8px; display: flex; gap: 6px;
+    margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap;
   }
   .status-btn {
-    font-size: 10px; padding: 4px 8px; border-radius: 4px;
+    font-size: 11px; padding: 6px 10px; min-height: 32px; border-radius: 4px;
     background: transparent; border: 1px solid var(--hairline);
     color: var(--slate); cursor: pointer; letter-spacing: 0.02em;
-    text-transform: uppercase;
+    text-transform: uppercase; display: inline-flex; align-items: center;
   }
   .status-btn:hover { border-color: var(--safety-yellow); color: var(--safety-yellow); }
   .status-btn.current { background: var(--safety-yellow); color: #16181c; border-color: var(--safety-yellow); font-weight: 600; }
 
   .empty-state {
-    padding: 60px 24px; text-align: center; color: var(--slate-dim);
+    padding: 48px 20px; text-align: center; color: var(--slate-dim);
   }
   .empty-state .icon { font-size: 32px; margin-bottom: 8px; }
   .empty-state .msg { font-size: 13px; }
@@ -241,24 +465,73 @@
   .marker-pop {
     font-family: 'Inter', sans-serif;
     color: #16181c;
+    font-size: 12px;
   }
   .marker-pop b { font-family: 'Oswald', sans-serif; }
+
+  .footer-sub {
+    font-size: 10px;
+    color: var(--slate-dim);
+    padding: 8px 16px;
+    text-align: center;
+    border-top: 1px solid var(--hairline);
+  }
+  .footer-sub a { color: var(--slate); text-decoration: none; }
 </style>
 </head>
 <body>
+
+<!-- Mobile Drawer Backdrop -->
+<div class="drawer-backdrop" id="drawer-backdrop"></div>
+
+<!-- Mobile Slide-Out Drawer -->
+<nav class="mobile-drawer" id="mobile-drawer" aria-label="Mobile Navigation">
+  <div class="drawer-brand">
+    <span>CivicLens</span>
+    <button class="drawer-close" id="drawer-close" aria-label="Close navigation">&times;</button>
+  </div>
+  <ul class="drawer-links">
+    <li><a href="../frontend/index.html">🏛️ Home Portal</a></li>
+    <li><a href="../frontend/citizen-report.html">📢 Report Defect</a></li>
+    <li><a href="../frontend/public-map.html">🗺️ Public Incident Map</a></li>
+    <li><a href="#" class="active">⚡ Live Monitor</a></li>
+    <li><a href="../frontend/municipal/dashboard.html">🛠️ Municipal Triage</a></li>
+    <li><a href="../frontend/municipal/verification.html">🔍 Verification Queue</a></li>
+  </ul>
+  <div style="margin-top: auto; padding-top: 16px; font-size: 11px; color: var(--slate-dim);">
+    CivicLens v2.0 · Municipal Console
+  </div>
+</nav>
+
 <div id="app">
   <header>
-    <div class="brand">
-      <svg class="brand-mark" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M4 30 Q 16 26, 20 30 Q 24 34, 28 30 Q 32 26, 44 30" stroke="#eeece2" stroke-width="3" fill="none" stroke-linecap="round"/>
-        <ellipse cx="24" cy="31.5" rx="6.5" ry="3" fill="#ffc933"/>
-        <path d="M4 30 L4 22 M44 30 L44 22" stroke="#5c626e" stroke-width="2" stroke-dasharray="3 3"/>
-      </svg>
-      <div>
-        <h1>Roadstate</h1>
-        <div class="sub">Live Pothole Detection &amp; Reporting — Municipal Console</div>
-      </div>
+    <div class="brand-group">
+      <button class="nav-toggle-btn" id="nav-toggle-btn" aria-label="Open navigation menu">☰</button>
+      <a href="../frontend/index.html" class="brand">
+        <svg class="brand-mark" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="48" height="48" rx="8" fill="#1e293b"/>
+          <path d="M6 32 Q 18 28, 22 32 Q 26 36, 30 32 Q 34 28, 42 32" stroke="#f8fafc" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <ellipse cx="26" cy="33.5" rx="6.5" ry="3" fill="#f59e0b"/>
+          <circle cx="24" cy="18" r="8" stroke="#2563eb" stroke-width="3" fill="none"/>
+          <circle cx="24" cy="18" r="3" fill="#2563eb"/>
+        </svg>
+        <div>
+          <h1>CivicLens <span class="tag">AI</span></h1>
+          <div class="sub">Live Infrastructure Triage &amp; Reporting — Municipal Console</div>
+        </div>
+      </a>
     </div>
+
+    <!-- Desktop Navigation -->
+    <nav class="desktop-nav" aria-label="Header Navigation">
+      <a href="../frontend/index.html">Portal</a>
+      <a href="../frontend/citizen-report.html">Citizen Report</a>
+      <a href="../frontend/public-map.html">Public Map</a>
+      <a href="#" class="active">Live Monitor</a>
+      <a href="../frontend/municipal/dashboard.html">Municipal Triage</a>
+      <a href="../frontend/municipal/verification.html">Verification</a>
+    </nav>
+
     <div id="conn-status" class="conn-status">
       <div class="dot" id="conn-dot"></div>
       <span id="conn-text">Connecting…</span>
@@ -267,7 +540,7 @@
 
   <div class="stats">
     <div class="stat">
-      <div class="label">Open Reports</div>
+      <div class="label">Open Incidents</div>
       <div class="value" id="stat-total">—</div>
     </div>
     <div class="stat">
@@ -283,7 +556,7 @@
       <div class="value minor-num" id="stat-minor">—</div>
     </div>
     <div class="stat">
-      <div class="label">Reporting Vehicles</div>
+      <div class="label">Active Sources</div>
       <div class="value" id="stat-vehicles">—</div>
     </div>
   </div>
@@ -292,15 +565,21 @@
     <div id="map"></div>
     <div id="side">
       <div class="side-header">
-        <div class="title">Live Feed</div>
-        <div class="filters" id="filters">
-          <div class="chip active" data-sev="all">All</div>
-          <div class="chip sev-severe" data-sev="severe">Severe</div>
-          <div class="chip sev-moderate" data-sev="moderate">Moderate</div>
-          <div class="chip sev-minor" data-sev="minor">Minor</div>
+        <div class="title">
+          <span>Live Detection Feed</span>
+          <span style="font-size: 11px; color: var(--slate); font-weight: normal;" id="feed-count"></span>
+        </div>
+        <div class="filters" id="filters" role="toolbar" aria-label="Filter detections by severity">
+          <button class="chip active" data-sev="all">All</button>
+          <button class="chip sev-severe" data-sev="severe">Severe</button>
+          <button class="chip sev-moderate" data-sev="moderate">Moderate</button>
+          <button class="chip sev-minor" data-sev="minor">Minor</button>
         </div>
       </div>
       <div id="feed"></div>
+      <div class="footer-sub">
+        Originally Roadstate &copy; 2026 halo-112 (MIT) &middot; Extended as CivicLens
+      </div>
     </div>
   </main>
 </div>
@@ -308,17 +587,35 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 /* ============================================================
+   DRAWER NAVIGATION
+   ============================================================ */
+const navToggleBtn = document.getElementById('nav-toggle-btn');
+const mobileDrawer = document.getElementById('mobile-drawer');
+const drawerBackdrop = document.getElementById('drawer-backdrop');
+const drawerClose = document.getElementById('drawer-close');
+
+function openDrawer() {
+  mobileDrawer.classList.add('open');
+  drawerBackdrop.classList.add('open');
+}
+function closeDrawer() {
+  mobileDrawer.classList.remove('open');
+  drawerBackdrop.classList.remove('open');
+}
+if (navToggleBtn) navToggleBtn.addEventListener('click', openDrawer);
+if (drawerClose) drawerClose.addEventListener('click', closeDrawer);
+if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeDrawer);
+
+/* ============================================================
    CONFIG
    ============================================================ */
-// Point this at your running backend (see /backend/app.py).
-// If it's unreachable (e.g. previewing this file standalone),
-// the dashboard falls back to a generated demo dataset so the
-// UI is still fully explorable.
-const API_BASE = "http://localhost:5000";
+const API_BASE = window.location.origin && window.location.origin.startsWith('http') 
+  ? window.location.origin 
+  : "http://localhost:5000";
 const POLL_INTERVAL_MS = 4000;
-const CITY_CENTER = [8.5241, 76.9366]; // Thiruvananthapuram, as a default demo city
+const CITY_CENTER = [8.5241, 76.9366]; // Thiruvananthapuram / Bengaluru demo default
 
-const SEVERITY_COLORS = { minor: "#4fae7c", moderate: "#f2a93c", severe: "#e8542e" };
+const SEVERITY_COLORS = { minor: "#10b981", moderate: "#f97316", severe: "#ef4444" };
 let currentFilter = "all";
 let demoMode = false;
 let detections = [];
@@ -334,11 +631,11 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
 }).addTo(map);
 
 function potholeIconSvg(severity) {
-  const color = SEVERITY_COLORS[severity] || "#8b92a0";
+  const color = SEVERITY_COLORS[severity] || "#94a3b8";
   return `
     <svg width="30" height="24" viewBox="0 0 30 24" xmlns="http://www.w3.org/2000/svg">
-      <path d="M1 16 Q 8 12, 11 16 Q 15 20, 19 16 Q 22 12, 29 16" stroke="#eeece2" stroke-width="2" fill="none" stroke-linecap="round"/>
-      <ellipse cx="15" cy="16.5" rx="4.5" ry="2.2" fill="${color}" stroke="#16181c" stroke-width="1"/>
+      <path d="M1 16 Q 8 12, 11 16 Q 15 20, 19 16 Q 22 12, 29 16" stroke="#f8fafc" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <ellipse cx="15" cy="16.5" rx="4.5" ry="2.2" fill="${color}" stroke="#0f172a" stroke-width="1"/>
     </svg>`;
 }
 
@@ -380,13 +677,13 @@ async function patchStatus(id, status) {
 }
 
 /* ============================================================
-   DEMO DATA (used only if the backend can't be reached)
+   DEMO DATA (used if backend is unreachable)
    ============================================================ */
 function generateDemoData() {
   const hotspots = [
     [8.5241, 76.9366], [8.4855, 76.9492], [8.5459, 76.9109], [8.5010, 76.9500], [8.5620, 76.9215]
   ];
-  const vehicles = ['bus-042', 'bus-017', 'car-118', 'car-104', 'bus-003'];
+  const vehicles = ['citizen-app', 'bus-042', 'car-118', 'survey-van', 'bus-003'];
   const sevPool = ['minor','minor','moderate','minor','severe','moderate','severe','minor'];
   const out = [];
   let n = 0;
@@ -406,7 +703,7 @@ function generateDemoData() {
         timestamp: (Date.now()/1000) - Math.random() * 3600 * 6,
         status: ['reported','reported','acknowledged','scheduled'][n % 4],
         report_count: 1 + (i === 0 ? Math.floor(Math.random()*4) : 0),
-        address: `Demo Ward ${hi+1}, near hotspot ${hi+1}`,
+        address: `Demo Ward ${hi+1}, Sector ${i+1}`,
       });
     }
   });
@@ -454,8 +751,8 @@ function renderMarkers(data) {
       <div class="marker-pop">
         <b>${d.severity.toUpperCase()}</b> pothole<br/>
         Depth est. ${d.est_depth_cm} cm<br/>
-        Reported ${d.report_count || 1}× · ${d.address || ''}<br/>
-        Status: ${d.status}
+        Reported ${d.report_count || 1}&times; &middot; ${d.address || 'GPS verified'}<br/>
+        Status: <b>${d.status}</b>
       </div>
     `);
     markers[d.id] = marker;
@@ -464,8 +761,11 @@ function renderMarkers(data) {
 
 function renderFeed(data) {
   const feed = document.getElementById('feed');
+  const countEl = document.getElementById('feed-count');
   const filtered = currentFilter === 'all' ? data : data.filter(d => d.severity === currentFilter);
   const sorted = [...filtered].sort((a,b) => b.timestamp - a.timestamp);
+
+  if (countEl) countEl.textContent = `(${sorted.length})`;
 
   if (sorted.length === 0) {
     feed.innerHTML = `<div class="empty-state"><div class="icon">🛣️</div><div class="msg">No reports match this filter.</div></div>`;
@@ -475,8 +775,8 @@ function renderFeed(data) {
   feed.innerHTML = sorted.map(d => `
     <div class="report" data-id="${d.id}">
       <svg class="sev-icon" viewBox="0 0 30 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M1 16 Q 8 12, 11 16 Q 15 20, 19 16 Q 22 12, 29 16" stroke="#5c626e" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <ellipse cx="15" cy="16.5" rx="4.5" ry="2.2" fill="${SEVERITY_COLORS[d.severity]}" stroke="#16181c" stroke-width="1"/>
+        <path d="M1 16 Q 8 12, 11 16 Q 15 20, 19 16 Q 22 12, 29 16" stroke="#64748b" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <ellipse cx="15" cy="16.5" rx="4.5" ry="2.2" fill="${SEVERITY_COLORS[d.severity]}" stroke="#0f172a" stroke-width="1"/>
       </svg>
       <div>
         <div class="row1">
@@ -487,7 +787,7 @@ function renderFeed(data) {
           <span class="badge mono">${d.severity}</span>
           <span class="badge mono">${d.est_depth_cm}cm</span>
           <span class="badge mono">${d.vehicle_id}</span>
-          ${d.report_count > 1 ? `<span class="badge mono">×${d.report_count}</span>` : ''}
+          ${d.report_count > 1 ? `<span class="badge mono">&times;${d.report_count} reports</span>` : ''}
         </div>
         <div class="status-row">
           ${['reported','acknowledged','scheduled','repaired'].map(s => `
@@ -511,6 +811,9 @@ function renderFeed(data) {
       if (d) {
         map.setView([d.latitude, d.longitude], 16);
         markers[d.id]?.openPopup();
+        if (window.innerWidth < 1024) {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
       }
     });
   });
@@ -530,16 +833,15 @@ async function refresh() {
     detections = data;
     demoMode = false;
     document.getElementById('conn-dot').className = 'dot live';
-    document.getElementById('conn-text').textContent = 'Live — connected to backend';
+    document.getElementById('conn-text').textContent = 'Live — connected';
     renderStats(stats);
     render();
   } catch (err) {
     if (!demoMode) {
-      // First failure: switch to demo dataset so the dashboard is still explorable.
       demoMode = true;
       detections = generateDemoData();
       document.getElementById('conn-dot').className = 'dot demo';
-      document.getElementById('conn-text').textContent = `Demo data — backend not reachable at ${API_BASE}`;
+      document.getElementById('conn-text').textContent = 'Demo preview mode';
       renderStats(computeDemoStats(detections));
       render();
     }

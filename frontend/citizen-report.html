@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>CivicLens — Report an Infrastructure Defect</title>
+<link rel="stylesheet" href="./static/css/civiclens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  .report-container {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: var(--cl-space-4);
+  }
+  @media (min-width: 768px) {
+    .report-container {
+      padding: var(--cl-space-6);
+    }
+  }
+  .lang-picker {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-bottom: var(--cl-space-4);
+  }
+  .lang-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+    border-radius: 4px;
+    border: 1px solid var(--cl-border);
+    background: var(--cl-bg-surface);
+    color: var(--cl-text-secondary);
+    cursor: pointer;
+  }
+  .lang-btn.active {
+    background: var(--cl-primary);
+    color: white;
+    border-color: var(--cl-primary);
+    font-weight: 600;
+  }
+  .preview-box {
+    margin-top: 8px;
+    position: relative;
+    max-width: 240px;
+    display: none;
+  }
+  .preview-box img {
+    width: 100%;
+    border-radius: var(--cl-radius-md);
+    border: 1px solid var(--cl-border);
+    display: block;
+  }
+  .preview-remove-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .gps-status {
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    background: var(--cl-bg-subtle);
+    border: 1px solid var(--cl-border);
+    margin-top: 6px;
+    display: none;
+  }
+  .severity-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-top: 4px;
+  }
+  @media (min-width: 480px) {
+    .severity-options {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+  .sev-radio-label {
+    padding: 10px;
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-md);
+    background: var(--cl-bg-subtle);
+    text-align: center;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.15s ease;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--cl-min-touch);
+  }
+  .sev-radio-label input {
+    display: none;
+  }
+  .sev-radio-label:has(input:checked) {
+    border-color: var(--cl-primary);
+    background: rgba(37, 99, 235, 0.15);
+    color: var(--cl-primary-light);
+  }
+  .sev-radio-label.sev-severe:has(input:checked) {
+    border-color: var(--cl-severe);
+    background: var(--cl-severe-bg);
+    color: var(--cl-severe);
+  }
+  .sev-radio-label.sev-moderate:has(input:checked) {
+    border-color: var(--cl-moderate);
+    background: var(--cl-moderate-bg);
+    color: var(--cl-moderate);
+  }
+  .sev-radio-label.sev-minor:has(input:checked) {
+    border-color: var(--cl-minor);
+    background: var(--cl-minor-bg);
+    color: var(--cl-minor);
+  }
+  .success-banner {
+    display: none;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid var(--cl-minor);
+    border-radius: var(--cl-radius-md);
+    padding: var(--cl-space-5);
+    margin-bottom: var(--cl-space-6);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="cl-app-wrapper">
+  <!-- Shared Navigation Sidebar -->
+  <div id="cl-sidebar-container" data-active="report"></div>
+
+  <!-- Main Content Area -->
+  <div class="cl-main-content">
+    <!-- Mobile Header -->
+    <header class="cl-mobile-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button class="cl-hamburger-btn" id="cl-hamburger-toggle" aria-label="Toggle navigation">☰</button>
+        <span style="font-family: var(--cl-font-heading); font-size: 1.25rem; font-weight: 700; text-transform: uppercase;">CivicLens</span>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--cl-text-muted); font-family: var(--cl-font-mono);">CITIZEN</div>
+    </header>
+
+    <div class="report-container">
+      <!-- Language Picker -->
+      <div class="lang-picker">
+        <button class="lang-btn active" id="btn-en">English</button>
+        <button class="lang-btn" id="btn-kn">ಕನ್ನಡ (Kannada)</button>
+      </div>
+
+      <!-- Success Notification Banner -->
+      <div class="success-banner" id="success-banner">
+        <div style="font-size: 2rem; margin-bottom: 8px;">✅</div>
+        <h3 style="margin: 0 0 6px 0; font-family: var(--cl-font-heading); font-size: 1.25rem; color: var(--cl-minor);" id="success-title">
+          Report Submitted Successfully
+        </h3>
+        <p style="margin: 0 0 12px 0; font-size: 13px; color: var(--cl-text-secondary);" id="success-desc">
+          Your report reference is <b class="mono" id="success-ref">CL-2026-0042</b>. Our automated triage system is evaluating nearby canonical incidents.
+        </p>
+        <button class="cl-btn cl-btn-secondary cl-btn-sm" id="btn-submit-another">Submit Another Defect</button>
+      </div>
+
+      <!-- Report Card -->
+      <div class="cl-card" id="report-form-card">
+        <h2 style="font-family: var(--cl-font-heading); font-size: var(--cl-text-2xl); text-transform: uppercase; margin: 0 0 4px 0;" id="form-heading">
+          Report Infrastructure Defect
+        </h2>
+        <p style="color: var(--cl-text-secondary); font-size: var(--cl-text-sm); margin: 0 0 var(--cl-space-6) 0;" id="form-subheading">
+          Provide photo evidence and location. Multiple reports at the same physical location are automatically grouped into a single canonical incident.
+        </p>
+
+        <form id="citizen-report-form">
+          <!-- 1. Photo Evidence -->
+          <div class="cl-form-group">
+            <label class="cl-label" for="photo-input" id="lbl-photo">
+              1. Photo Evidence (Camera or Gallery)
+            </label>
+            <input type="file" id="photo-input" accept="image/*" capture="environment" class="cl-input" style="padding-top: 10px;">
+            <div class="preview-box" id="preview-box">
+              <img id="image-preview" src="" alt="Defect preview">
+              <button type="button" class="preview-remove-btn" id="remove-preview" aria-label="Remove image">&times;</button>
+            </div>
+            <span style="font-size: 11px; color: var(--cl-text-muted);">
+              Clear photos of the pothole or hazard help AI estimation and municipal road crews.
+            </span>
+          </div>
+
+          <!-- 2. Location Capture -->
+          <div class="cl-form-group">
+            <label class="cl-label" id="lbl-location">
+              2. Defect Location
+            </label>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button type="button" class="cl-btn cl-btn-secondary" id="btn-get-gps" style="flex: 1;">
+                📍 Capture Current GPS
+              </button>
+              <button type="button" class="cl-btn cl-btn-secondary" id="btn-manual-toggle">
+                ✏️ Edit Coords
+              </button>
+            </div>
+            <div class="gps-status" id="gps-status-box"></div>
+
+            <!-- Coordinate inputs -->
+            <div id="manual-coords-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+              <div>
+                <label style="font-size: 11px; color: var(--cl-text-muted);">Latitude</label>
+                <input type="number" step="any" id="input-lat" class="cl-input" placeholder="e.g. 12.9716" required>
+              </div>
+              <div>
+                <label style="font-size: 11px; color: var(--cl-text-muted);">Longitude</label>
+                <input type="number" step="any" id="input-lon" class="cl-input" placeholder="e.g. 77.5946" required>
+              </div>
+            </div>
+
+            <div style="margin-top: 8px;">
+              <label style="font-size: 11px; color: var(--cl-text-muted);" id="lbl-landmark">Street / Landmark Address</label>
+              <input type="text" id="input-address" class="cl-input" placeholder="e.g. 100 Feet Rd, Indiranagar, near Metro Station">
+            </div>
+          </div>
+
+          <!-- 3. Defect Category -->
+          <div class="cl-form-group">
+            <label class="cl-label" for="category-select" id="lbl-category">
+              3. Defect Category
+            </label>
+            <select id="category-select" class="cl-select" required>
+              <option value="pothole" selected>Pothole / Road Depression</option>
+              <option value="road_damage">Asphalt Cave-in / Surface Damage</option>
+              <option value="drainage">Open Manhole / Clogged Storm Drain</option>
+              <option value="broken_streetlight">Broken Streetlight</option>
+              <option value="water_leakage">BWSSB Water Pipeline Leak</option>
+              <option value="garbage">Garbage / Debris Blocking Road</option>
+              <option value="other">Other Civic Defect</option>
+            </select>
+          </div>
+
+          <!-- 4. Estimated Severity -->
+          <div class="cl-form-group">
+            <label class="cl-label" id="lbl-severity">
+              4. Estimated Severity
+            </label>
+            <div class="severity-options">
+              <label class="sev-radio-label sev-minor">
+                <input type="radio" name="severity" value="minor" checked>
+                Minor
+              </label>
+              <label class="sev-radio-label sev-moderate">
+                <input type="radio" name="severity" value="moderate">
+                Moderate
+              </label>
+              <label class="sev-radio-label sev-severe">
+                <input type="radio" name="severity" value="severe">
+                Severe
+              </label>
+              <label class="sev-radio-label sev-severe">
+                <input type="radio" name="severity" value="critical">
+                Critical
+              </label>
+            </div>
+          </div>
+
+          <!-- 5. Description -->
+          <div class="cl-form-group">
+            <label class="cl-label" for="description-input" id="lbl-desc">
+              5. Description &amp; Details
+            </label>
+            <textarea id="description-input" class="cl-textarea" placeholder="Describe the size, depth, or danger to two-wheelers and pedestrians..." rows="3"></textarea>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" class="cl-btn cl-btn-primary" style="width: 100%; margin-top: var(--cl-space-2);" id="btn-submit">
+            🚀 Submit Defect Report
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="./static/js/nav.js"></script>
+<script>
+// Language translation dictionary
+const i18n = {
+  en: {
+    heading: "Report Infrastructure Defect",
+    subheading: "Provide photo evidence and location. Multiple reports at the same physical location are automatically grouped into a single canonical incident.",
+    photo: "1. Photo Evidence (Camera or Gallery)",
+    location: "2. Defect Location",
+    landmark: "Street / Landmark Address",
+    category: "3. Defect Category",
+    severity: "4. Estimated Severity",
+    desc: "5. Description & Details",
+    submit: "🚀 Submit Defect Report",
+    successTitle: "Report Submitted Successfully",
+    successDesc: "Your report reference is {ref}. Our automated triage system is evaluating nearby canonical incidents."
+  },
+  kn: {
+    heading: "ರಸ್ತೆ ಅಥವಾ ಸಾರ್ವಜನಿಕ ಸಮಸ್ಯೆ ವರದಿ ಮಾಡಿ",
+    subheading: "ಫೋಟೋ ಮತ್ತು ಸ್ಥಳ ವಿವರಗಳನ್ನು ನೀಡಿ. ಒಂದೇ ಸ್ಥಳದಲ್ಲಿರುವ ಬಹು ವರದಿಗಳನ್ನು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ವಿಲೀನಗೊಳಿಸಲಾಗುತ್ತದೆ.",
+    photo: "1. ಫೋಟೋ ಪುರಾವೆ (ಕ್ಯಾಮೆರಾ ಅಥವಾ ಗ್ಯಾಲರಿ)",
+    location: "2. ಸಮಸ್ಯೆಯಿರುವ ಸ್ಥಳ",
+    landmark: "ರಸ್ತೆ / ಹತ್ತಿರದ ಪ್ರಮುಖ ಸ್ಥಳ",
+    category: "3. ಸಮಸ್ಯೆಯ ವರ್ಗ",
+    severity: "4. ತೀವ್ರತೆಯ ಅಂದಾಜು",
+    desc: "5. ವಿವರಣೆ",
+    submit: "🚀 ವರದಿ ಸಲ್ಲಿಸಿ",
+    successTitle: "ವರದಿ ಯಶಸ್ವಿಯಾಗಿ ಸಲ್ಲಿಕೆಯಾಗಿದೆ",
+    successDesc: "ನಿಮ್ಮ ವರದಿ ಸಂಖ್ಯೆ {ref}. ನಮ್ಮ AI ವ್ಯವಸ್ಥೆಯು ಪರಿಶೀಲಿಸುತ್ತಿದೆ."
+  }
+};
+
+let currentLang = 'en';
+
+function setLanguage(lang) {
+  currentLang = lang;
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.getElementById('btn-kn').classList.toggle('active', lang === 'kn');
+
+  const t = i18n[lang];
+  document.getElementById('form-heading').textContent = t.heading;
+  document.getElementById('form-subheading').textContent = t.subheading;
+  document.getElementById('lbl-photo').textContent = t.photo;
+  document.getElementById('lbl-location').textContent = t.location;
+  document.getElementById('lbl-landmark').textContent = t.landmark;
+  document.getElementById('lbl-category').textContent = t.category;
+  document.getElementById('lbl-severity').textContent = t.severity;
+  document.getElementById('lbl-desc').textContent = t.desc;
+  document.getElementById('btn-submit').textContent = t.submit;
+}
+
+document.getElementById('btn-en').addEventListener('click', () => setLanguage('en'));
+document.getElementById('btn-kn').addEventListener('click', () => setLanguage('kn'));
+
+// Photo preview
+const photoInput = document.getElementById('photo-input');
+const previewBox = document.getElementById('preview-box');
+const imagePreview = document.getElementById('image-preview');
+const removePreviewBtn = document.getElementById('remove-preview');
+
+photoInput.addEventListener('change', function () {
+  const file = this.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      imagePreview.src = e.target.result;
+      previewBox.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+removePreviewBtn.addEventListener('click', function () {
+  photoInput.value = '';
+  imagePreview.src = '';
+  previewBox.style.display = 'none';
+});
+
+// GPS Location Capture
+const btnGetGps = document.getElementById('btn-get-gps');
+const gpsStatusBox = document.getElementById('gps-status-box');
+const inputLat = document.getElementById('input-lat');
+const inputLon = document.getElementById('input-lon');
+
+btnGetGps.addEventListener('click', function () {
+  if (!navigator.geolocation) {
+    alert("Geolocation is not supported by your browser");
+    return;
+  }
+  gpsStatusBox.style.display = 'block';
+  gpsStatusBox.textContent = "Acquiring high-accuracy GPS coordinates...";
+  gpsStatusBox.style.color = "var(--cl-warning)";
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+      const acc = position.coords.accuracy;
+      inputLat.value = lat.toFixed(6);
+      inputLon.value = lon.toFixed(6);
+      gpsStatusBox.textContent = `📍 GPS Locked: ${lat.toFixed(4)}, ${lon.toFixed(4)} (Accuracy: ±${Math.round(acc)}m)`;
+      gpsStatusBox.style.color = "var(--cl-minor)";
+    },
+    (error) => {
+      gpsStatusBox.textContent = `⚠️ GPS Error: ${error.message}. Please enter coordinates manually.`;
+      gpsStatusBox.style.color = "var(--cl-severe)";
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+});
+
+// Form submission handler
+const form = document.getElementById('citizen-report-form');
+const successBanner = document.getElementById('success-banner');
+const formCard = document.getElementById('report-form-card');
+const btnSubmitAnother = document.getElementById('btn-submit-another');
+
+form.addEventListener('submit', function (e) {
+  e.preventDefault();
+  const randNum = Math.floor(1000 + Math.random() * 9000);
+  const refCode = `CL-2026-${randNum}`;
+
+  document.getElementById('success-ref').textContent = refCode;
+  successBanner.style.display = 'block';
+  formCard.style.display = 'none';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+btnSubmitAnother.addEventListener('click', function () {
+  form.reset();
+  previewBox.style.display = 'none';
+  gpsStatusBox.style.display = 'none';
+  successBanner.style.display = 'none';
+  formCard.style.display = 'block';
+});
+</script>
+</body>
+</html>

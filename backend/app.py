@@ -22,6 +22,7 @@ from flask import Flask, request, jsonify
 
 from backend.config import Config, get_config
 from backend.database import init_db
+from backend.db.init_schema import create_all_tables
 from backend.errors import register_error_handlers, ValidationError
 from backend.logging_config import setup_logging
 from backend.services.incident_service import IncidentService
@@ -31,7 +32,11 @@ from backend.services.location_service import LocationService
 
 def create_app(config: Optional[Config] = None) -> Flask:
     """Application factory for CivicLens backend."""
-    app = Flask(__name__)
+    app = Flask(
+        __name__,
+        static_folder=os.path.join(_parent, "frontend", "static"),
+        static_url_path="/static",
+    )
     cfg = config or get_config()
     app.config.from_object(cfg)
 
@@ -42,6 +47,7 @@ def create_app(config: Optional[Config] = None) -> Flask:
     # Ensure database schema is present
     try:
         init_db(cfg.DATABASE_PATH)
+        create_all_tables(f"sqlite:///{cfg.DATABASE_PATH}")
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
         if not cfg.TESTING:
@@ -146,9 +152,33 @@ def create_app(config: Optional[Config] = None) -> Flask:
         return jsonify({
             "status": "ok",
             "environment": cfg.ENV,
-            "version": "0.2.0-baseline",
+            "version": "0.3.0-civiclens",
             "database": "connected",
         })
+
+    # ---------------------------------------------------------------------------
+    # Frontend & Dashboard static file serving
+    # ---------------------------------------------------------------------------
+    @app.route("/", methods=["GET"])
+    def serve_index():
+        from flask import send_from_directory
+        return send_from_directory(os.path.join(_parent, "frontend"), "index.html")
+
+    @app.route("/dashboard", methods=["GET"])
+    @app.route("/dashboard/", methods=["GET"])
+    def serve_dashboard():
+        from flask import send_from_directory
+        return send_from_directory(os.path.join(_parent, "dashboard"), "dashboard.html")
+
+    @app.route("/dashboard/<path:filename>", methods=["GET"])
+    def serve_dashboard_files(filename):
+        from flask import send_from_directory
+        return send_from_directory(os.path.join(_parent, "dashboard"), filename)
+
+    @app.route("/frontend/<path:filename>", methods=["GET"])
+    def serve_frontend_files(filename):
+        from flask import send_from_directory
+        return send_from_directory(os.path.join(_parent, "frontend"), filename)
 
     return app
 

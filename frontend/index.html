@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>CivicLens — AI-Powered Civic Grievance & Infrastructure Triage</title>
+<link rel="stylesheet" href="./static/css/civiclens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  .hero-section {
+    padding: var(--cl-space-8) var(--cl-space-4);
+    background: linear-gradient(180deg, var(--cl-bg-surface) 0%, var(--cl-bg-canvas) 100%);
+    border-bottom: 1px solid var(--cl-border);
+  }
+  @media (min-width: 768px) {
+    .hero-section {
+      padding: var(--cl-space-10) var(--cl-space-6);
+    }
+  }
+  .hero-title {
+    font-family: var(--cl-font-heading);
+    font-size: clamp(2rem, 5vw, 3.25rem);
+    font-weight: 700;
+    line-height: 1.1;
+    margin: 0 0 var(--cl-space-3) 0;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  .hero-tag {
+    color: var(--cl-warning);
+  }
+  .hero-lead {
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+    color: var(--cl-text-secondary);
+    max-width: 720px;
+    margin: 0 0 var(--cl-space-6) 0;
+    line-height: 1.6;
+  }
+  .portal-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--cl-space-4);
+    margin-top: var(--cl-space-6);
+  }
+  @media (min-width: 600px) {
+    .portal-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (min-width: 1024px) {
+    .portal-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  .portal-card {
+    background: var(--cl-bg-surface);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-lg);
+    padding: var(--cl-space-5);
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .portal-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--cl-primary);
+    box-shadow: var(--cl-shadow-md);
+  }
+  .portal-icon {
+    font-size: 2.25rem;
+    margin-bottom: var(--cl-space-3);
+  }
+  .portal-card-title {
+    font-family: var(--cl-font-heading);
+    font-size: var(--cl-text-xl);
+    font-weight: 600;
+    margin: 0 0 var(--cl-space-2) 0;
+    text-transform: uppercase;
+    color: var(--cl-text-primary);
+  }
+  .portal-card-desc {
+    font-size: var(--cl-text-sm);
+    color: var(--cl-text-secondary);
+    margin: 0 0 var(--cl-space-4) 0;
+    flex: 1;
+    line-height: 1.5;
+  }
+  .portal-card-action {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--cl-space-2);
+    font-size: var(--cl-text-sm);
+    font-weight: 600;
+    color: var(--cl-primary-light);
+  }
+</style>
+</head>
+<body>
+
+<div class="cl-app-wrapper">
+  <!-- Sidebar Container -->
+  <div id="cl-sidebar-container" data-active="home"></div>
+
+  <!-- Main Content Area -->
+  <div class="cl-main-content">
+    <!-- Mobile Header -->
+    <header class="cl-mobile-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button class="cl-hamburger-btn" id="cl-hamburger-toggle" aria-label="Toggle navigation">☰</button>
+        <span style="font-family: var(--cl-font-heading); font-size: 1.25rem; font-weight: 700; text-transform: uppercase;">CivicLens</span>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--cl-text-muted); font-family: var(--cl-font-mono);">BBMP AI</div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="cl-container">
+        <h1 class="hero-title">
+          Civic<span class="hero-tag">Lens</span>
+        </h1>
+        <p class="hero-lead">
+          AI-Powered Multilingual Civic Grievance &amp; Infrastructure Triage System. 
+          Transforming automated edge detection and citizen reports into a single unified source of truth for municipal action.
+        </p>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <a href="./citizen-report.html" class="cl-btn cl-btn-primary">
+            📢 Report Road Defect
+          </a>
+          <a href="../dashboard/dashboard.html" class="cl-btn cl-btn-secondary">
+            ⚡ Live Pothole Monitor
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Core Portals Grid -->
+    <section class="cl-container" style="padding-top: var(--cl-space-6); padding-bottom: var(--cl-space-8);">
+      <h2 style="font-family: var(--cl-font-heading); font-size: var(--cl-text-2xl); text-transform: uppercase; margin: 0 0 var(--cl-space-2) 0;">
+        System Modules
+      </h2>
+      <p style="color: var(--cl-text-secondary); margin: 0 0 var(--cl-space-6) 0; font-size: var(--cl-text-sm);">
+        Select an interface based on your role (citizen reporting or municipal administration):
+      </p>
+
+      <div class="portal-grid">
+        <!-- Citizen Reporting -->
+        <a href="./citizen-report.html" class="portal-card">
+          <div class="portal-icon">📢</div>
+          <h3 class="portal-card-title">Citizen Reporting</h3>
+          <p class="portal-card-desc">
+            Submit a road hazard with photo upload, automatic GPS coordinate tagging, severity estimate, and multilingual support.
+          </p>
+          <div class="portal-card-action">Open Citizen Form &rarr;</div>
+        </a>
+
+        <!-- Public Map -->
+        <a href="./public-map.html" class="portal-card">
+          <div class="portal-icon">🗺️</div>
+          <h3 class="portal-card-title">Public Incident Map</h3>
+          <p class="portal-card-desc">
+            Explore live city-wide infrastructure defects, repair statuses, and verified municipal work orders in real-time.
+          </p>
+          <div class="portal-card-action">View Public Map &rarr;</div>
+        </a>
+
+        <!-- Live Detection Monitor -->
+        <a href="../dashboard/dashboard.html" class="portal-card">
+          <div class="portal-icon">⚡</div>
+          <h3 class="portal-card-title">Live Sensor Monitor</h3>
+          <p class="portal-card-desc">
+            Original Roadstate real-time feed connected to in-vehicle cameras and onboard YOLO detection telemetry.
+          </p>
+          <div class="portal-card-action">Open Live Monitor &rarr;</div>
+        </a>
+
+        <!-- Municipal Triage -->
+        <a href="./municipal/dashboard.html" class="portal-card">
+          <div class="portal-icon">🛠️</div>
+          <h3 class="portal-card-title">Municipal Triage Console</h3>
+          <p class="portal-card-desc">
+            Administrative workflow for ward engineers to review canonical incidents, assign departments, and schedule repairs.
+          </p>
+          <div class="portal-card-action">Access Triage Console &rarr;</div>
+        </a>
+
+        <!-- Human Verification Queue -->
+        <a href="./municipal/verification.html" class="portal-card">
+          <div class="portal-icon">🔍</div>
+          <h3 class="portal-card-title">Verification Queue</h3>
+          <p class="portal-card-desc">
+            Review uncertain AI duplicate-match candidates side-by-side to merge reports into canonical incidents or split them.
+          </p>
+          <div class="portal-card-action">Review Candidates &rarr;</div>
+        </a>
+
+        <!-- Architecture & Telemetry -->
+        <div class="portal-card" style="opacity: 0.85;">
+          <div class="portal-icon">📐</div>
+          <h3 class="portal-card-title">Architecture &amp; Data</h3>
+          <p class="portal-card-desc">
+            PostgreSQL/PostGIS normalized schema with 14 domain entities. Preserves 100% backward compatibility with legacy Roadstate telemetry.
+          </p>
+          <div style="font-size: var(--cl-text-xs); color: var(--cl-text-muted); font-family: var(--cl-font-mono);">
+            Status: Step 3 Active
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Attribution -->
+      <footer style="margin-top: var(--cl-space-10); padding-top: var(--cl-space-4); border-top: 1px solid var(--cl-border); text-align: center; font-size: var(--cl-text-xs); color: var(--cl-text-muted);">
+        CivicLens &copy; 2026 &middot; Built upon Roadstate by halo-112 (MIT License) &middot; Multilingual Infrastructure Triage
+      </footer>
+    </section>
+  </div>
+</div>
+
+<script src="./static/js/nav.js"></script>
+</body>
+</html>

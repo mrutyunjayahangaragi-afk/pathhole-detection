@@ -207,3 +207,26 @@ def test_patch_invalid_status_returns_400(client, clean_db):
 
     patch_res = client.patch(f"/api/detections/{det_id}", json={"status": "invalid_status"})
     assert patch_res.status_code == 400
+
+
+def test_frontend_and_dashboard_routes(client):
+    """Verifies portal home, responsive dashboard, and static assets are served."""
+    res_home = client.get("/")
+    assert res_home.status_code == 200
+    assert b"CivicLens" in res_home.data
+
+    res_dash = client.get("/dashboard")
+    assert res_dash.status_code == 200
+    assert b"CivicLens" in res_dash.data
+
+    res_css = client.get("/static/css/civiclens.css")
+    assert res_css.status_code == 200
+    assert b"CivicLens" in res_css.data
+
+    res_js = client.get("/static/js/nav.js")
+    assert res_js.status_code == 200
+
+    res_citizen = client.get("/frontend/citizen-report.html")
+    assert res_citizen.status_code == 200
+    assert b"CivicLens" in res_citizen.data
+

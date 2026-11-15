@@ -18,7 +18,7 @@ from backend.db.engine import get_session_factory
 from backend.db.session import transactional_session
 from backend.db.models import (
     CitizenReport, ReportItem, EvidenceAsset, ReportEvidence,
-    IncidentObservation, User
+    IncidentObservation, User, DetectionRun, Detection
 )
 from backend.errors import ValidationError, NotFoundError, CivicLensError
 
@@ -120,6 +120,7 @@ class CitizenReportService:
 
         db = self._session_factory()
         created_file_paths = []
+        created_asset_ids = []
 
         try:
             # 2. Idempotency Check
@@ -233,7 +234,29 @@ class CitizenReportService:
                     )
                     db.add(rep_evidence)
 
+                    # Only queue images for AI defect detection
+                    if mime.startswith("image/"):
+                        created_asset_ids.append(asset.id)
+
             db.commit()
+
+            # 6. Trigger AI Defect Detection if configured
+            from backend.config import get_config
+            cfg = get_config()
+            if created_asset_ids and getattr(cfg, "AUTO_DETECT_ON_SUBMISSION", True):
+                try:
+                    from backend.services.defect_detection_service import DefectDetectionService
+                    detector = DefectDetectionService(session_factory=self._session_factory)
+                    for aid in created_asset_ids:
+                        detector.process_evidence(
+                            evidence_asset_id=aid,
+                            requesting_user_id=citizen_id,
+                            is_officer_or_admin=False,
+                        )
+                except Exception:
+                    # Robustness: detection errors must never fail report creation
+                    pass
+
             return self._serialize_report(report, db)
 
         except Exception as e:
@@ -400,14 +423,56 @@ class CitizenReportService:
             for link in evidence_links:
                 asset = db.query(EvidenceAsset).filter_by(id=link.evidence_asset_id).first()
                 if asset:
+                    # Query latest detection run and detections for this asset
+                    latest_run = (
+                        db.query(DetectionRun)
+                        .filter_by(evidence_asset_id=asset.id)
+                        .order_by(DetectionRun.created_at.desc())
+                        .first()
+                    )
+                    dets = db.query(Detection).filter_by(evidence_asset_id=asset.id).all()
+
                     evidence_list.append({
                         "id": asset.id,
+                        "evidence_asset_id": asset.id,
                         "original_filename": asset.original_filename,
                         "media_type": asset.media_type,
                         "file_size_bytes": asset.file_size_bytes,
                         "created_at": asset.created_at.isoformat() if asset.created_at else None,
                         "download_url": f"/api/v1/evidence/{asset.id}",
+                        "detection_status": latest_run.processing_status if latest_run else "unprocessed",
+                        "detection_error_code": latest_run.error_code if latest_run else None,
+                        "defect_count": len(dets),
+                        "detections": [
+                            {
+                                "id": d.id,
+                                "category": d.detected_category,
+                                "confidence": d.confidence_score,
+                                "confidence_tier": d.confidence_tier or "medium",
+                                "bbox_pixels": {
+                                    "x": d.bbox_x,
+                                    "y": d.bbox_y,
+                                    "width": d.bbox_w,
+                                    "height": d.bbox_h,
+                                },
+                                "normalized_bbox": {
+                                    "xmin": d.normalized_xmin,
+                                    "ymin": d.normalized_ymin,
+                                    "xmax": d.normalized_xmax,
+                                    "ymax": d.normalized_ymax,
+                                } if d.normalized_xmin is not None else None,
+                                "image_dimensions": {
+                                    "width": d.image_width,
+                                    "height": d.image_height,
+                                } if d.image_width else None,
+                                "est_depth_cm": d.est_depth_cm,
+                                "severity": d.severity,
+                                "review_status": d.review_status,
+                            }
+                            for d in dets
+                        ],
                     })
             data["evidence"] = evidence_list
+            data["total_defects_detected"] = sum(e.get("defect_count", 0) for e in evidence_list)
 
         return data

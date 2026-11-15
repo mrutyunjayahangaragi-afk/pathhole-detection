@@ -255,6 +255,9 @@ class DetectionRun(Base):
     processing_status = Column(String(20), nullable=False, default="pending")
     started_at = Column(DateTime(timezone=True), nullable=True)
     completed_at = Column(DateTime(timezone=True), nullable=True)
+    processing_duration_ms = Column(Float, nullable=True)
+    error_code = Column(String(50), nullable=True)
+    error_message = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
 
     # Relationships
@@ -263,9 +266,11 @@ class DetectionRun(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "processing_status IN ('pending','running','completed','failed')",
+            "processing_status IN ('pending','processing','running','completed','failed','needs_review')",
             name="ck_detection_run_status"
         ),
+        Index("ix_detection_runs_evidence", "evidence_asset_id"),
+        Index("ix_detection_runs_status", "processing_status"),
     )
 
 
@@ -276,16 +281,33 @@ class Detection(Base):
 
     id = Column(String(36), primary_key=True, default=_uuid)
     detection_run_id = Column(String(36), ForeignKey("detection_runs.id", ondelete="CASCADE"), nullable=False)
+    evidence_asset_id = Column(String(36), ForeignKey("evidence_assets_v2.id", ondelete="CASCADE"), nullable=True)
     detected_category = Column(String(50), nullable=False, default="pothole")
     confidence_score = Column(Float, nullable=False, default=0.0)
+    confidence_tier = Column(String(20), nullable=True, default="medium")
+
+    # Absolute pixel coordinates
     bbox_x = Column(Integer, nullable=True, default=0)
     bbox_y = Column(Integer, nullable=True, default=0)
     bbox_w = Column(Integer, nullable=True, default=0)
     bbox_h = Column(Integer, nullable=True, default=0)
+
+    # Normalized [0.0, 1.0] coordinates
+    normalized_xmin = Column(Float, nullable=True)
+    normalized_ymin = Column(Float, nullable=True)
+    normalized_xmax = Column(Float, nullable=True)
+    normalized_ymax = Column(Float, nullable=True)
+
+    image_width = Column(Integer, nullable=True)
+    image_height = Column(Integer, nullable=True)
+
     est_depth_cm = Column(Float, nullable=True)
     severity = Column(String(10), nullable=True)
     model_version = Column(String(50), nullable=True)
     review_status = Column(String(20), nullable=False, default="unreviewed")
+    reviewed_by = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    review_notes = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
 
     # Relationships
@@ -294,10 +316,11 @@ class Detection(Base):
     __table_args__ = (
         CheckConstraint("confidence_score BETWEEN 0.0 AND 1.0", name="ck_detection_confidence"),
         CheckConstraint(
-            "review_status IN ('unreviewed','confirmed','rejected','uncertain')",
+            "review_status IN ('unreviewed','confirmed','rejected','uncertain','corrected')",
             name="ck_detection_review_status"
         ),
         Index("ix_detections_v3_run", "detection_run_id"),
+        Index("ix_detections_v3_evidence", "evidence_asset_id"),
     )
 
 

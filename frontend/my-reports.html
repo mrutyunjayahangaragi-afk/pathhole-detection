@@ -361,7 +361,9 @@ function renderReports(data) {
       year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
     }) : '—';
     const evidenceCount = (report.evidence || []).length;
-    const evidenceBadge = evidenceCount > 0 ? `<span style="font-size: 11px; color: var(--cl-text-muted);">📷 ${evidenceCount}</span>` : '—';
+    const defectCount = report.total_defects_detected || 0;
+    const aiBadge = defectCount > 0 ? `<span class="cl-badge cl-badge-minor" style="font-size: 10px; padding: 1px 5px; margin-left: 4px;">🤖 ${defectCount}</span>` : '';
+    const evidenceBadge = evidenceCount > 0 ? `<span style="font-size: 11px; color: var(--cl-text-muted);">📷 ${evidenceCount}${aiBadge}</span>` : '—';
 
     return `
       <tr>
@@ -422,6 +424,7 @@ function renderReports(data) {
             </span>
             <span>🕒 ${dateStr}</span>
             ${evidenceCount > 0 ? `<span>📷 ${evidenceCount} photo(s)</span>` : ''}
+            ${defectCount > 0 ? `<span class="cl-badge cl-badge-minor" style="font-size: 10px; padding: 1px 5px;">🤖 ${defectCount} defect(s)</span>` : ''}
           </div>
         </div>
         <a href="report-detail.html?id=${encodeURIComponent(report.id)}" class="cl-btn cl-btn-secondary cl-btn-sm" style="width: 100%; margin-top: 4px; justify-content: center;">

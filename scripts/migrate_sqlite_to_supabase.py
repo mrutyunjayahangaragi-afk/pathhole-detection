@@ -343,6 +343,25 @@ def migrate_to_supabase(
                     else:
                         attr_dict[col_name] = str(val) if val is not None else None
 
+                # Sanitize nullable foreign keys if parent record does not exist on target
+                if tbl_name == "detections_v3":
+                    # If required parent detection_run does not exist on target, skip orphaned row
+                    run_chk = session.query(DetectionRun.id).filter_by(id=attr_dict.get("detection_run_id")).scalar()
+                    if not run_chk:
+                        print(f"    [WARN] Skipping orphaned detection '{row_id}': parent detection_run '{attr_dict.get('detection_run_id')}' not found on target")
+                        continue
+
+                    if attr_dict.get("reviewed_by"):
+                        user_chk = session.query(User.id).filter_by(id=attr_dict["reviewed_by"]).scalar()
+                        if not user_chk:
+                            print(f"    [WARN] Sanitized orphaned reviewed_by '{attr_dict['reviewed_by']}' to None in detection '{row_id}'")
+                            attr_dict["reviewed_by"] = None
+                    if attr_dict.get("evidence_asset_id"):
+                        asset_chk = session.query(EvidenceAsset.id).filter_by(id=attr_dict["evidence_asset_id"]).scalar()
+                        if not asset_chk:
+                            print(f"    [WARN] Sanitized orphaned evidence_asset_id '{attr_dict['evidence_asset_id']}' to None in detection '{row_id}'")
+                            attr_dict["evidence_asset_id"] = None
+
                 # Check if existing record on target (Idempotent upsert)
                 existing = session.query(model_cls).filter_by(id=row_id).first()
                 if not existing:

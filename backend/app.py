@@ -30,6 +30,7 @@ from backend.services.report_service import ReportService
 from backend.services.location_service import LocationService
 from backend.routes.auth_routes import auth_bp
 from backend.routes.citizen_routes import citizen_bp
+from backend.routes.detection_routes import detection_bp
 
 
 def create_app(config: Optional[Config] = None) -> Flask:
@@ -74,6 +75,7 @@ def create_app(config: Optional[Config] = None) -> Flask:
     # Register API Blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(citizen_bp)
+    app.register_blueprint(detection_bp)
 
     # Instantiate services
     location_service = LocationService(cfg)

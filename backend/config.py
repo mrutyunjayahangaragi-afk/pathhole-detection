@@ -189,6 +189,19 @@ class Config:
         except ValueError as e:
             raise ConfigurationError(f"Invalid MAX_CONTENT_LENGTH_MB: {e}") from e
 
+        # AI Defect Detection Configuration
+        self.MODEL_NAME = os.environ.get("MODEL_NAME", "yolov8-pothole")
+        self.MODEL_VERSION = os.environ.get("MODEL_VERSION", "v1.0.0")
+        raw_weights = os.environ.get("MODEL_WEIGHTS_PATH", "weights/pothole_yolov8.pt")
+        self.MODEL_WEIGHTS_PATH = str(PROJECT_ROOT / raw_weights) if raw_weights else None
+        try:
+            self.CONFIDENCE_THRESHOLD = float(os.environ.get("CONFIDENCE_THRESHOLD", "0.40"))
+            self.HIGH_CONFIDENCE_THRESHOLD = float(os.environ.get("HIGH_CONFIDENCE_THRESHOLD", "0.75"))
+            self.IOU_THRESHOLD = float(os.environ.get("IOU_THRESHOLD", "0.45"))
+        except ValueError as e:
+            raise ConfigurationError(f"Invalid detection threshold configuration: {e}") from e
+        self.AUTO_DETECT_ON_SUBMISSION = _bool_from_env("AUTO_DETECT_ON_SUBMISSION", True)
+
 
 class DevelopmentConfig(Config):
     """Development environment configuration."""

@@ -150,44 +150,190 @@
     background: var(--cl-bg-subtle);
     display: flex;
     flex-direction: column;
+    margin-bottom: var(--cl-space-4);
+  }
+  .evidence-canvas-wrapper {
+    position: relative;
+    width: 100%;
+    background: #0f172a;
+    border-radius: var(--cl-radius-sm);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .evidence-media {
     width: 100%;
-    aspect-ratio: 1;
-    object-fit: cover;
+    height: auto;
+    max-height: 440px;
+    object-fit: contain;
     display: block;
     cursor: pointer;
   }
-  .evidence-caption {
-    padding: 6px 8px;
+  .detection-bbox-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  .detection-box {
+    position: absolute;
+    border: 2px solid #ef4444;
+    background: rgba(239, 68, 68, 0.2);
+    box-sizing: border-box;
+    border-radius: 3px;
+    pointer-events: auto;
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+  }
+  .detection-box:hover, .detection-box.active {
+    border-color: #38bdf8;
+    background: rgba(56, 189, 248, 0.35);
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+    z-index: 10;
+  }
+  .detection-tag {
+    position: absolute;
+    bottom: calc(100% + 2px);
+    left: -2px;
+    background: #ef4444;
+    color: #ffffff;
     font-size: 10px;
-    color: var(--cl-text-muted);
+    font-weight: 700;
     font-family: var(--cl-font-mono);
-    text-overflow: ellipsis;
-    overflow: hidden;
+    padding: 2px 5px;
+    border-radius: 3px 3px 0 0;
     white-space: nowrap;
+    text-transform: uppercase;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    letter-spacing: 0.3px;
+  }
+  .detection-box:hover .detection-tag, .detection-box.active .detection-tag {
+    background: #0284c7;
+  }
+  .evidence-caption {
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--cl-text-primary);
+    background: var(--cl-bg-surface);
     border-top: 1px solid var(--cl-border);
   }
+  .defect-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--cl-bg-surface);
+    border-top: 1px solid var(--cl-border);
+  }
+  .defect-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    background: var(--cl-bg-subtle);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-sm);
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .defect-item-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .feedback-btn-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .feedback-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    border-radius: 4px;
+    border: 1px solid var(--cl-border);
+    background: var(--cl-bg-elevated);
+    color: var(--cl-text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .feedback-btn:hover {
+    background: var(--cl-primary);
+    color: white;
+    border-color: var(--cl-primary-light);
+  }
+  .feedback-btn.confirmed {
+    background: #065f46;
+    color: #6ee7b7;
+    border-color: #059669;
+  }
+  .feedback-btn.rejected {
+    background: #7f1d1d;
+    color: #fca5a5;
+    border-color: #b91c1c;
+  }
 
-  /* Modal Image Zoom */
+  /* Modal Image Zoom & Detection Inspector */
   .modal-overlay {
     display: none;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.85);
+    background: rgba(0,0,0,0.92);
     z-index: 1000;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: 16px;
   }
   .modal-overlay.open {
     display: flex;
   }
-  .modal-img {
-    max-width: 90vw;
-    max-height: 85vh;
+  .modal-dialog {
+    max-width: 95vw;
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--cl-bg-surface);
     border-radius: var(--cl-radius-md);
+    border: 1px solid var(--cl-border);
     box-shadow: var(--cl-shadow-lg);
+    overflow: hidden;
+  }
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--cl-border);
+    background: var(--cl-bg-subtle);
+  }
+  .modal-body {
+    position: relative;
+    overflow: auto;
+    max-height: 75vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+  }
+  .modal-img {
+    max-width: 100%;
+    max-height: 70vh;
+    display: block;
+    object-fit: contain;
+  }
+  .modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-top: 1px solid var(--cl-border);
+    font-size: 12px;
+    background: var(--cl-bg-subtle);
+    flex-wrap: wrap;
+    gap: 8px;
   }
 </style>
 </head>
@@ -393,9 +539,34 @@
   </main>
 </div>
 
-<!-- Modal for enlarged image preview -->
-<div class="modal-overlay" id="img-modal" onclick="closeImageModal()">
-  <img class="modal-img" id="modal-img-content" src="" alt="Enlarged photo preview">
+<!-- Modal for enlarged image preview & AI Inspection -->
+<div class="modal-overlay" id="img-modal" onclick="closeImageModal(event)">
+  <div class="modal-dialog" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-family: var(--cl-font-heading); font-size: 1rem; text-transform: uppercase;">Defect Visual Inspector</span>
+        <span class="cl-badge cl-badge-secondary" id="modal-defect-badge" style="font-size: 10px;">0 Defects</span>
+      </div>
+      <button class="cl-btn cl-btn-sm cl-btn-secondary" onclick="closeImageModal()" style="padding: 4px 10px; font-weight: 700;">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body-container">
+      <div style="position: relative; display: inline-block;">
+        <img class="modal-img" id="modal-img-content" src="" alt="Enlarged photo preview">
+        <div class="detection-bbox-layer" id="modal-bbox-layer"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;">
+          <input type="checkbox" id="modal-toggle-boxes" checked onchange="toggleModalBboxes(this.checked)">
+          <span>Show AI Bounding Boxes</span>
+        </label>
+      </div>
+      <div style="font-size: 11px; color: var(--cl-text-muted);" id="modal-caption-text">
+        Click on bounding boxes to inspect candidate defect metadata.
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Leaflet JS -->
@@ -405,6 +576,7 @@
 <script>
 let detailMap = null;
 let detailMarker = null;
+let activeReportData = null;
 
 document.addEventListener("DOMContentLoaded", async function () {
   if (!CivicAuth.isAuthenticated()) {
@@ -456,8 +628,8 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
 
     const data = await res.json();
-    const report = data.report;
-    renderReportDetails(report);
+    activeReportData = data.report;
+    renderReportDetails(activeReportData);
 
   } catch (err) {
     document.getElementById("detail-state-box").innerHTML = `
@@ -594,40 +766,227 @@ function renderEvidenceGallery(evidenceList) {
   container.innerHTML = evidenceList.map(item => {
     const assetId = item.evidence_asset_id || item.id;
     const evidenceUrl = `/api/v1/evidence/${encodeURIComponent(assetId)}`;
-    const mime = item.mime_type || '';
+    const mime = item.media_type || item.mime_type || '';
     const isVideo = mime.startsWith('video/');
 
     if (isVideo) {
       return `
         <div class="evidence-card">
           <video class="evidence-media" src="${evidenceUrl}" controls preload="metadata"></video>
-          <div class="evidence-caption" title="${item.file_name || 'Video Evidence'}">
-            🎬 ${item.file_name || 'Video'}
+          <div class="evidence-caption" title="${item.original_filename || 'Video Evidence'}">
+            🎬 ${item.original_filename || 'Video'}
           </div>
         </div>
       `;
     }
 
+    const dets = item.detections || [];
+    const detStatus = (item.detection_status || 'unprocessed').toLowerCase();
+    const errCode = item.detection_error_code;
+
+    // Build bounding boxes overlay
+    const boxesHtml = dets.map((d, dIdx) => {
+      const nb = d.normalized_bbox;
+      if (!nb) return '';
+      const leftPct = (nb.xmin * 100).toFixed(2);
+      const topPct = (nb.ymin * 100).toFixed(2);
+      const widthPct = ((nb.xmax - nb.xmin) * 100).toFixed(2);
+      const heightPct = ((nb.ymax - nb.ymin) * 100).toFixed(2);
+      const catLabel = (d.category || 'Pothole').toUpperCase();
+      const confPct = Math.round(d.confidence * 100);
+
+      return `
+        <div class="detection-box" id="box-${assetId}-${dIdx}"
+             style="left: ${leftPct}%; top: ${topPct}%; width: ${widthPct}%; height: ${heightPct}%;"
+             onclick="event.stopPropagation(); highlightDefect('${assetId}', ${dIdx});"
+             title="${catLabel} (${confPct}% confidence)">
+          <span class="detection-tag">#${dIdx + 1} ${catLabel} ${confPct}%</span>
+        </div>
+      `;
+    }).join('');
+
+    // Status badge determination
+    let statusBadgeHtml = '';
+    if (detStatus === 'completed' && dets.length > 0) {
+      statusBadgeHtml = `<span class="cl-badge cl-badge-minor">🤖 AI Analyzed: ${dets.length} Defect${dets.length > 1 ? 's' : ''} Detected</span>`;
+    } else if (detStatus === 'needs_review') {
+      statusBadgeHtml = `<span class="cl-badge cl-badge-moderate">⚠️ Needs Review: ${dets.length} Candidate${dets.length > 1 ? 's' : ''}</span>`;
+    } else if (detStatus === 'completed' && dets.length === 0) {
+      statusBadgeHtml = `<span class="cl-badge" style="background: var(--cl-bg-elevated); color: var(--cl-text-muted);">🤖 AI Analyzed: 0 Defects Detected</span>`;
+    } else if (errCode === 'MODEL_WEIGHTS_MISSING') {
+      statusBadgeHtml = `<span class="cl-badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4);">⚙️ Model Weights Awaiting Configuration</span>`;
+    } else if (detStatus === 'failed') {
+      statusBadgeHtml = `<span class="cl-badge cl-badge-severe">❌ Analysis Failed</span>`;
+    } else {
+      statusBadgeHtml = `<button class="cl-btn cl-btn-sm cl-btn-primary" onclick="runDetection('${assetId}')">⚡ Run AI Defect Analysis</button>`;
+    }
+
+    // Defect items feedback list
+    let defectRowsHtml = '';
+    if (dets.length > 0) {
+      defectRowsHtml = dets.map((d, dIdx) => {
+        const cat = (d.category || 'Pothole').replace('_', ' ').toUpperCase();
+        const confPct = Math.round(d.confidence * 100);
+        const confTier = (d.confidence_tier || 'medium').toUpperCase();
+        const depthText = d.est_depth_cm > 0 ? `Est. Depth: ${d.est_depth_cm}cm` : '';
+        const sevText = d.severity ? `${d.severity.toUpperCase()}` : '';
+        const reviewStatus = (d.review_status || 'unreviewed').toLowerCase();
+        const isConfirmed = reviewStatus === 'confirmed';
+        const isRejected = reviewStatus === 'rejected';
+
+        return `
+          <div class="defect-item-row" id="row-${assetId}-${dIdx}" onmouseenter="highlightDefect('${assetId}', ${dIdx})">
+            <div class="defect-item-left">
+              <span style="font-weight: 700; color: #ef4444; font-size: 11px; font-family: var(--cl-font-mono);">#${dIdx + 1}</span>
+              <span style="font-weight: 600; color: var(--cl-text-primary); font-size: 12px;">${cat}</span>
+              <span class="cl-badge" style="font-size: 10px; padding: 2px 6px; background: ${confTier === 'HIGH' ? '#065f46' : '#78350f'}; color: ${confTier === 'HIGH' ? '#6ee7b7' : '#fde68a'};">
+                ${confPct}% (${confTier})
+              </span>
+              ${depthText ? `<span style="font-size: 11px; color: var(--cl-text-muted); font-family: var(--cl-font-mono);">${depthText}</span>` : ''}
+              ${sevText ? `<span class="cl-badge cl-badge-${sevText === 'SEVERE' ? 'severe' : sevText === 'MODERATE' ? 'moderate' : 'minor'}" style="font-size: 9px; padding: 1px 5px;">${sevText}</span>` : ''}
+            </div>
+            <div class="feedback-btn-group">
+              <button class="feedback-btn ${isConfirmed ? 'confirmed' : ''}"
+                      onclick="submitDetectionReview('${d.id}', 'confirmed', '${assetId}')"
+                      title="Confirm this detection is accurate">
+                ${isConfirmed ? '✓ Confirmed' : '✓ Confirm'}
+              </button>
+              <button class="feedback-btn ${isRejected ? 'rejected' : ''}"
+                      onclick="submitDetectionReview('${d.id}', 'rejected', '${assetId}')"
+                      title="Report this detection is a false positive">
+                ${isRejected ? '✕ Rejected' : '✕ Reject'}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
     return `
-      <div class="evidence-card">
-        <img class="evidence-media" src="${evidenceUrl}" alt="Defect evidence" onclick="openImageModal('${evidenceUrl}')" loading="lazy">
-        <div class="evidence-caption" title="${item.file_name || 'Photo Evidence'}">
-          📷 ${item.file_name || 'Photo'}
+      <div class="evidence-card" id="evidence-card-${assetId}">
+        <div class="evidence-canvas-wrapper" onclick="openImageModal('${evidenceUrl}', '${assetId}')">
+          <img class="evidence-media" src="${evidenceUrl}" alt="Infrastructure Defect Photograph" loading="lazy">
+          <div class="detection-bbox-layer">${boxesHtml}</div>
+        </div>
+        <div class="evidence-caption">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <span style="font-family: var(--cl-font-mono); font-size: 11px; color: var(--cl-text-muted);">
+              📷 ${item.original_filename || 'evidence.jpg'}
+            </span>
+            <div>${statusBadgeHtml}</div>
+          </div>
+        </div>
+        ${dets.length > 0 ? `<div class="defect-list">${defectRowsHtml}</div>` : ''}
+        <div style="padding: 6px 12px 10px; background: var(--cl-bg-surface);">
+          <div style="font-size: 11px; color: var(--cl-text-muted); background: var(--cl-bg-elevated); border: 1px solid var(--cl-border); border-radius: 4px; padding: 6px 8px; line-height: 1.4;">
+            💡 <strong>AI Transparency Notice:</strong> Detections are automated computer vision recommendations to assist municipal triage. They do not constitute official municipal verification until audited by an authorized municipal road engineer.
+          </div>
         </div>
       </div>
     `;
   }).join('');
 }
 
-function openImageModal(url) {
+function highlightDefect(assetId, dIdx) {
+  // Highlight box
+  const box = document.getElementById(`box-${assetId}-${dIdx}`);
+  if (box) {
+    document.querySelectorAll('.detection-box').forEach(b => b.classList.remove('active'));
+    box.classList.add('active');
+  }
+}
+
+async function runDetection(assetId) {
+  try {
+    const res = await CivicAuth.apiFetch(`/api/v1/evidence/${encodeURIComponent(assetId)}/detect`, {
+      method: "POST",
+    });
+    const result = await res.json();
+    // Reload report to refresh detections
+    if (activeReportData) {
+      const repRes = await CivicAuth.apiFetch(`/api/v1/reports/${encodeURIComponent(activeReportData.id)}`);
+      if (repRes.ok) {
+        const repData = await repRes.json();
+        activeReportData = repData.report;
+        renderReportDetails(activeReportData);
+      }
+    }
+  } catch (err) {
+    alert("Detection request failed: " + err.message);
+  }
+}
+
+async function submitDetectionReview(detectionId, verdict, assetId) {
+  try {
+    const res = await CivicAuth.apiFetch(`/api/v1/detections/${encodeURIComponent(detectionId)}/review`, {
+      method: "POST",
+      body: JSON.stringify({ review_status: verdict }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || "Failed to submit review");
+    }
+    // Refresh report
+    if (activeReportData) {
+      const repRes = await CivicAuth.apiFetch(`/api/v1/reports/${encodeURIComponent(activeReportData.id)}`);
+      if (repRes.ok) {
+        const repData = await repRes.json();
+        activeReportData = repData.report;
+        renderReportDetails(activeReportData);
+      }
+    }
+  } catch (err) {
+    alert("Error submitting review: " + err.message);
+  }
+}
+
+function openImageModal(url, assetId) {
   const modal = document.getElementById("img-modal");
   const modalImg = document.getElementById("modal-img-content");
   modalImg.src = url;
+
+  // Build modal bounding boxes if this asset has detections
+  const layer = document.getElementById("modal-bbox-layer");
+  layer.innerHTML = "";
+  if (activeReportData && activeReportData.evidence) {
+    const asset = activeReportData.evidence.find(e => (e.evidence_asset_id || e.id) === assetId);
+    if (asset && asset.detections) {
+      document.getElementById("modal-defect-badge").textContent = `${asset.detections.length} Defect${asset.detections.length > 1 ? 's' : ''}`;
+      layer.innerHTML = asset.detections.map((d, dIdx) => {
+        const nb = d.normalized_bbox;
+        if (!nb) return "";
+        const leftPct = (nb.xmin * 100).toFixed(2);
+        const topPct = (nb.ymin * 100).toFixed(2);
+        const widthPct = ((nb.xmax - nb.xmin) * 100).toFixed(2);
+        const heightPct = ((nb.ymax - nb.ymin) * 100).toFixed(2);
+        const cat = (d.category || 'Pothole').toUpperCase();
+        const confPct = Math.round(d.confidence * 100);
+        return `
+          <div class="detection-box" style="left: ${leftPct}%; top: ${topPct}%; width: ${widthPct}%; height: ${heightPct}%;">
+            <span class="detection-tag">#${dIdx + 1} ${cat} ${confPct}%</span>
+          </div>
+        `;
+      }).join('');
+    } else {
+      document.getElementById("modal-defect-badge").textContent = "0 Defects";
+    }
+  }
+
   modal.classList.add("open");
 }
 
-function closeImageModal() {
+function closeImageModal(event) {
+  if (event && event.target && event.target.id !== "img-modal" && !event.target.classList.contains("cl-btn")) {
+    return;
+  }
   document.getElementById("img-modal").classList.remove("open");
+}
+
+function toggleModalBboxes(show) {
+  const layer = document.getElementById("modal-bbox-layer");
+  if (layer) {
+    layer.style.display = show ? "block" : "none";
+  }
 }
 </script>
 </body>

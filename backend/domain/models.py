@@ -111,10 +111,21 @@ class Detection:
     bbox_y: int = 0
     bbox_w: int = 0
     bbox_h: int = 0
+    normalized_xmin: Optional[float] = None
+    normalized_ymin: Optional[float] = None
+    normalized_xmax: Optional[float] = None
+    normalized_ymax: Optional[float] = None
+    image_width: Optional[int] = None
+    image_height: Optional[int] = None
     confidence: float = 0.0
+    confidence_tier: str = "medium"
     est_depth_cm: float = 0.0
     severity: SeverityLevel = SeverityLevel.MINOR
     model_version: str = "yolov8-baseline"
+    review_status: str = "unreviewed"
+    reviewed_by: Optional[str] = None
+    reviewed_at: Optional[float] = None
+    review_notes: Optional[str] = None
     created_at: float = field(default_factory=time.time)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -123,10 +134,23 @@ class Detection:
             "evidence_asset_id": self.evidence_asset_id,
             "defect_type": self.defect_type,
             "bbox": [self.bbox_x, self.bbox_y, self.bbox_w, self.bbox_h],
+            "normalized_bbox": {
+                "xmin": self.normalized_xmin,
+                "ymin": self.normalized_ymin,
+                "xmax": self.normalized_xmax,
+                "ymax": self.normalized_ymax,
+            } if self.normalized_xmin is not None else None,
+            "image_width": self.image_width,
+            "image_height": self.image_height,
             "confidence": self.confidence,
+            "confidence_tier": self.confidence_tier,
             "est_depth_cm": self.est_depth_cm,
             "severity": self.severity.value,
             "model_version": self.model_version,
+            "review_status": self.review_status,
+            "reviewed_by": self.reviewed_by,
+            "reviewed_at": self.reviewed_at,
+            "review_notes": self.review_notes,
             "created_at": self.created_at,
         }
 

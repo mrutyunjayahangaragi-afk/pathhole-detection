@@ -46,6 +46,20 @@ class NotFoundError(CivicLensError):
     message = "The requested resource was not found."
 
 
+class UnauthorizedError(CivicLensError):
+    """Raised when authentication is missing or invalid."""
+    status_code = 401
+    error_code = "UNAUTHORIZED"
+    message = "Authentication required."
+
+
+class ForbiddenError(CivicLensError):
+    """Raised when the authenticated user does not have permission for the action."""
+    status_code = 403
+    error_code = "FORBIDDEN"
+    message = "Access forbidden."
+
+
 class ConflictError(CivicLensError):
     """Raised when a state conflict occurs."""
     status_code = 409

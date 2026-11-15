@@ -17,8 +17,8 @@ from backend.db.models import User, CitizenReport
 from backend.auth import generate_auth_token
 from backend.errors import ValidationError, NotFoundError, CivicLensError
 
-# Standard email validation regex
-EMAIL_REGEX = re.compile(r"^[\w\.\+\-]+@[\w\-]+\.[a-zA-Z]{2,}$")
+# Standard email validation regex (supports multiple domain labels like .gov.in)
+EMAIL_REGEX = re.compile(r"^[\w\.\+\-]+@(?:[\w\-]+\.)+[a-zA-Z]{2,}$")
 
 # In-memory sliding window rate limiter: {key: [timestamp1, timestamp2, ...]}
 _FAILED_LOGIN_ATTEMPTS: Dict[str, list] = {}

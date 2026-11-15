@@ -45,11 +45,24 @@ def create_app(config: Optional[Config] = None) -> Flask:
     # Initialize structured logging
     logger = setup_logging(cfg.LOG_LEVEL, app_name="civiclens")
     app.logger = logger
+    app.config["MAX_CONTENT_LENGTH"] = cfg.MAX_CONTENT_LENGTH
 
     # Ensure database schema is present
     try:
-        init_db(cfg.DATABASE_PATH)
-        create_all_tables(f"sqlite:///{cfg.DATABASE_PATH}")
+        from backend.config import redact_secret
+        from backend.db.engine import get_engine
+        from sqlalchemy import text
+
+        if getattr(cfg, "DATABASE_PROVIDER", "sqlite") in ("supabase", "postgresql"):
+            create_all_tables(cfg.DATABASE_URL)
+            eng = get_engine(cfg.DATABASE_URL)
+            with eng.connect() as conn:
+                conn.execute(text("SELECT 1;"))
+            logger.info(f"Connected to Supabase PostgreSQL database ({redact_secret(cfg.DATABASE_URL)})")
+        else:
+            init_db(cfg.DATABASE_PATH)
+            create_all_tables(f"sqlite:///{cfg.DATABASE_PATH}")
+            logger.info(f"Connected to SQLite database at '{cfg.DATABASE_PATH}'")
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
         if not cfg.TESTING:
@@ -73,10 +86,20 @@ def create_app(config: Optional[Config] = None) -> Flask:
     @app.after_request
     def add_cors_headers(response):
         origins = cfg.CORS_ORIGINS
-        origin_header = "*" if "*" in origins else ", ".join(origins)
-        response.headers["Access-Control-Allow-Origin"] = origin_header
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PATCH, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Idempotency-Key"
+        req_origin = request.headers.get("Origin")
+
+        if "*" in origins:
+            response.headers["Access-Control-Allow-Origin"] = "*"
+        elif req_origin and req_origin in origins:
+            response.headers["Access-Control-Allow-Origin"] = req_origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+        elif origins:
+            response.headers["Access-Control-Allow-Origin"] = origins[0]
+
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = (
+            "Content-Type, Authorization, X-Requested-With, Accept, Origin, Idempotency-Key"
+        )
         return response
 
     @app.before_request
@@ -154,13 +177,26 @@ def create_app(config: Optional[Config] = None) -> Flask:
 
     @app.route("/api/health", methods=["GET"])
     def health():
-        """Health check endpoint with operational diagnostics."""
+        """Health check endpoint with operational diagnostics and live DB ping."""
+        db_status = "connected"
+        try:
+            from backend.db.engine import get_engine
+            from sqlalchemy import text
+            eng = get_engine()
+            with eng.connect() as conn:
+                conn.execute(text("SELECT 1;"))
+        except Exception as e:
+            db_status = f"unhealthy: {e}"
+
+        is_healthy = db_status == "connected"
         return jsonify({
-            "status": "ok",
+            "status": "ok" if is_healthy else "degraded",
             "environment": cfg.ENV,
-            "version": "0.3.0-civiclens",
-            "database": "connected",
-        })
+            "version": "0.4.0-civiclens",
+            "database": db_status,
+            "database_provider": getattr(cfg, "DATABASE_PROVIDER", "sqlite"),
+            "database_status": db_status,
+        }), (200 if is_healthy else 503)
 
     # ---------------------------------------------------------------------------
     # Frontend & Dashboard static file serving

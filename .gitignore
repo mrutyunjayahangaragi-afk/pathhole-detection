@@ -20,13 +20,27 @@ htmlcov/
 .env
 .env.local
 .env.*.local
+.env.development
+.env.production
+.env.staging
 *.pem
 *.key
+
+# Database backups and temporary files
+backups/
+*.bak
+*.backup
+*.sqlite.bak
 
 # SQLite databases generated during development and testing
 *.db-journal
 test_*.db
 /tmp/test_*.db
+*.db.bak
+
+# Logs
+*.log
+logs/
 
 # macOS files
 .DS_Store

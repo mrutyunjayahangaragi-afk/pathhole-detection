@@ -38,6 +38,38 @@ def _bool_from_env(key: str, default: bool = False) -> bool:
     return val.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def redact_secret(val: Optional[str], show_chars: int = 4) -> str:
+    """Safely redacts secrets for logs and reports without exposing private data."""
+    if not val:
+        return "[NOT SET]"
+    trimmed = str(val).strip()
+    if len(trimmed) <= show_chars * 2:
+        return "[REDACTED]"
+    return f"{trimmed[:show_chars]}...{trimmed[-show_chars:]} (len={len(trimmed)})"
+
+
+def normalize_database_url(url: Optional[str]) -> Optional[str]:
+    """
+    Normalizes PostgreSQL database URLs for SQLAlchemy compatibility.
+    - Normalizes `postgres://` to `postgresql://`
+    - Ensures `sslmode=require` for remote hosts (e.g. Supabase poolers)
+    """
+    if not url:
+        return url
+    trimmed = url.strip()
+    if trimmed.startswith("postgres://"):
+        trimmed = "postgresql://" + trimmed[len("postgres://"):]
+
+    # Enforce sslmode=require for remote hosts unless already set or local
+    if trimmed.startswith("postgresql"):
+        lower = trimmed.lower()
+        if "sslmode=" not in lower and "localhost" not in lower and "127.0.0.1" not in lower:
+            delim = "&" if "?" in trimmed else "?"
+            trimmed = f"{trimmed}{delim}sslmode=require"
+
+    return trimmed
+
+
 def _resolve_db_path(raw_path: str) -> str:
     """
     Safely resolves SQLite database paths regardless of the current working directory.
@@ -68,13 +100,19 @@ def _resolve_db_path(raw_path: str) -> str:
 class Config:
     """Base application configuration."""
     def __init__(self):
-        self.ENV = os.environ.get("FLASK_ENV", "development").lower()
+        # Support modern APP_ENV, with backward-compatible FLASK_ENV fallback
+        self.ENV = (
+            os.environ.get("APP_ENV") or
+            os.environ.get("FLASK_ENV") or
+            os.environ.get("ENVIRONMENT") or
+            "development"
+        ).lower().strip()
         self.DEBUG = _bool_from_env("FLASK_DEBUG", False)
         self.TESTING = False
         
-        self.HOST = os.environ.get("HOST", "0.0.0.0")
+        self.HOST = os.environ.get("HOST", "127.0.0.1")
         try:
-            self.PORT = int(os.environ.get("PORT", "5000"))
+            self.PORT = int(os.environ.get("PORT", "5055"))
             if not (1 <= self.PORT <= 65535):
                 raise ConfigurationError(f"PORT must be between 1 and 65535, got {self.PORT}")
         except ValueError as e:
@@ -82,10 +120,35 @@ class Config:
 
         self.SECRET_KEY = os.environ.get("SECRET_KEY", "insecure-dev-key-civiclens-change-in-production")
         
-        # Database
-        self.RAW_DB_PATH = os.environ.get("DATABASE_PATH", "backend/pothole_reports.db")
-        self.DATABASE_PATH = _resolve_db_path(self.RAW_DB_PATH)
-        self.DATABASE_URL = os.environ.get("DATABASE_URL")  # Future PostgreSQL URL
+        # Database Provider: 'sqlite', 'supabase', or 'postgresql'
+        self.DATABASE_PROVIDER = os.environ.get("DATABASE_PROVIDER", "sqlite").lower().strip()
+        if self.DATABASE_PROVIDER not in ("sqlite", "supabase", "postgresql"):
+            raise ConfigurationError(
+                f"Unsupported DATABASE_PROVIDER '{self.DATABASE_PROVIDER}'. Must be 'sqlite', 'supabase', or 'postgresql'."
+            )
+
+        raw_url = os.environ.get("DATABASE_URL")
+        self.SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
+        self.SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "").strip()
+
+        if self.DATABASE_PROVIDER in ("supabase", "postgresql"):
+            # Strict safety check: Never silently fall back to SQLite when Supabase is requested!
+            if not raw_url or not raw_url.strip():
+                raise ConfigurationError(
+                    f"DATABASE_PROVIDER is set to '{self.DATABASE_PROVIDER}', but DATABASE_URL is missing or empty. "
+                    "Configure your Supabase PostgreSQL connection string in .env (e.g. DATABASE_URL=postgresql://postgres:...@...)."
+                )
+            if "YOUR_SUPABASE" in raw_url or "[password]" in raw_url or "YOUR_PASSWORD" in raw_url:
+                raise ConfigurationError(
+                    "DATABASE_URL contains placeholder values. Please replace with your actual Supabase PostgreSQL connection string in .env."
+                )
+            self.DATABASE_URL = normalize_database_url(raw_url)
+            self.RAW_DB_PATH = None
+            self.DATABASE_PATH = None
+        else:
+            self.RAW_DB_PATH = os.environ.get("DATABASE_PATH", "backend/pothole_reports.db")
+            self.DATABASE_PATH = _resolve_db_path(self.RAW_DB_PATH)
+            self.DATABASE_URL = f"sqlite:///{self.DATABASE_PATH}"
         
         # Deduplication
         try:
@@ -107,8 +170,9 @@ class Config:
             raise ConfigurationError(f"Invalid NOMINATIM_RATE_LIMIT_SECONDS: {e}") from e
 
         # CORS
+        raw_cors = os.environ.get("CORS_ORIGINS", "http://localhost:5055,http://127.0.0.1:5055")
         self.CORS_ORIGINS: List[str] = [
-            o.strip() for o in os.environ.get("CORS_ORIGINS", "*").split(",") if o.strip()
+            o.strip() for o in raw_cors.split(",") if o.strip()
         ]
 
         # Logging
@@ -116,7 +180,14 @@ class Config:
 
         # Uploads
         self.UPLOAD_FOLDER = str(PROJECT_ROOT / os.environ.get("UPLOAD_FOLDER", "uploads"))
-        self.MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH_MB", "16")) * 1024 * 1024
+        try:
+            max_mb = int(os.environ.get("MAX_CONTENT_LENGTH_MB", "16"))
+            if max_mb <= 0:
+                raise ConfigurationError("MAX_CONTENT_LENGTH_MB must be greater than 0")
+            self.MAX_CONTENT_LENGTH_MB = max_mb
+            self.MAX_CONTENT_LENGTH = max_mb * 1024 * 1024
+        except ValueError as e:
+            raise ConfigurationError(f"Invalid MAX_CONTENT_LENGTH_MB: {e}") from e
 
 
 class DevelopmentConfig(Config):
@@ -130,10 +201,22 @@ class TestingConfig(Config):
     """Testing environment configuration."""
     __test__ = False  # Prevent pytest from treating this configuration as a test suite
     def __init__(self):
-        super().__init__()
+        # Prevent test suite from failing if developer has DATABASE_PROVIDER=supabase in local .env
+        orig_provider = os.environ.get("DATABASE_PROVIDER")
+        try:
+            os.environ["DATABASE_PROVIDER"] = "sqlite"
+            super().__init__()
+        finally:
+            if orig_provider is not None:
+                os.environ["DATABASE_PROVIDER"] = orig_provider
+            else:
+                os.environ.pop("DATABASE_PROVIDER", None)
+
         self.TESTING = True
         self.DEBUG = False
+        self.DATABASE_PROVIDER = "sqlite"
         self.DATABASE_PATH = os.environ.get("TEST_DATABASE_PATH", "/tmp/civiclens_test.db")
+        self.DATABASE_URL = f"sqlite:///{self.DATABASE_PATH}"
         self.LOG_LEVEL = "WARNING"
         self.NOMINATIM_RATE_LIMIT_SECONDS = 0.0  # Do not throttle in automated unit tests
 
@@ -144,9 +227,11 @@ class ProductionConfig(Config):
     
     def __init__(self):
         super().__init__()
-        if self.SECRET_KEY.startswith("insecure-dev-key"):
+        if _bool_from_env("FLASK_DEBUG", False):
+            raise ConfigurationError("FLASK_DEBUG cannot be enabled in production environment.")
+        if not self.SECRET_KEY or self.SECRET_KEY.startswith("insecure-dev-key") or len(self.SECRET_KEY) < 32:
             raise ConfigurationError(
-                "In production, SECRET_KEY must be explicitly set to a secure secret."
+                "In production, SECRET_KEY must be explicitly set to a secure, random string (min 32 characters)."
             )
 
 
@@ -159,6 +244,12 @@ CONFIG_MAP = {
 
 def get_config(env_name: Optional[str] = None) -> Config:
     """Return an active configuration instance based on environment name."""
-    name = (env_name or os.environ.get("FLASK_ENV", "development")).lower()
+    name = (
+        env_name or
+        os.environ.get("APP_ENV") or
+        os.environ.get("FLASK_ENV") or
+        os.environ.get("ENVIRONMENT") or
+        "development"
+    ).lower().strip()
     config_cls = CONFIG_MAP.get(name, DevelopmentConfig)
     return config_cls()

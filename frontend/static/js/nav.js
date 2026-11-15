@@ -20,7 +20,9 @@
 
     const navItems = [
       { key: 'home', label: 'Home Portal', icon: '🏛️', href: prefix + 'index.html' },
+      { key: 'citizen_dashboard', label: 'Citizen Dashboard', icon: '👤', href: prefix + 'citizen-dashboard.html' },
       { key: 'report', label: 'Report Defect', icon: '📢', href: prefix + 'citizen-report.html' },
+      { key: 'my_reports', label: 'My Submissions', icon: '📋', href: prefix + 'my-reports.html' },
       { key: 'map', label: 'Public Map', icon: '🗺️', href: prefix + 'public-map.html' },
       { key: 'dashboard', label: 'Live Monitor', icon: '⚡', href: prefix + 'dashboard/dashboard.html' },
       { key: 'municipal', label: 'Municipal Triage', icon: '🛠️', href: prefix + 'municipal/dashboard.html' },
@@ -57,7 +59,8 @@
           <ul class="cl-nav-list">
             ${navLinksHtml}
           </ul>
-          <div style="padding: 16px; border-top: 1px solid var(--cl-border); font-size: 11px; color: var(--cl-text-muted);">
+          <div class="cl-nav-user-slot"></div>
+          <div style="padding: 12px 16px; border-top: 1px solid var(--cl-border); font-size: 11px; color: var(--cl-text-muted);">
             <div>CivicLens v2.0</div>
             <div>BBMP & Smart Cities</div>
           </div>

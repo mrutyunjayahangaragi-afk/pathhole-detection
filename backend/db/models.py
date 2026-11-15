@@ -42,6 +42,8 @@ class User(Base):
         String(30), nullable=False, default="citizen",
     )
     preferred_language = Column(String(5), nullable=False, default="en")
+    password_hash = Column(String(255), nullable=True)
+    last_login_at = Column(DateTime(timezone=True), nullable=True)
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow)
@@ -118,7 +120,15 @@ class CitizenReport(Base):
     id = Column(String(36), primary_key=True, default=_uuid)
     citizen_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     report_reference = Column(String(20), unique=True, nullable=True)
+    title = Column(String(255), nullable=True)
     description = Column(Text, nullable=True)
+    reported_severity = Column(String(20), nullable=True, default="minor")
+    idempotency_key = Column(String(64), nullable=True, unique=True, index=True)
+    is_manual_location = Column(Boolean, nullable=False, default=False)
+    latitude = Column(Float, nullable=False, default=0.0)
+    longitude = Column(Float, nullable=False, default=0.0)
+    location_accuracy_m = Column(Float, nullable=True)
+    address = Column(Text, nullable=True)
     original_language = Column(String(5), nullable=False, default="en")
     translated_description = Column(Text, nullable=True)
     submission_channel = Column(String(30), nullable=False, default="web")
@@ -139,11 +149,16 @@ class CitizenReport(Base):
             name="ck_report_channel"
         ),
         CheckConstraint(
-            "status IN ('submitted','under_review','linked','rejected','withdrawn')",
+            "status IN ('submitted','under_review','linked','rejected','withdrawn','acknowledged','resolved')",
             name="ck_report_status"
+        ),
+        CheckConstraint(
+            "reported_severity IS NULL OR reported_severity IN ('minor','moderate','severe','critical')",
+            name="ck_report_severity"
         ),
         Index("ix_reports_v2_citizen", "citizen_id"),
         Index("ix_reports_v2_status", "status"),
+        Index("ix_reports_v2_coords", "latitude", "longitude"),
     )
 
 

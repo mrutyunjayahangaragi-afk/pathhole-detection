@@ -230,3 +230,23 @@ def test_frontend_and_dashboard_routes(client):
     assert res_citizen.status_code == 200
     assert b"CivicLens" in res_citizen.data
 
+    res_login = client.get("/citizen-login.html")
+    assert res_login.status_code == 200
+    assert b"CivicLens" in res_login.data
+
+    res_cdash = client.get("/citizen-dashboard.html")
+    assert res_cdash.status_code == 200
+    assert b"CivicLens" in res_cdash.data
+
+    res_my_reports = client.get("/my-reports.html")
+    assert res_my_reports.status_code == 200
+    assert b"CivicLens" in res_my_reports.data
+
+    res_detail = client.get("/report-detail.html")
+    assert res_detail.status_code == 200
+    assert b"CivicLens" in res_detail.data
+
+    res_auth_js = client.get("/static/js/citizen-auth.js")
+    assert res_auth_js.status_code == 200
+    assert b"CivicAuth" in res_auth_js.data
+

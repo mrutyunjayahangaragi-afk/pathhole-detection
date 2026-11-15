@@ -8,11 +8,14 @@ Supports dual-engine operation:
 
 import os
 from sqlalchemy import create_engine, event, text
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker, scoped_session, Session
-from typing import Optional
+from typing import Optional, Dict
 
-_engine = None
-_SessionFactory = None
+_engine: Optional[Engine] = None
+_SessionFactory: Optional[sessionmaker] = None
+_engines: Dict[str, Engine] = {}
+_session_factories: Dict[str, sessionmaker] = {}
 
 
 def _create_engine_for_url(url: str):
@@ -38,39 +41,48 @@ def _create_engine_for_url(url: str):
 
 def get_engine(database_url: Optional[str] = None):
     """Creates or returns the singleton SQLAlchemy engine."""
-    global _engine
-    if database_url is not None:
-        if _engine is not None and str(_engine.url) == database_url:
-            return _engine
-        eng = _create_engine_for_url(database_url)
-        if _engine is None:
-            _engine = eng
-        return eng
+    global _engine, _engines
+    if database_url is None:
+        try:
+            from flask import current_app
+            if current_app:
+                db_path = current_app.config.get("DATABASE_PATH")
+                if db_path:
+                    database_url = f"sqlite:///{db_path}"
+        except (RuntimeError, ImportError):
+            pass
 
-    if _engine is not None:
+    if database_url is None and _engine is not None:
         return _engine
 
-    url = os.environ.get("DATABASE_URL")
-    if url:
-        _engine = _create_engine_for_url(url)
-    else:
-        from backend.config import get_config
-        cfg = get_config()
-        sqlite_url = f"sqlite:///{cfg.DATABASE_PATH}"
-        _engine = _create_engine_for_url(sqlite_url)
+    if database_url is None:
+        url = os.environ.get("DATABASE_URL")
+        if url:
+            database_url = url
+        else:
+            from backend.config import get_config
+            cfg = get_config()
+            database_url = f"sqlite:///{cfg.DATABASE_PATH}"
 
-    return _engine
+    if database_url in _engines:
+        return _engines[database_url]
+
+    eng = _create_engine_for_url(database_url)
+    _engines[database_url] = eng
+    _engine = eng
+    return eng
 
 
 def get_session_factory(database_url: Optional[str] = None) -> sessionmaker:
     """Returns a session factory bound to the engine."""
-    global _SessionFactory
-    if database_url is None and _SessionFactory is not None:
-        return _SessionFactory
+    global _SessionFactory, _session_factories
     engine = get_engine(database_url)
+    url_key = str(engine.url)
+    if url_key in _session_factories:
+        return _session_factories[url_key]
     factory = sessionmaker(bind=engine, expire_on_commit=False)
-    if database_url is None:
-        _SessionFactory = factory
+    _session_factories[url_key] = factory
+    _SessionFactory = factory
     return factory
 
 
@@ -82,8 +94,13 @@ def get_scoped_session(database_url: Optional[str] = None) -> scoped_session:
 
 def reset_engine():
     """Resets the engine singleton — used in testing."""
-    global _engine, _SessionFactory
-    if _engine:
-        _engine.dispose()
+    global _engine, _SessionFactory, _engines, _session_factories
+    for eng in list(_engines.values()):
+        try:
+            eng.dispose()
+        except Exception:
+            pass
+    _engines.clear()
+    _session_factories.clear()
     _engine = None
     _SessionFactory = None

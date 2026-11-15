@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>CivicLens — Citizen Dashboard</title>
+<link rel="stylesheet" href="./static/css/civiclens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  .dash-hero {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(30, 41, 59, 0.8) 100%);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-md);
+    padding: var(--cl-space-5);
+    margin-bottom: var(--cl-space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--cl-space-4);
+  }
+  @media (min-width: 768px) {
+    .dash-hero {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--cl-space-6);
+    }
+  }
+  .dash-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .report-list-item {
+    background: var(--cl-bg-subtle);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-md);
+    padding: var(--cl-space-4);
+    margin-bottom: var(--cl-space-3);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .report-list-item:hover {
+    border-color: var(--cl-primary-light);
+    background: var(--cl-bg-elevated);
+  }
+  @media (min-width: 640px) {
+    .report-list-item {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
+  .badge-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: var(--cl-radius-full);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .status-submitted { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+  .status-under_review { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+  .status-acknowledged { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+  .status-in_progress { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); }
+  .status-resolved { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+  .status-rejected { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+  .empty-state {
+    text-align: center;
+    padding: var(--cl-space-8) var(--cl-space-4);
+    border: 2px dashed var(--cl-border);
+    border-radius: var(--cl-radius-md);
+    color: var(--cl-text-secondary);
+  }
+  /* Profile drawer modal */
+  .profile-panel {
+    background: var(--cl-bg-surface);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-md);
+    padding: var(--cl-space-4);
+    margin-top: var(--cl-space-5);
+  }
+</style>
+</head>
+<body>
+
+<div class="cl-app-wrapper">
+  <!-- Shared Sidebar Container -->
+  <div id="cl-sidebar-container" data-active="citizen_dashboard"></div>
+
+  <!-- Main Content Area -->
+  <main class="cl-main-content">
+    <!-- Mobile Header -->
+    <header class="cl-mobile-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button class="cl-hamburger-btn" id="cl-hamburger-toggle" aria-label="Toggle navigation">☰</button>
+        <span style="font-family: var(--cl-font-heading); font-size: 1.25rem; font-weight: 700; text-transform: uppercase;">CivicLens</span>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--cl-text-muted); font-family: var(--cl-font-mono);">CITIZEN PORTAL</div>
+    </header>
+
+    <div class="cl-container">
+      <!-- Hero / Welcome Banner -->
+      <section class="dash-hero" aria-label="Citizen Overview">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <span class="cl-badge cl-badge-minor" id="user-role-badge">CITIZEN</span>
+            <span style="font-size: 12px; color: var(--cl-text-muted);" id="user-lang-badge">PREF: EN</span>
+          </div>
+          <h1 style="font-family: var(--cl-font-heading); font-size: 1.75rem; text-transform: uppercase; margin: 0 0 4px 0;" id="user-greeting">
+            Welcome back, Citizen
+          </h1>
+          <p style="margin: 0; font-size: 13px; color: var(--cl-text-secondary);" id="user-email-text">
+            Loading your grievance dashboard...
+          </p>
+        </div>
+        <div class="dash-actions">
+          <a href="citizen-report.html" class="cl-btn cl-btn-primary">
+            📢 Report Road Defect
+          </a>
+          <a href="my-reports.html" class="cl-btn cl-btn-secondary">
+            📋 My Submissions
+          </a>
+        </div>
+      </section>
+
+      <!-- Real DB Stats Grid -->
+      <section aria-label="Grievance Statistics">
+        <h2 style="font-family: var(--cl-font-heading); font-size: 1.25rem; text-transform: uppercase; margin: 0 0 var(--cl-space-3) 0;">
+          Your Grievance Summary
+        </h2>
+        <div class="cl-stat-grid">
+          <div class="cl-stat-card">
+            <span class="cl-stat-label">Total Submitted</span>
+            <span class="cl-stat-val" id="stat-total">0</span>
+          </div>
+          <div class="cl-stat-card">
+            <span class="cl-stat-label">Awaiting Triage</span>
+            <span class="cl-stat-val" style="color: #60a5fa;" id="stat-submitted">0</span>
+          </div>
+          <div class="cl-stat-card">
+            <span class="cl-stat-label">Under Review</span>
+            <span class="cl-stat-val moderate" id="stat-under-review">0</span>
+          </div>
+          <div class="cl-stat-card">
+            <span class="cl-stat-label">Action Scheduled</span>
+            <span class="cl-stat-val" style="color: #c084fc;" id="stat-acknowledged">0</span>
+          </div>
+          <div class="cl-stat-card">
+            <span class="cl-stat-label">Resolved &amp; Closed</span>
+            <span class="cl-stat-val minor" id="stat-resolved">0</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Recent Submissions List -->
+      <section style="margin-top: var(--cl-space-6);" aria-label="Recent Reports">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--cl-space-3);">
+          <h2 style="font-family: var(--cl-font-heading); font-size: 1.25rem; text-transform: uppercase; margin: 0;">
+            Recent Grievances
+          </h2>
+          <a href="my-reports.html" style="font-size: 13px; color: var(--cl-primary-light); text-decoration: none; font-weight: 600;">
+            View All Submissions &rarr;
+          </a>
+        </div>
+
+        <div id="recent-reports-container">
+          <div style="text-align: center; padding: 24px; color: var(--cl-text-muted);">
+            Loading recent submissions...
+          </div>
+        </div>
+      </section>
+
+      <!-- Profile & Settings Card -->
+      <section class="profile-panel" id="profile-section" aria-label="Citizen Profile">
+        <h3 style="font-family: var(--cl-font-heading); font-size: 1.15rem; text-transform: uppercase; margin: 0 0 var(--cl-space-3) 0;">
+          Profile &amp; Contact Preferences
+        </h3>
+        <form id="profile-form" style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+            <div>
+              <label class="cl-label" for="profile-name">Full Name</label>
+              <input type="text" id="profile-name" class="cl-input" required>
+            </div>
+            <div>
+              <label class="cl-label" for="profile-phone">Phone Number (Optional)</label>
+              <input type="tel" id="profile-phone" class="cl-input" placeholder="+91 98765 43210">
+            </div>
+            <div>
+              <label class="cl-label" for="profile-lang">Preferred Language</label>
+              <select id="profile-lang" class="cl-select">
+                <option value="en">English (default)</option>
+                <option value="kn">ಕನ್ನಡ (Kannada)</option>
+              </select>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 4px;">
+            <span id="profile-feedback" style="font-size: 12px; display: none;"></span>
+            <button type="submit" class="cl-btn cl-btn-secondary cl-btn-sm" id="btn-save-profile">
+              Save Profile
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script src="./static/js/nav.js"></script>
+<script src="./static/js/citizen-auth.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", async function () {
+  if (!CivicAuth.isAuthenticated()) {
+    window.location.href = "citizen-login.html?redirect=" + encodeURIComponent(window.location.pathname);
+    return;
+  }
+
+  // Load User Info and Aggregate Counts
+  try {
+    const res = await CivicAuth.apiFetch("/api/v1/auth/me");
+    if (!res.ok) {
+      if (res.status === 401) return;
+      throw new Error("Failed to fetch profile");
+    }
+    const data = await res.json();
+    const user = data.user;
+    const stats = data.report_stats || {};
+
+    // Update Greeting
+    document.getElementById("user-greeting").textContent = `Welcome back, ${user.display_name}`;
+    document.getElementById("user-email-text").textContent = `${user.email} • Registered as ${user.role.replace('_', ' ')}`;
+    document.getElementById("user-role-badge").textContent = user.role.toUpperCase().replace('_', ' ');
+    document.getElementById("user-lang-badge").textContent = `LANG: ${user.preferred_language.toUpperCase()}`;
+
+    // Populate Profile Fields
+    document.getElementById("profile-name").value = user.display_name || "";
+    document.getElementById("profile-phone").value = user.phone_number || "";
+    document.getElementById("profile-lang").value = user.preferred_language || "en";
+
+    // Populate Real DB Counts
+    document.getElementById("stat-total").textContent = stats.total || 0;
+    document.getElementById("stat-submitted").textContent = stats.submitted || 0;
+    document.getElementById("stat-under-review").textContent = stats.under_review || 0;
+    document.getElementById("stat-acknowledged").textContent = stats.acknowledged || 0;
+    document.getElementById("stat-resolved").textContent = stats.resolved || 0;
+
+  } catch (err) {
+    console.error("Profile load error:", err);
+  }
+
+  // Load Recent 5 Reports
+  try {
+    const listRes = await CivicAuth.apiFetch("/api/v1/reports?per_page=5&page=1");
+    if (listRes.ok) {
+      const listData = await listRes.json();
+      renderRecentReports(listData.items || []);
+    }
+  } catch (err) {
+    console.error("Recent reports load error:", err);
+    document.getElementById("recent-reports-container").innerHTML = `
+      <div style="color: var(--cl-severe); font-size: 13px; padding: 12px;">Failed to load recent reports.</div>
+    `;
+  }
+
+  // Handle Profile Form Submit
+  const profileForm = document.getElementById("profile-form");
+  const profileFeedback = document.getElementById("profile-feedback");
+  const btnSave = document.getElementById("btn-save-profile");
+
+  profileForm.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    btnSave.disabled = true;
+    profileFeedback.style.display = "inline";
+    profileFeedback.style.color = "var(--cl-warning)";
+    profileFeedback.textContent = "Updating...";
+
+    try {
+      const payload = {
+        display_name: document.getElementById("profile-name").value.trim(),
+        phone_number: document.getElementById("profile-phone").value.trim() || null,
+        preferred_language: document.getElementById("profile-lang").value
+      };
+
+      const res = await CivicAuth.apiFetch("/api/v1/auth/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const resData = await res.json();
+      if (!res.ok) {
+        throw new Error(resData.error || "Update failed");
+      }
+
+      // Update cached user
+      const currentUser = CivicAuth.getUser() || {};
+      CivicAuth.setSession(null, { ...currentUser, ...resData.user });
+      document.getElementById("user-greeting").textContent = `Welcome back, ${resData.user.display_name}`;
+      document.getElementById("user-lang-badge").textContent = `LANG: ${resData.user.preferred_language.toUpperCase()}`;
+
+      profileFeedback.style.color = "var(--cl-minor)";
+      profileFeedback.textContent = "✓ Profile updated successfully";
+      setTimeout(() => { profileFeedback.style.display = "none"; }, 3000);
+    } catch (err) {
+      profileFeedback.style.color = "var(--cl-severe)";
+      profileFeedback.textContent = err.message;
+    } finally {
+      btnSave.disabled = false;
+    }
+  });
+});
+
+function formatStatusBadge(status) {
+  const norm = (status || "submitted").toLowerCase();
+  const labels = {
+    submitted: "Submitted",
+    under_review: "Under Review",
+    acknowledged: "Acknowledged",
+    in_progress: "In Progress",
+    resolved: "Resolved",
+    rejected: "Closed / Rejected"
+  };
+  const label = labels[norm] || norm;
+  return `<span class="badge-status status-${norm}">${label}</span>`;
+}
+
+function renderRecentReports(items) {
+  const container = document.getElementById("recent-reports-container");
+  if (!items || items.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div style="font-size: 2.2rem; margin-bottom: 8px;">📢</div>
+        <h3 style="font-family: var(--cl-font-heading); font-size: 1.2rem; margin: 0 0 6px 0; color: var(--cl-text-primary);">
+          No Grievance Reports Yet
+        </h3>
+        <p style="margin: 0 0 16px 0; font-size: 13px;">
+          You haven't submitted any civic infrastructure complaints. Help improve your local roads and public safety today.
+        </p>
+        <a href="citizen-report.html" class="cl-btn cl-btn-primary cl-btn-sm">
+          Submit Your First Defect Report
+        </a>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = items.map(report => {
+    const dateStr = report.created_at ? new Date(report.created_at).toLocaleDateString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    }) : 'Recent';
+
+    const evidenceCount = (report.evidence || []).length;
+    const evidenceTag = evidenceCount > 0 ? `<span style="font-size: 11px; color: var(--cl-text-muted);">📷 ${evidenceCount} photo(s)</span>` : '';
+
+    return `
+      <div class="report-list-item">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
+            <span style="font-family: var(--cl-font-mono); font-size: 12px; font-weight: 600; color: var(--cl-primary-light);">
+              ${escapeHtml(report.reference_code)}
+            </span>
+            ${formatStatusBadge(report.status)}
+            <span class="cl-badge cl-badge-${report.reported_severity === 'severe' || report.reported_severity === 'critical' ? 'severe' : report.reported_severity === 'moderate' ? 'moderate' : 'minor'}">
+              ${report.reported_severity || 'Minor'}
+            </span>
+          </div>
+          <div style="font-weight: 600; font-size: 14px; color: var(--cl-text-primary); margin-bottom: 2px;">
+            ${escapeHtml(report.title || 'Civic Infrastructure Defect')}
+          </div>
+          <div style="font-size: 12px; color: var(--cl-text-secondary); display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <span>📍 ${escapeHtml(report.address || (report.latitude && report.longitude ? `${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}` : 'Location captured'))}</span>
+            <span>🕒 ${dateStr}</span>
+            ${evidenceTag}
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+          <a href="report-detail.html?id=${encodeURIComponent(report.id)}" class="cl-btn cl-btn-secondary cl-btn-sm" style="white-space: nowrap;">
+            View Details &rarr;
+          </a>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+</script>
+</body>
+</html>

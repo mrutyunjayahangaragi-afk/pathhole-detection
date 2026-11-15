@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>CivicLens — Grievance Report Details</title>
+<link rel="stylesheet" href="./static/css/civiclens.css">
+<!-- Leaflet CSS for Location Display -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  .detail-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--cl-space-4);
+  }
+  @media (min-width: 768px) {
+    .detail-container {
+      padding: var(--cl-space-6);
+    }
+  }
+
+  /* Status Timeline Tracker */
+  .timeline-card {
+    background: var(--cl-bg-surface);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-md);
+    padding: var(--cl-space-5);
+    margin-bottom: var(--cl-space-5);
+  }
+  .timeline-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+    margin-top: 16px;
+  }
+  @media (min-width: 640px) {
+    .timeline-steps {
+      flex-direction: row;
+      justify-content: space-between;
+      gap: 0;
+    }
+    .timeline-step {
+      flex: 1;
+      text-align: center;
+      position: relative;
+    }
+    .timeline-step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      width: 100%;
+      height: 2px;
+      background: var(--cl-border);
+      z-index: 1;
+    }
+    .timeline-step.completed:not(:last-child)::after {
+      background: var(--cl-primary);
+    }
+  }
+
+  .timeline-node {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  @media (min-width: 640px) {
+    .timeline-node {
+      flex-direction: column;
+      gap: 6px;
+    }
+  }
+
+  .step-circle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--cl-bg-elevated);
+    border: 2px solid var(--cl-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--cl-text-muted);
+    position: relative;
+    z-index: 2;
+  }
+  .timeline-step.active .step-circle {
+    background: var(--cl-primary);
+    border-color: var(--cl-primary-light);
+    color: white;
+    box-shadow: 0 0 10px rgba(37, 99, 235, 0.4);
+  }
+  .timeline-step.completed .step-circle {
+    background: var(--cl-minor);
+    border-color: #34d399;
+    color: white;
+  }
+
+  .step-info {
+    display: flex;
+    flex-direction: column;
+  }
+  .step-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cl-text-primary);
+  }
+  .step-date {
+    font-size: 11px;
+    color: var(--cl-text-muted);
+  }
+
+  /* Two Column Detail Grid */
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--cl-space-5);
+  }
+  @media (min-width: 768px) {
+    .detail-grid {
+      grid-template-columns: 1.2fr 0.8fr;
+    }
+  }
+
+  /* Map container */
+  #detail-map {
+    height: 240px;
+    border-radius: var(--cl-radius-md);
+    border: 1px solid var(--cl-border);
+    margin-top: 8px;
+    z-index: 10;
+  }
+
+  /* Evidence Gallery */
+  .evidence-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .evidence-card {
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-md);
+    overflow: hidden;
+    background: var(--cl-bg-subtle);
+    display: flex;
+    flex-direction: column;
+  }
+  .evidence-media {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+    cursor: pointer;
+  }
+  .evidence-caption {
+    padding: 6px 8px;
+    font-size: 10px;
+    color: var(--cl-text-muted);
+    font-family: var(--cl-font-mono);
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    border-top: 1px solid var(--cl-border);
+  }
+
+  /* Modal Image Zoom */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open {
+    display: flex;
+  }
+  .modal-img {
+    max-width: 90vw;
+    max-height: 85vh;
+    border-radius: var(--cl-radius-md);
+    box-shadow: var(--cl-shadow-lg);
+  }
+</style>
+</head>
+<body>
+
+<div class="cl-app-wrapper">
+  <!-- Shared Navigation Sidebar -->
+  <div id="cl-sidebar-container" data-active="my_reports"></div>
+
+  <!-- Main Content Area -->
+  <main class="cl-main-content">
+    <!-- Mobile Header -->
+    <header class="cl-mobile-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button class="cl-hamburger-btn" id="cl-hamburger-toggle" aria-label="Toggle navigation">☰</button>
+        <span style="font-family: var(--cl-font-heading); font-size: 1.25rem; font-weight: 700; text-transform: uppercase;">CivicLens</span>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--cl-text-muted); font-family: var(--cl-font-mono);">REPORT DETAILS</div>
+    </header>
+
+    <div class="detail-container">
+      <!-- Back Navigation Bar -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--cl-space-4); flex-wrap: wrap; gap: 8px;">
+        <a href="my-reports.html" style="font-size: 13px; color: var(--cl-primary-light); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+          &larr; Back to My Submissions
+        </a>
+        <a href="citizen-dashboard.html" style="font-size: 13px; color: var(--cl-text-secondary); text-decoration: none;">
+          Citizen Dashboard
+        </a>
+      </div>
+
+      <!-- State Loading / Error Screen -->
+      <div id="detail-state-box" style="text-align: center; padding: 40px; color: var(--cl-text-muted);">
+        Loading grievance report details...
+      </div>
+
+      <!-- Report Detail Content Area -->
+      <div id="detail-content" style="display: none;">
+        <!-- Timeline Card -->
+        <section class="timeline-card" aria-label="Status Progression">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-family: var(--cl-font-mono); font-size: 1.1rem; font-weight: 700; color: var(--cl-primary-light);" id="header-ref">
+                CR-000000-00000
+              </span>
+              <span id="header-status-badge"></span>
+            </div>
+            <div style="font-size: 12px; color: var(--cl-text-muted);" id="header-submitted-date">
+              Submitted: —
+            </div>
+          </div>
+
+          <!-- Stepper -->
+          <div class="timeline-steps" id="stepper-container">
+            <div class="timeline-step" id="step-submitted">
+              <div class="timeline-node">
+                <div class="step-circle" id="circle-submitted">1</div>
+                <div class="step-info">
+                  <span class="step-title">Submitted</span>
+                  <span class="step-date" id="date-submitted">—</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="timeline-step" id="step-under_review">
+              <div class="timeline-node">
+                <div class="step-circle" id="circle-under_review">2</div>
+                <div class="step-info">
+                  <span class="step-title">Under Review</span>
+                  <span class="step-date">Automated Triage</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="timeline-step" id="step-acknowledged">
+              <div class="timeline-node">
+                <div class="step-circle" id="circle-acknowledged">3</div>
+                <div class="step-info">
+                  <span class="step-title">Acknowledged</span>
+                  <span class="step-date">Dept Assigned</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="timeline-step" id="step-in_progress">
+              <div class="timeline-node">
+                <div class="step-circle" id="circle-in_progress">4</div>
+                <div class="step-info">
+                  <span class="step-title">In Progress</span>
+                  <span class="step-date">Crew Dispatched</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="timeline-step" id="step-resolved">
+              <div class="timeline-node">
+                <div class="step-circle" id="circle-resolved">5</div>
+                <div class="step-info">
+                  <span class="step-title">Resolved</span>
+                  <span class="step-date">Repaired &amp; Closed</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Two Column Content Grid -->
+        <div class="detail-grid">
+          <!-- Left Column: Defect Info & Evidence -->
+          <div style="display: flex; flex-direction: column; gap: var(--cl-space-5);">
+            <!-- Defect Details Card -->
+            <section class="cl-card" aria-label="Grievance Details">
+              <h2 style="font-family: var(--cl-font-heading); font-size: 1.3rem; margin: 0 0 6px 0; color: var(--cl-text-primary);" id="detail-title">
+                Defect Title
+              </h2>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+                <span class="cl-badge cl-badge-secondary" id="detail-category" style="background: var(--cl-bg-elevated); color: var(--cl-text-primary);">
+                  Pothole
+                </span>
+                <span class="cl-badge" id="detail-severity-badge">
+                  Minor Severity
+                </span>
+              </div>
+
+              <div style="font-size: 13px; line-height: 1.6; color: var(--cl-text-primary); white-space: pre-line; background: var(--cl-bg-subtle); padding: 12px; border-radius: 6px; border: 1px solid var(--cl-border); margin-bottom: 12px;" id="detail-desc">
+                No detailed description provided.
+              </div>
+
+              <div style="font-size: 11px; color: #fbbf24; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; padding: 8px 10px;">
+                ⚠️ <strong>Note:</strong> Citizen severity represents an initial community report. Official response priority and engineering dispatch are finalized through municipal road assessment.
+              </div>
+            </section>
+
+            <!-- Evidence Gallery Card -->
+            <section class="cl-card" aria-label="Photographic Evidence">
+              <h3 style="font-family: var(--cl-font-heading); font-size: 1.15rem; text-transform: uppercase; margin: 0 0 4px 0;">
+                Photographic &amp; Video Evidence
+              </h3>
+              <p style="margin: 0; font-size: 12px; color: var(--cl-text-secondary);">
+                Securely encrypted and hashed supporting evidence files for this report.
+              </p>
+
+              <div id="evidence-container">
+                <div class="evidence-gallery" id="evidence-gallery"></div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Right Column: Location Map & Metadata -->
+          <div style="display: flex; flex-direction: column; gap: var(--cl-space-5);">
+            <!-- Location Card -->
+            <section class="cl-card" aria-label="Geographic Location">
+              <h3 style="font-family: var(--cl-font-heading); font-size: 1.15rem; text-transform: uppercase; margin: 0 0 4px 0;">
+                Defect Location
+              </h3>
+              <div style="font-size: 13px; color: var(--cl-text-primary); font-weight: 500; margin-bottom: 4px;" id="location-address">
+                Loading address...
+              </div>
+              <div style="font-family: var(--cl-font-mono); font-size: 11px; color: var(--cl-text-muted); margin-bottom: 8px;" id="location-coords">
+                Lat: 0.000000, Lon: 0.000000
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+                <span class="cl-badge cl-badge-secondary" id="location-source-badge" style="font-size: 10px;">
+                  GPS Verified
+                </span>
+                <span class="cl-badge cl-badge-secondary" id="location-accuracy-badge" style="font-size: 10px;">
+                  Accuracy ±0m
+                </span>
+              </div>
+
+              <!-- Map view -->
+              <div id="detail-map" role="region" aria-label="Defect geographic pin map"></div>
+            </section>
+
+            <!-- Report Technical Metadata Card -->
+            <section class="cl-card" aria-label="Technical Details">
+              <h3 style="font-family: var(--cl-font-heading); font-size: 1.15rem; text-transform: uppercase; margin: 0 0 10px 0;">
+                Report Audit Metadata
+              </h3>
+              <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--cl-text-muted);">Unique ID:</span>
+                  <span style="font-family: var(--cl-font-mono); color: var(--cl-text-secondary);" id="meta-id">—</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--cl-text-muted);">Report Channel:</span>
+                  <span style="color: var(--cl-text-primary);" id="meta-source">Citizen Web Portal</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--cl-text-muted);">Last Updated:</span>
+                  <span style="color: var(--cl-text-primary);" id="meta-updated">—</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--cl-text-muted);">Canonical Incident:</span>
+                  <span style="font-family: var(--cl-font-mono); color: var(--cl-primary-light);" id="meta-incident">Unassigned / Merging</span>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal for enlarged image preview -->
+<div class="modal-overlay" id="img-modal" onclick="closeImageModal()">
+  <img class="modal-img" id="modal-img-content" src="" alt="Enlarged photo preview">
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="./static/js/nav.js"></script>
+<script src="./static/js/citizen-auth.js"></script>
+<script>
+let detailMap = null;
+let detailMarker = null;
+
+document.addEventListener("DOMContentLoaded", async function () {
+  if (!CivicAuth.isAuthenticated()) {
+    window.location.href = "citizen-login.html?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
+    return;
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const reportId = urlParams.get("id");
+
+  if (!reportId) {
+    document.getElementById("detail-state-box").innerHTML = `
+      <div style="color: var(--cl-severe);">
+        Missing report ID parameter in URL.
+        <div style="margin-top: 12px;">
+          <a href="my-reports.html" class="cl-btn cl-btn-secondary cl-btn-sm">Return to My Submissions</a>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  try {
+    const res = await CivicAuth.apiFetch(`/api/v1/reports/${encodeURIComponent(reportId)}`);
+    if (!res.ok) {
+      if (res.status === 403) {
+        document.getElementById("detail-state-box").innerHTML = `
+          <div style="color: var(--cl-severe); font-size: 15px;">
+            ⛔ <strong>Access Denied:</strong> You are not authorized to view this grievance report.
+            <div style="margin-top: 12px;">
+              <a href="my-reports.html" class="cl-btn cl-btn-secondary cl-btn-sm">Return to My Submissions</a>
+            </div>
+          </div>
+        `;
+        return;
+      }
+      if (res.status === 404) {
+        document.getElementById("detail-state-box").innerHTML = `
+          <div style="color: var(--cl-warning); font-size: 15px;">
+            🔍 Report not found. It may have been deleted or archived.
+            <div style="margin-top: 12px;">
+              <a href="my-reports.html" class="cl-btn cl-btn-secondary cl-btn-sm">Return to My Submissions</a>
+            </div>
+          </div>
+        `;
+        return;
+      }
+      throw new Error("Failed to load report");
+    }
+
+    const data = await res.json();
+    const report = data.report;
+    renderReportDetails(report);
+
+  } catch (err) {
+    document.getElementById("detail-state-box").innerHTML = `
+      <div style="color: var(--cl-severe);">
+        ${err.message || 'Error loading report.'}
+      </div>
+    `;
+  }
+});
+
+function renderReportDetails(report) {
+  document.getElementById("detail-state-box").style.display = "none";
+  document.getElementById("detail-content").style.display = "block";
+
+  // Header
+  document.getElementById("header-ref").textContent = report.reference_code;
+  const statusNorm = (report.status || "submitted").toLowerCase();
+  document.getElementById("header-status-badge").innerHTML = `
+    <span class="cl-badge cl-badge-${statusNorm === 'resolved' ? 'minor' : statusNorm === 'rejected' ? 'severe' : 'moderate'}">
+      ${statusNorm.replace('_', ' ').toUpperCase()}
+    </span>
+  `;
+
+  const dateCreated = report.created_at ? new Date(report.created_at) : null;
+  const dateStr = dateCreated ? dateCreated.toLocaleString() : '—';
+  document.getElementById("header-submitted-date").textContent = `Submitted: ${dateStr}`;
+  document.getElementById("date-submitted").textContent = dateCreated ? dateCreated.toLocaleDateString() : '—';
+
+  // Stepper updates
+  updateStepper(statusNorm);
+
+  // Content
+  document.getElementById("detail-title").textContent = report.title || "Civic Infrastructure Defect";
+  document.getElementById("detail-category").textContent = (report.category || "Pothole").replace('_', ' ').toUpperCase();
+
+  const sev = (report.reported_severity || "minor").toLowerCase();
+  const sevBadge = document.getElementById("detail-severity-badge");
+  sevBadge.textContent = `${sev.toUpperCase()} SEVERITY`;
+  sevBadge.className = `cl-badge cl-badge-${sev === 'severe' || sev === 'critical' ? 'severe' : sev === 'moderate' ? 'moderate' : 'minor'}`;
+
+  document.getElementById("detail-desc").textContent = report.description || "No additional description provided.";
+
+  // Location
+  document.getElementById("location-address").textContent = report.address || "Street location not reverse geocoded";
+  const lat = report.latitude || 12.9716;
+  const lon = report.longitude || 77.5946;
+  document.getElementById("location-coords").textContent = `Latitude: ${lat.toFixed(6)}, Longitude: ${lon.toFixed(6)}`;
+  document.getElementById("location-source-badge").textContent = report.is_manual_location ? "Interactive Map Pin" : "Device GPS";
+
+  if (report.location_accuracy_m) {
+    document.getElementById("location-accuracy-badge").textContent = `Accuracy ±${Math.round(report.location_accuracy_m)}m`;
+  } else {
+    document.getElementById("location-accuracy-badge").style.display = "none";
+  }
+
+  // Metadata
+  document.getElementById("meta-id").textContent = report.id;
+  document.getElementById("meta-source").textContent = report.source_channel || "Citizen Web Portal";
+  document.getElementById("meta-updated").textContent = report.updated_at ? new Date(report.updated_at).toLocaleString() : dateStr;
+  document.getElementById("meta-incident").textContent = report.canonical_incident_id ? report.canonical_incident_id.substring(0, 8) + '...' : 'Under Triage';
+
+  // Initialize Map
+  setTimeout(() => {
+    initDetailMap(lat, lon, report.location_accuracy_m);
+  }, 100);
+
+  // Evidence Gallery
+  renderEvidenceGallery(report.evidence || []);
+}
+
+function updateStepper(status) {
+  const steps = ["submitted", "under_review", "acknowledged", "in_progress", "resolved"];
+  const stepIdx = steps.indexOf(status);
+
+  steps.forEach((step, idx) => {
+    const el = document.getElementById(`step-${step}`);
+    const circle = document.getElementById(`circle-${step}`);
+    if (!el || !circle) return;
+
+    if (idx < stepIdx) {
+      el.classList.add("completed");
+      circle.innerHTML = "✓";
+    } else if (idx === stepIdx) {
+      el.classList.add("active");
+      circle.innerHTML = (idx + 1).toString();
+    } else {
+      el.classList.remove("completed", "active");
+      circle.innerHTML = (idx + 1).toString();
+    }
+  });
+
+  if (status === "rejected") {
+    const rejStep = document.getElementById("step-under_review");
+    if (rejStep) {
+      rejStep.querySelector(".step-title").textContent = "Rejected / Closed";
+      rejStep.classList.add("active");
+    }
+  }
+}
+
+function initDetailMap(lat, lon, accuracy) {
+  if (detailMap) {
+    detailMap.remove();
+  }
+  detailMap = L.map('detail-map').setView([lat, lon], 15);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(detailMap);
+
+  detailMarker = L.marker([lat, lon]).addTo(detailMap);
+
+  if (accuracy && accuracy > 0) {
+    L.circle([lat, lon], {
+      radius: accuracy,
+      color: '#2563eb',
+      fillColor: '#3b82f6',
+      fillOpacity: 0.15
+    }).addTo(detailMap);
+  }
+}
+
+function renderEvidenceGallery(evidenceList) {
+  const container = document.getElementById("evidence-gallery");
+  if (!evidenceList || evidenceList.length === 0) {
+    container.innerHTML = `
+      <div style="font-size: 12px; color: var(--cl-text-muted); padding: 12px 0;">
+        No photographic evidence was attached to this report.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = evidenceList.map(item => {
+    const assetId = item.evidence_asset_id || item.id;
+    const evidenceUrl = `/api/v1/evidence/${encodeURIComponent(assetId)}`;
+    const mime = item.mime_type || '';
+    const isVideo = mime.startsWith('video/');
+
+    if (isVideo) {
+      return `
+        <div class="evidence-card">
+          <video class="evidence-media" src="${evidenceUrl}" controls preload="metadata"></video>
+          <div class="evidence-caption" title="${item.file_name || 'Video Evidence'}">
+            🎬 ${item.file_name || 'Video'}
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="evidence-card">
+        <img class="evidence-media" src="${evidenceUrl}" alt="Defect evidence" onclick="openImageModal('${evidenceUrl}')" loading="lazy">
+        <div class="evidence-caption" title="${item.file_name || 'Photo Evidence'}">
+          📷 ${item.file_name || 'Photo'}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openImageModal(url) {
+  const modal = document.getElementById("img-modal");
+  const modalImg = document.getElementById("modal-img-content");
+  modalImg.src = url;
+  modal.classList.add("open");
+}
+
+function closeImageModal() {
+  document.getElementById("img-modal").classList.remove("open");
+}
+</script>
+</body>
+</html>

@@ -54,14 +54,27 @@ def client(app):
 def clean_db(test_db_path):
     """Cleans all test tables before each test that requires an empty state."""
     init_db(test_db_path)
+    from backend.db.engine import reset_engine
+    reset_engine()
     from backend.database import get_db
     with get_db(test_db_path) as conn:
-        conn.execute("DELETE FROM detections")
-        conn.execute("DELETE FROM citizen_reports")
-        conn.execute("DELETE FROM incidents")
-        conn.execute("DELETE FROM evidence_assets")
-        conn.execute("DELETE FROM detections_v2")
-        conn.execute("DELETE FROM match_decisions")
-        conn.execute("DELETE FROM incident_observations")
-        conn.execute("DELETE FROM audit_logs")
+        for tbl in [
+            "report_evidence_v2",
+            "report_items_v2",
+            "citizen_reports_v2",
+            "users",
+            "detections",
+            "citizen_reports",
+            "incidents",
+            "evidence_assets",
+            "detections_v2",
+            "match_decisions",
+            "incident_observations",
+            "audit_logs",
+        ]:
+            try:
+                conn.execute(f"DELETE FROM {tbl}")
+            except Exception:
+                pass
     yield test_db_path
+    reset_engine()

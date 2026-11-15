@@ -28,6 +28,8 @@ from backend.logging_config import setup_logging
 from backend.services.incident_service import IncidentService
 from backend.services.report_service import ReportService
 from backend.services.location_service import LocationService
+from backend.routes.auth_routes import auth_bp
+from backend.routes.citizen_routes import citizen_bp
 
 
 def create_app(config: Optional[Config] = None) -> Flask:
@@ -56,6 +58,10 @@ def create_app(config: Optional[Config] = None) -> Flask:
     # Register centralized error handlers
     register_error_handlers(app)
 
+    # Register API Blueprints
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(citizen_bp)
+
     # Instantiate services
     location_service = LocationService(cfg)
     report_service = ReportService(location_service=location_service, db_path=cfg.DATABASE_PATH)
@@ -70,7 +76,7 @@ def create_app(config: Optional[Config] = None) -> Flask:
         origin_header = "*" if "*" in origins else ", ".join(origins)
         response.headers["Access-Control-Allow-Origin"] = origin_header
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, PATCH, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Idempotency-Key"
         return response
 
     @app.before_request
@@ -186,11 +192,37 @@ def create_app(config: Optional[Config] = None) -> Flask:
         return send_from_directory(os.path.join(_parent, "frontend", "municipal"), filename)
 
     @app.route("/citizen-report.html", methods=["GET"])
+    @app.route("/citizen-report", methods=["GET"])
     def serve_citizen_report():
         from flask import send_from_directory
         return send_from_directory(os.path.join(_parent, "frontend"), "citizen-report.html")
 
+    @app.route("/citizen-login.html", methods=["GET"])
+    @app.route("/citizen-login", methods=["GET"])
+    def serve_citizen_login():
+        from flask import send_from_directory
+        return send_from_directory(os.path.join(_parent, "frontend"), "citizen-login.html")
+
+    @app.route("/citizen-dashboard.html", methods=["GET"])
+    @app.route("/citizen-dashboard", methods=["GET"])
+    def serve_citizen_dashboard():
+        from flask import send_from_directory
+        return send_from_directory(os.path.join(_parent, "frontend"), "citizen-dashboard.html")
+
+    @app.route("/my-reports.html", methods=["GET"])
+    @app.route("/my-reports", methods=["GET"])
+    def serve_my_reports():
+        from flask import send_from_directory
+        return send_from_directory(os.path.join(_parent, "frontend"), "my-reports.html")
+
+    @app.route("/report-detail.html", methods=["GET"])
+    @app.route("/report-detail", methods=["GET"])
+    def serve_report_detail():
+        from flask import send_from_directory
+        return send_from_directory(os.path.join(_parent, "frontend"), "report-detail.html")
+
     @app.route("/public-map.html", methods=["GET"])
+    @app.route("/public-map", methods=["GET"])
     def serve_public_map():
         from flask import send_from_directory
         return send_from_directory(os.path.join(_parent, "frontend"), "public-map.html")

@@ -5,11 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <title>CivicLens — Report an Infrastructure Defect</title>
 <link rel="stylesheet" href="./static/css/civiclens.css">
+<!-- Leaflet CSS for Map Coordinate Pin -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   .report-container {
-    max-width: 680px;
+    max-width: 720px;
     margin: 0 auto;
     padding: var(--cl-space-4);
   }
@@ -25,13 +27,14 @@
     margin-bottom: var(--cl-space-4);
   }
   .lang-btn {
-    padding: 4px 10px;
+    padding: 6px 12px;
     font-size: 12px;
     border-radius: 4px;
     border: 1px solid var(--cl-border);
     background: var(--cl-bg-surface);
     color: var(--cl-text-secondary);
     cursor: pointer;
+    font-weight: 500;
   }
   .lang-btn.active {
     background: var(--cl-primary);
@@ -39,33 +42,55 @@
     border-color: var(--cl-primary);
     font-weight: 600;
   }
-  .preview-box {
-    margin-top: 8px;
-    position: relative;
-    max-width: 240px;
-    display: none;
+  /* Evidence preview gallery */
+  .evidence-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 8px;
+    margin-top: 10px;
   }
-  .preview-box img {
-    width: 100%;
+  .preview-item {
+    position: relative;
     border-radius: var(--cl-radius-md);
+    overflow: hidden;
     border: 1px solid var(--cl-border);
+    aspect-ratio: 1;
+    background: var(--cl-bg-subtle);
+  }
+  .preview-item img, .preview-item video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
     display: block;
   }
   .preview-remove-btn {
     position: absolute;
-    top: 6px;
-    right: 6px;
-    background: rgba(0,0,0,0.7);
+    top: 4px;
+    right: 4px;
+    background: rgba(0,0,0,0.75);
     color: white;
     border: none;
     border-radius: 50%;
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     cursor: pointer;
     font-size: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+  /* Map container */
+  #pin-map {
+    height: 220px;
+    border-radius: var(--cl-radius-md);
+    border: 1px solid var(--cl-border);
+    margin-top: 8px;
+    z-index: 10;
+  }
+  @media (min-width: 600px) {
+    #pin-map {
+      height: 260px;
+    }
   }
   .gps-status {
     font-size: 12px;
@@ -111,10 +136,15 @@
     background: rgba(37, 99, 235, 0.15);
     color: var(--cl-primary-light);
   }
-  .sev-radio-label.sev-severe:has(input:checked) {
+  .sev-radio-label.sev-critical:has(input:checked) {
     border-color: var(--cl-severe);
     background: var(--cl-severe-bg);
     color: var(--cl-severe);
+  }
+  .sev-radio-label.sev-severe:has(input:checked) {
+    border-color: #f43f5e;
+    background: rgba(244, 63, 94, 0.15);
+    color: #fb7185;
   }
   .sev-radio-label.sev-moderate:has(input:checked) {
     border-color: var(--cl-moderate);
@@ -126,12 +156,22 @@
     background: var(--cl-minor-bg);
     color: var(--cl-minor);
   }
+  .disclaimer-banner {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: var(--cl-radius-md);
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #fbbf24;
+    margin-top: 8px;
+    line-height: 1.4;
+  }
   .success-banner {
     display: none;
-    background: rgba(16, 185, 129, 0.15);
+    background: rgba(16, 185, 129, 0.12);
     border: 1px solid var(--cl-minor);
     border-radius: var(--cl-radius-md);
-    padding: var(--cl-space-5);
+    padding: var(--cl-space-6);
     margin-bottom: var(--cl-space-6);
     text-align: center;
   }
@@ -144,7 +184,7 @@
   <div id="cl-sidebar-container" data-active="report"></div>
 
   <!-- Main Content Area -->
-  <div class="cl-main-content">
+  <main class="cl-main-content">
     <!-- Mobile Header -->
     <header class="cl-mobile-header">
       <div style="display: flex; align-items: center; gap: 10px;">
@@ -163,58 +203,80 @@
 
       <!-- Success Notification Banner -->
       <div class="success-banner" id="success-banner">
-        <div style="font-size: 2rem; margin-bottom: 8px;">✅</div>
-        <h3 style="margin: 0 0 6px 0; font-family: var(--cl-font-heading); font-size: 1.25rem; color: var(--cl-minor);" id="success-title">
+        <div style="font-size: 2.2rem; margin-bottom: 8px;">✅</div>
+        <h3 style="margin: 0 0 6px 0; font-family: var(--cl-font-heading); font-size: 1.4rem; color: var(--cl-minor);" id="success-title">
           Report Submitted Successfully
         </h3>
-        <p style="margin: 0 0 12px 0; font-size: 13px; color: var(--cl-text-secondary);" id="success-desc">
-          Your report reference is <b class="mono" id="success-ref">CL-2026-0042</b>. Our automated triage system is evaluating nearby canonical incidents.
+        <p style="margin: 0 0 16px 0; font-size: 13px; color: var(--cl-text-secondary);" id="success-desc">
+          Your grievance reference code is <b class="mono" id="success-ref" style="color: var(--cl-primary-light); font-size: 14px;">CR-202611-00000</b>.
+          Municipal engineering dispatch and automated triage are processing your report.
         </p>
-        <button class="cl-btn cl-btn-secondary cl-btn-sm" id="btn-submit-another">Submit Another Defect</button>
+        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+          <a href="#" class="cl-btn cl-btn-primary cl-btn-sm" id="btn-view-submitted">
+            View Report Details &rarr;
+          </a>
+          <button type="button" class="cl-btn cl-btn-secondary cl-btn-sm" id="btn-submit-another">
+            Submit Another Defect
+          </button>
+        </div>
       </div>
 
       <!-- Report Card -->
       <div class="cl-card" id="report-form-card">
-        <h2 style="font-family: var(--cl-font-heading); font-size: var(--cl-text-2xl); text-transform: uppercase; margin: 0 0 4px 0;" id="form-heading">
+        <h1 style="font-family: var(--cl-font-heading); font-size: var(--cl-text-2xl); text-transform: uppercase; margin: 0 0 4px 0;" id="form-heading">
           Report Infrastructure Defect
-        </h2>
-        <p style="color: var(--cl-text-secondary); font-size: var(--cl-text-sm); margin: 0 0 var(--cl-space-6) 0;" id="form-subheading">
-          Provide photo evidence and location. Multiple reports at the same physical location are automatically grouped into a single canonical incident.
+        </h1>
+        <p style="color: var(--cl-text-secondary); font-size: var(--cl-text-sm); margin: 0 0 var(--cl-space-5) 0;" id="form-subheading">
+          Provide photos, select or pinpoint defect location, and specify severity. Multiple citizen reports at the same defect site automatically link to a canonical municipal incident.
         </p>
 
+        <!-- Validation Alert -->
+        <div id="form-error-alert" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid var(--cl-severe); color: #fca5a5; padding: 10px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 16px;"></div>
+
         <form id="citizen-report-form">
-          <!-- 1. Photo Evidence -->
+          <!-- 1. Photo / Video Evidence -->
           <div class="cl-form-group">
             <label class="cl-label" for="photo-input" id="lbl-photo">
-              1. Photo Evidence (Camera or Gallery)
+              1. Photographic / Video Evidence (Up to 5 files)
             </label>
-            <input type="file" id="photo-input" accept="image/*" capture="environment" class="cl-input" style="padding-top: 10px;">
-            <div class="preview-box" id="preview-box">
-              <img id="image-preview" src="" alt="Defect preview">
-              <button type="button" class="preview-remove-btn" id="remove-preview" aria-label="Remove image">&times;</button>
-            </div>
-            <span style="font-size: 11px; color: var(--cl-text-muted);">
-              Clear photos of the pothole or hazard help AI estimation and municipal road crews.
+            <input type="file" id="photo-input" multiple accept="image/jpeg,image/png,image/webp,video/mp4" class="cl-input" style="padding-top: 10px;">
+            <div class="evidence-preview-grid" id="preview-grid"></div>
+            <span style="font-size: 11px; color: var(--cl-text-muted); margin-top: 4px; display: block;">
+              Accepted: JPEG, PNG, WebP, MP4 (Max 16 MB each). Clear road photos help engineering triage crews.
             </span>
           </div>
 
-          <!-- 2. Location Capture -->
+          <!-- 2. Defect Title -->
+          <div class="cl-form-group">
+            <label class="cl-label" for="input-title" id="lbl-title">
+              2. Brief Defect Title
+            </label>
+            <input type="text" id="input-title" class="cl-input" placeholder="e.g. Deep pothole on outer ring road near bus stop" required maxlength="200">
+          </div>
+
+          <!-- 3. Location Capture: Interactive Map + GPS -->
           <div class="cl-form-group">
             <label class="cl-label" id="lbl-location">
-              2. Defect Location
+              3. Defect Location (Interactive Pin &amp; GPS)
             </label>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
               <button type="button" class="cl-btn cl-btn-secondary" id="btn-get-gps" style="flex: 1;">
-                📍 Capture Current GPS
+                📍 Capture Device GPS
               </button>
-              <button type="button" class="cl-btn cl-btn-secondary" id="btn-manual-toggle">
-                ✏️ Edit Coords
+              <button type="button" class="cl-btn cl-btn-secondary" id="btn-center-map">
+                🎯 Recenter Map Pin
               </button>
             </div>
             <div class="gps-status" id="gps-status-box"></div>
 
+            <!-- Leaflet Interactive Map -->
+            <div id="pin-map" role="region" aria-label="Interactive defect location picker map"></div>
+            <span style="font-size: 11px; color: var(--cl-text-muted); margin-top: 4px; display: block;">
+              Tap anywhere on the map or drag the pin to mark the exact location of the defect.
+            </span>
+
             <!-- Coordinate inputs -->
-            <div id="manual-coords-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
               <div>
                 <label style="font-size: 11px; color: var(--cl-text-muted);">Latitude</label>
                 <input type="number" step="any" id="input-lat" class="cl-input" placeholder="e.g. 12.9716" required>
@@ -226,31 +288,31 @@
             </div>
 
             <div style="margin-top: 8px;">
-              <label style="font-size: 11px; color: var(--cl-text-muted);" id="lbl-landmark">Street / Landmark Address</label>
-              <input type="text" id="input-address" class="cl-input" placeholder="e.g. 100 Feet Rd, Indiranagar, near Metro Station">
+              <label style="font-size: 11px; color: var(--cl-text-muted);" id="lbl-landmark">Street / Landmark Address (Optional)</label>
+              <input type="text" id="input-address" class="cl-input" placeholder="e.g. 100 Feet Rd, Indiranagar, near Metro Pillar 124">
             </div>
           </div>
 
-          <!-- 3. Defect Category -->
+          <!-- 4. Defect Category -->
           <div class="cl-form-group">
             <label class="cl-label" for="category-select" id="lbl-category">
-              3. Defect Category
+              4. Defect Category
             </label>
             <select id="category-select" class="cl-select" required>
               <option value="pothole" selected>Pothole / Road Depression</option>
               <option value="road_damage">Asphalt Cave-in / Surface Damage</option>
               <option value="drainage">Open Manhole / Clogged Storm Drain</option>
-              <option value="broken_streetlight">Broken Streetlight</option>
+              <option value="broken_streetlight">Broken Streetlight / Electrical Hazard</option>
               <option value="water_leakage">BWSSB Water Pipeline Leak</option>
-              <option value="garbage">Garbage / Debris Blocking Road</option>
-              <option value="other">Other Civic Defect</option>
+              <option value="garbage">Garbage / Construction Debris on Road</option>
+              <option value="other">Other Civic Infrastructure Defect</option>
             </select>
           </div>
 
-          <!-- 4. Estimated Severity -->
+          <!-- 5. Estimated Severity with Official Disclaimer -->
           <div class="cl-form-group">
             <label class="cl-label" id="lbl-severity">
-              4. Estimated Severity
+              5. Estimated Severity
             </label>
             <div class="severity-options">
               <label class="sev-radio-label sev-minor">
@@ -265,19 +327,23 @@
                 <input type="radio" name="severity" value="severe">
                 Severe
               </label>
-              <label class="sev-radio-label sev-severe">
+              <label class="sev-radio-label sev-critical">
                 <input type="radio" name="severity" value="critical">
                 Critical
               </label>
             </div>
+            <!-- Severity Disclaimer -->
+            <div class="disclaimer-banner" id="sev-disclaimer">
+              ⚠️ <strong>Citizen Severity Disclaimer:</strong> Your severity selection represents an initial citizen observation. Final priority triage and classification are determined by Municipal Engineering evaluation.
+            </div>
           </div>
 
-          <!-- 5. Description -->
+          <!-- 6. Detailed Description -->
           <div class="cl-form-group">
             <label class="cl-label" for="description-input" id="lbl-desc">
-              5. Description &amp; Details
+              6. Description &amp; Safety Hazards
             </label>
-            <textarea id="description-input" class="cl-textarea" placeholder="Describe the size, depth, or danger to two-wheelers and pedestrians..." rows="3"></textarea>
+            <textarea id="description-input" class="cl-textarea" placeholder="Describe the size, depth, danger to two-wheelers, pedestrians, or water accumulation..." rows="3"></textarea>
           </div>
 
           <!-- Submit Button -->
@@ -287,42 +353,60 @@
         </form>
       </div>
     </div>
-  </div>
+  </main>
 </div>
 
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="./static/js/nav.js"></script>
+<script src="./static/js/citizen-auth.js"></script>
 <script>
 // Language translation dictionary
 const i18n = {
   en: {
     heading: "Report Infrastructure Defect",
-    subheading: "Provide photo evidence and location. Multiple reports at the same physical location are automatically grouped into a single canonical incident.",
-    photo: "1. Photo Evidence (Camera or Gallery)",
-    location: "2. Defect Location",
-    landmark: "Street / Landmark Address",
-    category: "3. Defect Category",
-    severity: "4. Estimated Severity",
-    desc: "5. Description & Details",
+    subheading: "Provide photos, select or pinpoint defect location, and specify severity. Multiple citizen reports at the same defect site automatically link to a canonical municipal incident.",
+    photo: "1. Photographic / Video Evidence (Up to 5 files)",
+    title: "2. Brief Defect Title",
+    location: "3. Defect Location (Interactive Pin & GPS)",
+    landmark: "Street / Landmark Address (Optional)",
+    category: "4. Defect Category",
+    severity: "5. Estimated Severity",
+    desc: "6. Description & Safety Hazards",
     submit: "🚀 Submit Defect Report",
-    successTitle: "Report Submitted Successfully",
-    successDesc: "Your report reference is {ref}. Our automated triage system is evaluating nearby canonical incidents."
+    disclaimer: "⚠️ <strong>Citizen Severity Disclaimer:</strong> Your severity selection represents an initial citizen observation. Final priority triage and classification are determined by Municipal Engineering evaluation."
   },
   kn: {
-    heading: "ರಸ್ತೆ ಅಥವಾ ಸಾರ್ವಜನಿಕ ಸಮಸ್ಯೆ ವರದಿ ಮಾಡಿ",
-    subheading: "ಫೋಟೋ ಮತ್ತು ಸ್ಥಳ ವಿವರಗಳನ್ನು ನೀಡಿ. ಒಂದೇ ಸ್ಥಳದಲ್ಲಿರುವ ಬಹು ವರದಿಗಳನ್ನು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ವಿಲೀನಗೊಳಿಸಲಾಗುತ್ತದೆ.",
-    photo: "1. ಫೋಟೋ ಪುರಾವೆ (ಕ್ಯಾಮೆರಾ ಅಥವಾ ಗ್ಯಾಲರಿ)",
-    location: "2. ಸಮಸ್ಯೆಯಿರುವ ಸ್ಥಳ",
+    heading: "ರಸ್ತೆ ಅಥವಾ ಮೂಲಸೌಕರ್ಯ ದೋಷ ವರದಿ ಮಾಡಿ",
+    subheading: "ಫೋಟೋಗಳನ್ನು ಒದಗಿಸಿ, ನಕ್ಷೆಯಲ್ಲಿ ಸ್ಥಳವನ್ನು ಗುರುತಿಸಿ ಮತ್ತು ತೀವ್ರತೆಯನ್ನು ತಿಳಿಸಿ. ಒಂದೇ ಸ್ಥಳದಲ್ಲಿರುವ ಬಹು ವರದಿಗಳು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ವಿಲೀನಗೊಳ್ಳುತ್ತವೆ.",
+    photo: "1. ಫೋಟೋ ಅಥವಾ ವೀಡಿಯೊ ಸಾಕ್ಷ್ಯ (ಗರಿಷ್ಠ 5 ಕಡತಗಳು)",
+    title: "2. ಸಂಕ್ಷಿಪ್ತ ಶೀರ್ಷಿಕೆ",
+    location: "3. ಸ್ಥಳ (ನಕ್ಷೆಯಲ್ಲಿ ಪಿನ್ ಅಥವಾ GPS)",
     landmark: "ರಸ್ತೆ / ಹತ್ತಿರದ ಪ್ರಮುಖ ಸ್ಥಳ",
-    category: "3. ಸಮಸ್ಯೆಯ ವರ್ಗ",
-    severity: "4. ತೀವ್ರತೆಯ ಅಂದಾಜು",
-    desc: "5. ವಿವರಣೆ",
+    category: "4. ದೋಷದ ವರ್ಗ",
+    severity: "5. ಅಂದಾಜು ತೀವ್ರತೆ",
+    desc: "6. ವಿವರಣೆ ಮತ್ತು ಅಪಾಯಗಳು",
     submit: "🚀 ವರದಿ ಸಲ್ಲಿಸಿ",
-    successTitle: "ವರದಿ ಯಶಸ್ವಿಯಾಗಿ ಸಲ್ಲಿಕೆಯಾಗಿದೆ",
-    successDesc: "ನಿಮ್ಮ ವರದಿ ಸಂಖ್ಯೆ {ref}. ನಮ್ಮ AI ವ್ಯವಸ್ಥೆಯು ಪರಿಶೀಲಿಸುತ್ತಿದೆ."
+    disclaimer: "⚠️ <strong>ಸೂಚನೆ:</strong> ನಾಗರಿಕರ ತೀವ್ರತೆಯ ಅಂದಾಜು ಪ್ರಾಥಮಿಕ ಮಾಹಿತಿಯಾಗಿದೆ. ಅಂತಿಮ ನಿರ್ಧಾರವನ್ನು ಪಾಲಿಕೆ ಇಂಜಿನಿಯರಿಂಗ್ ತಂಡ ಪರಿಶೀಲಿಸುತ್ತದೆ."
   }
 };
 
 let currentLang = 'en';
+let idempotencyKey = generateUUID();
+let isManualLocation = false;
+let locationAccuracy = null;
+let selectedFiles = [];
+
+function generateUUID() {
+  if (crypto && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
 
 function setLanguage(lang) {
   currentLang = lang;
@@ -333,46 +417,92 @@ function setLanguage(lang) {
   document.getElementById('form-heading').textContent = t.heading;
   document.getElementById('form-subheading').textContent = t.subheading;
   document.getElementById('lbl-photo').textContent = t.photo;
+  document.getElementById('lbl-title').textContent = t.title;
   document.getElementById('lbl-location').textContent = t.location;
   document.getElementById('lbl-landmark').textContent = t.landmark;
   document.getElementById('lbl-category').textContent = t.category;
   document.getElementById('lbl-severity').textContent = t.severity;
   document.getElementById('lbl-desc').textContent = t.desc;
   document.getElementById('btn-submit').textContent = t.submit;
+  document.getElementById('sev-disclaimer').innerHTML = t.disclaimer;
 }
 
 document.getElementById('btn-en').addEventListener('click', () => setLanguage('en'));
 document.getElementById('btn-kn').addEventListener('click', () => setLanguage('kn'));
 
-// Photo preview
-const photoInput = document.getElementById('photo-input');
-const previewBox = document.getElementById('preview-box');
-const imagePreview = document.getElementById('image-preview');
-const removePreviewBtn = document.getElementById('remove-preview');
-
-photoInput.addEventListener('change', function () {
-  const file = this.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      imagePreview.src = e.target.result;
-      previewBox.style.display = 'block';
-    };
-    reader.readAsDataURL(file);
+// Check Citizen Auth Guard
+document.addEventListener("DOMContentLoaded", function () {
+  if (!CivicAuth.isAuthenticated()) {
+    window.location.href = "citizen-login.html?redirect=" + encodeURIComponent(window.location.pathname);
+    return;
+  }
+  const user = CivicAuth.getUser();
+  if (user && user.preferred_language === 'kn') {
+    setLanguage('kn');
   }
 });
 
-removePreviewBtn.addEventListener('click', function () {
-  photoInput.value = '';
-  imagePreview.src = '';
-  previewBox.style.display = 'none';
-});
+// Setup Interactive Leaflet Map for Pin Placement
+const defaultLat = 12.9716; // Bengaluru default
+const defaultLon = 77.5946;
 
-// GPS Location Capture
-const btnGetGps = document.getElementById('btn-get-gps');
-const gpsStatusBox = document.getElementById('gps-status-box');
+const map = L.map('pin-map').setView([defaultLat, defaultLon], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+
+let pinMarker = L.marker([defaultLat, defaultLon], { draggable: true }).addTo(map);
+let accuracyCircle = null;
+
 const inputLat = document.getElementById('input-lat');
 const inputLon = document.getElementById('input-lon');
+inputLat.value = defaultLat.toFixed(6);
+inputLon.value = defaultLon.toFixed(6);
+
+function updateLocation(lat, lon, manual = true) {
+  inputLat.value = Number(lat).toFixed(6);
+  inputLon.value = Number(lon).toFixed(6);
+  isManualLocation = manual;
+  pinMarker.setLatLng([lat, lon]);
+}
+
+pinMarker.on('dragend', function (e) {
+  const pos = e.target.getLatLng();
+  updateLocation(pos.lat, pos.lng, true);
+});
+
+map.on('click', function (e) {
+  updateLocation(e.latlng.lat, e.latlng.lng, true);
+});
+
+inputLat.addEventListener('change', () => {
+  const lat = parseFloat(inputLat.value);
+  const lon = parseFloat(inputLon.value);
+  if (!isNaN(lat) && !isNaN(lon)) {
+    updateLocation(lat, lon, true);
+    map.setView([lat, lon]);
+  }
+});
+
+inputLon.addEventListener('change', () => {
+  const lat = parseFloat(inputLat.value);
+  const lon = parseFloat(inputLon.value);
+  if (!isNaN(lat) && !isNaN(lon)) {
+    updateLocation(lat, lon, true);
+    map.setView([lat, lon]);
+  }
+});
+
+document.getElementById('btn-center-map').addEventListener('click', () => {
+  const lat = parseFloat(inputLat.value) || defaultLat;
+  const lon = parseFloat(inputLon.value) || defaultLon;
+  map.setView([lat, lon], 15);
+});
+
+// GPS Geolocation Capture
+const btnGetGps = document.getElementById('btn-get-gps');
+const gpsStatusBox = document.getElementById('gps-status-box');
 
 btnGetGps.addEventListener('click', function () {
   if (!navigator.geolocation) {
@@ -388,40 +518,184 @@ btnGetGps.addEventListener('click', function () {
       const lat = position.coords.latitude;
       const lon = position.coords.longitude;
       const acc = position.coords.accuracy;
-      inputLat.value = lat.toFixed(6);
-      inputLon.value = lon.toFixed(6);
-      gpsStatusBox.textContent = `📍 GPS Locked: ${lat.toFixed(4)}, ${lon.toFixed(4)} (Accuracy: ±${Math.round(acc)}m)`;
+      locationAccuracy = acc;
+      isManualLocation = false;
+
+      updateLocation(lat, lon, false);
+      map.setView([lat, lon], 16);
+
+      if (accuracyCircle) map.removeLayer(accuracyCircle);
+      accuracyCircle = L.circle([lat, lon], {
+        radius: acc,
+        color: '#2563eb',
+        fillColor: '#3b82f6',
+        fillOpacity: 0.2
+      }).addTo(map);
+
+      gpsStatusBox.textContent = `📍 GPS Locked: ${lat.toFixed(5)}, ${lon.toFixed(5)} (Accuracy: ±${Math.round(acc)}m)`;
       gpsStatusBox.style.color = "var(--cl-minor)";
     },
     (error) => {
-      gpsStatusBox.textContent = `⚠️ GPS Error: ${error.message}. Please enter coordinates manually.`;
+      gpsStatusBox.textContent = `⚠️ GPS Error: ${error.message}. Please click on map to position pin manually.`;
       gpsStatusBox.style.color = "var(--cl-severe)";
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
   );
 });
 
-// Form submission handler
-const form = document.getElementById('citizen-report-form');
+// Photo & Video Evidence Gallery
+const photoInput = document.getElementById('photo-input');
+const previewGrid = document.getElementById('preview-grid');
+
+photoInput.addEventListener('change', function () {
+  const files = Array.from(this.files);
+  for (const file of files) {
+    if (selectedFiles.length >= 5) {
+      alert("You can upload a maximum of 5 evidence files.");
+      break;
+    }
+    if (file.size > 16 * 1024 * 1024) {
+      alert(`File "${file.name}" exceeds the 16MB limit.`);
+      continue;
+    }
+    selectedFiles.push(file);
+  }
+  renderPreviews();
+});
+
+function renderPreviews() {
+  previewGrid.innerHTML = '';
+  selectedFiles.forEach((file, index) => {
+    const item = document.createElement('div');
+    item.className = 'preview-item';
+
+    if (file.type.startsWith('video/')) {
+      const vid = document.createElement('video');
+      vid.src = URL.createObjectURL(file);
+      vid.muted = true;
+      item.appendChild(vid);
+    } else {
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      item.appendChild(img);
+    }
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'preview-remove-btn';
+    removeBtn.type = 'button';
+    removeBtn.innerHTML = '&times;';
+    removeBtn.setAttribute('aria-label', 'Remove file');
+    removeBtn.addEventListener('click', () => {
+      selectedFiles.splice(index, 1);
+      renderPreviews();
+    });
+    item.appendChild(removeBtn);
+    previewGrid.appendChild(item);
+  });
+}
+
+// Form Submission with Idempotency and Dual Location
+const reportForm = document.getElementById('citizen-report-form');
 const successBanner = document.getElementById('success-banner');
 const formCard = document.getElementById('report-form-card');
+const formErrorAlert = document.getElementById('form-error-alert');
+const btnSubmit = document.getElementById('btn-submit');
 const btnSubmitAnother = document.getElementById('btn-submit-another');
+const btnViewSubmitted = document.getElementById('btn-view-submitted');
 
-form.addEventListener('submit', function (e) {
+reportForm.addEventListener('submit', async function (e) {
   e.preventDefault();
-  const randNum = Math.floor(1000 + Math.random() * 9000);
-  const refCode = `CL-2026-${randNum}`;
+  formErrorAlert.style.display = 'none';
 
-  document.getElementById('success-ref').textContent = refCode;
-  successBanner.style.display = 'block';
-  formCard.style.display = 'none';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  const lat = parseFloat(inputLat.value);
+  const lon = parseFloat(inputLon.value);
+
+  if (isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+    formErrorAlert.textContent = "Please provide valid geographic coordinates using GPS or clicking on the map.";
+    formErrorAlert.style.display = 'block';
+    return;
+  }
+
+  const title = document.getElementById('input-title').value.trim();
+  if (!title) {
+    formErrorAlert.textContent = "Please enter a brief title for this defect report.";
+    formErrorAlert.style.display = 'block';
+    return;
+  }
+
+  const category = document.getElementById('category-select').value;
+  const severity = document.querySelector('input[name="severity"]:checked')?.value || 'minor';
+  const description = document.getElementById('description-input').value.trim();
+  const address = document.getElementById('input-address').value.trim();
+
+  btnSubmit.disabled = true;
+  btnSubmit.textContent = "Submitting Grievance Report...";
+
+  try {
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('category', category);
+    formData.append('severity', severity);
+    formData.append('description', description);
+    formData.append('latitude', lat.toString());
+    formData.append('longitude', lon.toString());
+    formData.append('is_manual_location', isManualLocation ? 'true' : 'false');
+    if (locationAccuracy) {
+      formData.append('location_accuracy_m', locationAccuracy.toString());
+    }
+    if (address) {
+      formData.append('address', address);
+    }
+    formData.append('idempotency_key', idempotencyKey);
+
+    // Append selected evidence files
+    selectedFiles.forEach(file => {
+      formData.append('evidence_files', file);
+    });
+
+    const res = await CivicAuth.apiFetch('/api/v1/reports', {
+      method: 'POST',
+      headers: {
+        'Idempotency-Key': idempotencyKey
+      },
+      body: formData
+    });
+
+    const resData = await res.json();
+    if (!res.ok) {
+      throw new Error(resData.error || 'Failed to submit grievance report.');
+    }
+
+    // Success! Show confirmation with Reference Code
+    const report = resData.report;
+    document.getElementById('success-ref').textContent = report.reference_code;
+    btnViewSubmitted.href = `report-detail.html?id=${encodeURIComponent(report.id)}`;
+
+    successBanner.style.display = 'block';
+    formCard.style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Rotate idempotency key for subsequent submission
+    idempotencyKey = generateUUID();
+
+  } catch (err) {
+    formErrorAlert.textContent = err.message || "An unexpected error occurred. Please try again.";
+    formErrorAlert.style.display = 'block';
+  } finally {
+    btnSubmit.disabled = false;
+    btnSubmit.textContent = i18n[currentLang].submit;
+  }
 });
 
 btnSubmitAnother.addEventListener('click', function () {
-  form.reset();
-  previewBox.style.display = 'none';
+  reportForm.reset();
+  selectedFiles = [];
+  renderPreviews();
+  inputLat.value = defaultLat.toFixed(6);
+  inputLon.value = defaultLon.toFixed(6);
+  updateLocation(defaultLat, defaultLon, false);
   gpsStatusBox.style.display = 'none';
+  formErrorAlert.style.display = 'none';
   successBanner.style.display = 'none';
   formCard.style.display = 'block';
 });

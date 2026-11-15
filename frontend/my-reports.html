@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>CivicLens — My Submissions</title>
+<link rel="stylesheet" href="./static/css/civiclens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  .portfolio-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--cl-space-3);
+    margin-bottom: var(--cl-space-5);
+  }
+  @media (min-width: 768px) {
+    .portfolio-header {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
+  .filters-bar {
+    background: var(--cl-bg-surface);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-md);
+    padding: var(--cl-space-3);
+    margin-bottom: var(--cl-space-4);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  @media (min-width: 768px) {
+    .filters-bar {
+      flex-direction: row;
+      align-items: center;
+      padding: var(--cl-space-3) var(--cl-space-4);
+    }
+  }
+  .filter-input-group {
+    flex: 1;
+    position: relative;
+  }
+  .filter-selects {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  @media (max-width: 600px) {
+    .filter-selects select {
+      flex: 1;
+    }
+  }
+
+  /* Desktop Table */
+  .table-container {
+    display: none;
+    background: var(--cl-bg-surface);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-md);
+    overflow-x: auto;
+  }
+  @media (min-width: 900px) {
+    .table-container {
+      display: block;
+    }
+  }
+  .cl-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 13px;
+  }
+  .cl-table th {
+    background: var(--cl-bg-elevated);
+    padding: 12px 14px;
+    font-weight: 600;
+    color: var(--cl-text-secondary);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--cl-border);
+  }
+  .cl-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--cl-border);
+    vertical-align: middle;
+  }
+  .cl-table tr:last-child td {
+    border-bottom: none;
+  }
+  .cl-table tr:hover td {
+    background: var(--cl-bg-subtle);
+  }
+
+  /* Mobile Cards Layout */
+  .cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  @media (min-width: 900px) {
+    .cards-container {
+      display: none;
+    }
+  }
+  .report-card {
+    background: var(--cl-bg-surface);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-md);
+    padding: var(--cl-space-4);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .report-card:hover {
+    border-color: var(--cl-primary-light);
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: var(--cl-radius-full);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .status-submitted { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+  .status-under_review { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+  .status-acknowledged { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+  .status-in_progress { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); }
+  .status-resolved { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+  .status-rejected { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+  /* Pagination Bar */
+  .pagination-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--cl-space-4) 0;
+    margin-top: var(--cl-space-2);
+  }
+  .empty-state {
+    text-align: center;
+    padding: var(--cl-space-8) var(--cl-space-4);
+    background: var(--cl-bg-surface);
+    border: 1px dashed var(--cl-border);
+    border-radius: var(--cl-radius-md);
+    color: var(--cl-text-secondary);
+  }
+</style>
+</head>
+<body>
+
+<div class="cl-app-wrapper">
+  <!-- Shared Navigation Sidebar -->
+  <div id="cl-sidebar-container" data-active="my_reports"></div>
+
+  <!-- Main Content Area -->
+  <main class="cl-main-content">
+    <!-- Mobile Header -->
+    <header class="cl-mobile-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button class="cl-hamburger-btn" id="cl-hamburger-toggle" aria-label="Toggle navigation">☰</button>
+        <span style="font-family: var(--cl-font-heading); font-size: 1.25rem; font-weight: 700; text-transform: uppercase;">CivicLens</span>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--cl-text-muted); font-family: var(--cl-font-mono);">MY SUBMISSIONS</div>
+    </header>
+
+    <div class="cl-container">
+      <!-- Page Header -->
+      <header class="portfolio-header">
+        <div>
+          <h1 style="font-family: var(--cl-font-heading); font-size: var(--cl-text-2xl); text-transform: uppercase; margin: 0 0 4px 0;">
+            My Grievance Submissions
+          </h1>
+          <p style="margin: 0; font-size: 13px; color: var(--cl-text-secondary);">
+            Track status, official dispatch updates, and photo evidence for all civic defects you've reported.
+          </p>
+        </div>
+        <div>
+          <a href="citizen-report.html" class="cl-btn cl-btn-primary">
+            📢 Report New Defect
+          </a>
+        </div>
+      </header>
+
+      <!-- Search & Filters -->
+      <section class="filters-bar" aria-label="Search and Filters">
+        <div class="filter-input-group">
+          <input type="text" id="filter-search" class="cl-input" placeholder="Search reference code, title, street address..." style="min-height: 40px; font-size: 13px;">
+        </div>
+        <div class="filter-selects">
+          <select id="filter-status" class="cl-select" style="min-height: 40px; font-size: 13px; min-width: 140px;">
+            <option value="">All Statuses</option>
+            <option value="submitted">Submitted</option>
+            <option value="under_review">Under Review</option>
+            <option value="acknowledged">Acknowledged</option>
+            <option value="in_progress">In Progress</option>
+            <option value="resolved">Resolved</option>
+            <option value="rejected">Closed / Rejected</option>
+          </select>
+          <select id="filter-category" class="cl-select" style="min-height: 40px; font-size: 13px; min-width: 140px;">
+            <option value="">All Categories</option>
+            <option value="pothole">Pothole</option>
+            <option value="road_damage">Road Damage</option>
+            <option value="drainage">Drainage</option>
+            <option value="broken_streetlight">Streetlight</option>
+            <option value="water_leakage">Water Leak</option>
+            <option value="garbage">Garbage / Debris</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Reports Display Container -->
+      <div id="reports-output">
+        <div style="text-align: center; padding: 40px; color: var(--cl-text-muted);">
+          Loading your submissions...
+        </div>
+      </div>
+
+      <!-- Pagination Controls -->
+      <nav class="pagination-bar" id="pagination-controls" style="display: none;" aria-label="Reports pagination">
+        <span style="font-size: 13px; color: var(--cl-text-secondary);" id="page-summary">
+          Showing 1-10 of 10 reports
+        </span>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="cl-btn cl-btn-secondary cl-btn-sm" id="btn-prev-page" disabled>
+            &larr; Previous
+          </button>
+          <button type="button" class="cl-btn cl-btn-secondary cl-btn-sm" id="btn-next-page" disabled>
+            Next &rarr;
+          </button>
+        </div>
+      </nav>
+    </div>
+  </main>
+</div>
+
+<script src="./static/js/nav.js"></script>
+<script src="./static/js/citizen-auth.js"></script>
+<script>
+let currentPage = 1;
+const perPage = 10;
+let totalPages = 1;
+
+document.addEventListener("DOMContentLoaded", function () {
+  if (!CivicAuth.isAuthenticated()) {
+    window.location.href = "citizen-login.html?redirect=" + encodeURIComponent(window.location.pathname);
+    return;
+  }
+
+  loadReports(1);
+
+  // Wire Filter Events
+  let searchTimeout = null;
+  document.getElementById("filter-search").addEventListener("input", function () {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      loadReports(1);
+    }, 350);
+  });
+
+  document.getElementById("filter-status").addEventListener("change", () => loadReports(1));
+  document.getElementById("filter-category").addEventListener("change", () => loadReports(1));
+
+  document.getElementById("btn-prev-page").addEventListener("click", () => {
+    if (currentPage > 1) loadReports(currentPage - 1);
+  });
+
+  document.getElementById("btn-next-page").addEventListener("click", () => {
+    if (currentPage < totalPages) loadReports(currentPage + 1);
+  });
+});
+
+async function loadReports(page = 1) {
+  currentPage = page;
+  const search = document.getElementById("filter-search").value.trim();
+  const status = document.getElementById("filter-status").value;
+  const category = document.getElementById("filter-category").value;
+
+  const params = new URLSearchParams({
+    page: page.toString(),
+    per_page: perPage.toString()
+  });
+  if (search) params.append("search", search);
+  if (status) params.append("status", status);
+  if (category) params.append("category", category);
+
+  try {
+    const res = await CivicAuth.apiFetch(`/api/v1/reports?${params.toString()}`);
+    if (!res.ok) {
+      if (res.status === 401) return;
+      throw new Error("Failed to load reports");
+    }
+    const data = await res.json();
+    renderReports(data);
+  } catch (err) {
+    document.getElementById("reports-output").innerHTML = `
+      <div style="color: var(--cl-severe); padding: 24px; text-align: center;">
+        ${err.message || 'Error loading grievance reports.'}
+      </div>
+    `;
+  }
+}
+
+function formatStatus(status) {
+  const norm = (status || "submitted").toLowerCase();
+  const labels = {
+    submitted: "Submitted",
+    under_review: "Under Review",
+    acknowledged: "Acknowledged",
+    in_progress: "In Progress",
+    resolved: "Resolved",
+    rejected: "Closed / Rejected"
+  };
+  return `<span class="status-badge status-${norm}">${labels[norm] || norm}</span>`;
+}
+
+function renderReports(data) {
+  const items = data.items || [];
+  const total = data.total || 0;
+  totalPages = data.pages || 1;
+  const container = document.getElementById("reports-output");
+  const paginationControls = document.getElementById("pagination-controls");
+
+  if (items.length === 0) {
+    paginationControls.style.display = "none";
+    container.innerHTML = `
+      <div class="empty-state">
+        <div style="font-size: 2.2rem; margin-bottom: 8px;">📋</div>
+        <h3 style="font-family: var(--cl-font-heading); font-size: 1.25rem; color: var(--cl-text-primary); margin: 0 0 6px 0;">
+          No Grievance Reports Found
+        </h3>
+        <p style="margin: 0 0 16px 0; font-size: 13px;">
+          No reports match your current filter criteria.
+        </p>
+        <a href="citizen-report.html" class="cl-btn cl-btn-primary cl-btn-sm">
+          Submit a New Grievance
+        </a>
+      </div>
+    `;
+    return;
+  }
+
+  // Update Pagination Controls
+  paginationControls.style.display = "flex";
+  const startIdx = (currentPage - 1) * perPage + 1;
+  const endIdx = Math.min(currentPage * perPage, total);
+  document.getElementById("page-summary").textContent = `Showing ${startIdx}-${endIdx} of ${total} reports (Page ${currentPage} of ${totalPages})`;
+  document.getElementById("btn-prev-page").disabled = currentPage <= 1;
+  document.getElementById("btn-next-page").disabled = currentPage >= totalPages;
+
+  // Render Desktop Table Rows
+  const tableRowsHtml = items.map(report => {
+    const dateStr = report.created_at ? new Date(report.created_at).toLocaleDateString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    }) : '—';
+    const evidenceCount = (report.evidence || []).length;
+    const evidenceBadge = evidenceCount > 0 ? `<span style="font-size: 11px; color: var(--cl-text-muted);">📷 ${evidenceCount}</span>` : '—';
+
+    return `
+      <tr>
+        <td style="font-family: var(--cl-font-mono); font-weight: 600; color: var(--cl-primary-light);">
+          <a href="report-detail.html?id=${encodeURIComponent(report.id)}" style="color: inherit; text-decoration: none;">
+            ${escapeHtml(report.reference_code)}
+          </a>
+        </td>
+        <td>
+          <div style="font-weight: 600; color: var(--cl-text-primary); margin-bottom: 2px;">
+            ${escapeHtml(report.title || 'Civic Defect')}
+          </div>
+          <div style="font-size: 11px; color: var(--cl-text-secondary);">
+            📍 ${escapeHtml(report.address || `${report.latitude?.toFixed(4)}, ${report.longitude?.toFixed(4)}`)}
+          </div>
+        </td>
+        <td style="text-transform: capitalize;">${escapeHtml((report.category || 'pothole').replace('_', ' '))}</td>
+        <td>
+          <span class="cl-badge cl-badge-${report.reported_severity === 'severe' || report.reported_severity === 'critical' ? 'severe' : report.reported_severity === 'moderate' ? 'moderate' : 'minor'}">
+            ${report.reported_severity || 'Minor'}
+          </span>
+        </td>
+        <td>${formatStatus(report.status)}</td>
+        <td style="color: var(--cl-text-secondary); font-size: 12px;">${dateStr}</td>
+        <td>${evidenceBadge}</td>
+        <td>
+          <a href="report-detail.html?id=${encodeURIComponent(report.id)}" class="cl-btn cl-btn-secondary cl-btn-sm" style="padding: 2px 8px; font-size: 11px;">
+            Details &rarr;
+          </a>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  // Render Mobile Cards
+  const cardsHtml = items.map(report => {
+    const dateStr = report.created_at ? new Date(report.created_at).toLocaleDateString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    }) : '—';
+    const evidenceCount = (report.evidence || []).length;
+
+    return `
+      <div class="report-card">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-family: var(--cl-font-mono); font-size: 12px; font-weight: 600; color: var(--cl-primary-light);">
+            ${escapeHtml(report.reference_code)}
+          </span>
+          ${formatStatus(report.status)}
+        </div>
+        <div style="font-weight: 600; font-size: 14px; color: var(--cl-text-primary);">
+          ${escapeHtml(report.title || 'Civic Infrastructure Defect')}
+        </div>
+        <div style="font-size: 12px; color: var(--cl-text-secondary); display: flex; flex-direction: column; gap: 4px;">
+          <div>📍 ${escapeHtml(report.address || `${report.latitude?.toFixed(4)}, ${report.longitude?.toFixed(4)}`)}</div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <span class="cl-badge cl-badge-${report.reported_severity === 'severe' || report.reported_severity === 'critical' ? 'severe' : report.reported_severity === 'moderate' ? 'moderate' : 'minor'}">
+              ${report.reported_severity || 'Minor'}
+            </span>
+            <span>🕒 ${dateStr}</span>
+            ${evidenceCount > 0 ? `<span>📷 ${evidenceCount} photo(s)</span>` : ''}
+          </div>
+        </div>
+        <a href="report-detail.html?id=${encodeURIComponent(report.id)}" class="cl-btn cl-btn-secondary cl-btn-sm" style="width: 100%; margin-top: 4px; justify-content: center;">
+          View Status Timeline &rarr;
+        </a>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <!-- Desktop Table View -->
+    <div class="table-container">
+      <table class="cl-table">
+        <thead>
+          <tr>
+            <th>Reference</th>
+            <th>Title &amp; Location</th>
+            <th>Category</th>
+            <th>Severity</th>
+            <th>Status</th>
+            <th>Submitted</th>
+            <th>Evidence</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRowsHtml}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile Cards View -->
+    <div class="cards-container">
+      ${cardsHtml}
+    </div>
+  `;
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+</script>
+</body>
+</html>

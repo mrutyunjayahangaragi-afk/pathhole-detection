@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>CivicLens — Citizen Sign In &amp; Registration</title>
+<link rel="stylesheet" href="./static/css/civiclens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  .auth-wrapper {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--cl-space-4);
+    background: radial-gradient(circle at top, var(--cl-bg-surface) 0%, var(--cl-bg-canvas) 100%);
+  }
+  .auth-card {
+    width: 100%;
+    max-width: 440px;
+    background: var(--cl-bg-surface);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-lg);
+    box-shadow: var(--cl-shadow-lg);
+    padding: var(--cl-space-6);
+  }
+  .auth-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--cl-border);
+    margin-bottom: var(--cl-space-5);
+  }
+  .auth-tab {
+    flex: 1;
+    text-align: center;
+    padding: var(--cl-space-3);
+    font-weight: 600;
+    font-size: var(--cl-text-sm);
+    color: var(--cl-text-muted);
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    min-height: var(--cl-min-touch);
+  }
+  .auth-tab.active {
+    color: var(--cl-primary-light);
+    border-bottom-color: var(--cl-primary);
+  }
+  .auth-alert {
+    display: none;
+    padding: 10px 14px;
+    border-radius: var(--cl-radius-md);
+    font-size: var(--cl-text-xs);
+    margin-bottom: var(--cl-space-4);
+  }
+  .auth-alert-error {
+    background: var(--cl-severe-bg);
+    border: 1px solid var(--cl-severe);
+    color: #fca5a5;
+  }
+  .auth-alert-success {
+    background: var(--cl-minor-bg);
+    border: 1px solid var(--cl-minor);
+    color: #86efac;
+  }
+</style>
+</head>
+<body>
+
+<div class="auth-wrapper">
+  <div style="margin-bottom: var(--cl-space-5); text-align: center;">
+    <a href="./index.html" style="text-decoration: none; color: inherit; display: inline-flex; align-items: center; gap: 8px;">
+      <div class="cl-brand-logo" style="width: 36px; height: 36px; font-size: 16px;">CL</div>
+      <h1 class="cl-brand-title" style="font-size: 24px;">CivicLens</h1>
+    </a>
+    <p style="font-size: 13px; color: var(--cl-text-muted); margin: 4px 0 0 0;">
+      Citizen Grievance &amp; Infrastructure Portal
+    </p>
+  </div>
+
+  <div class="auth-card">
+    <!-- Tabs -->
+    <div class="auth-tabs" role="tablist">
+      <button class="auth-tab active" id="tab-login" role="tab">Sign In</button>
+      <button class="auth-tab" id="tab-register" role="tab">Create Account</button>
+    </div>
+
+    <!-- Alert Box -->
+    <div class="auth-alert" id="auth-alert"></div>
+
+    <!-- 1. LOGIN FORM -->
+    <form id="login-form">
+      <div class="cl-form-group">
+        <label class="cl-label" for="login-email">Email Address</label>
+        <input type="email" id="login-email" class="cl-input" placeholder="name@example.com" required autocomplete="email">
+      </div>
+      <div class="cl-form-group">
+        <label class="cl-label" for="login-password">Password</label>
+        <input type="password" id="login-password" class="cl-input" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="cl-btn cl-btn-primary" style="width: 100%; margin-top: 8px;" id="btn-login-submit">
+        Sign In to Portal
+      </button>
+    </form>
+
+    <!-- 2. REGISTER FORM -->
+    <form id="register-form" style="display: none;">
+      <div class="cl-form-group">
+        <label class="cl-label" for="reg-name">Full Name</label>
+        <input type="text" id="reg-name" class="cl-input" placeholder="e.g. Ramesh Kumar" required autocomplete="name">
+      </div>
+      <div class="cl-form-group">
+        <label class="cl-label" for="reg-email">Email Address</label>
+        <input type="email" id="reg-email" class="cl-input" placeholder="name@example.com" required autocomplete="email">
+      </div>
+      <div class="cl-form-group">
+        <label class="cl-label" for="reg-phone">Phone Number (Optional)</label>
+        <input type="tel" id="reg-phone" class="cl-input" placeholder="+91 98765 43210" autocomplete="tel">
+      </div>
+      <div class="cl-form-group">
+        <label class="cl-label" for="reg-lang">Preferred Language</label>
+        <select id="reg-lang" class="cl-select">
+          <option value="en" selected>English</option>
+          <option value="kn">ಕನ್ನಡ (Kannada)</option>
+        </select>
+      </div>
+      <div class="cl-form-group">
+        <label class="cl-label" for="reg-password">Password (min 8 chars, 1 letter, 1 number)</label>
+        <input type="password" id="reg-password" class="cl-input" placeholder="••••••••" required minlength="8" autocomplete="new-password">
+      </div>
+      <div class="cl-form-group">
+        <label class="cl-label" for="reg-confirm">Confirm Password</label>
+        <input type="password" id="reg-confirm" class="cl-input" placeholder="••••••••" required minlength="8" autocomplete="new-password">
+      </div>
+      <button type="submit" class="cl-btn cl-btn-primary" style="width: 100%; margin-top: 8px;" id="btn-reg-submit">
+        Create Citizen Account
+      </button>
+    </form>
+  </div>
+
+  <div style="margin-top: var(--cl-space-6); font-size: 12px; color: var(--cl-text-muted);">
+    <a href="./index.html" style="color: var(--cl-text-secondary); text-decoration: none;">&larr; Back to Public Portal</a>
+  </div>
+</div>
+
+<script src="./static/js/citizen-auth.js"></script>
+<script>
+const tabLogin = document.getElementById("tab-login");
+const tabRegister = document.getElementById("tab-register");
+const loginForm = document.getElementById("login-form");
+const registerForm = document.getElementById("register-form");
+const alertBox = document.getElementById("auth-alert");
+
+function showAlert(msg, isError = true) {
+  alertBox.textContent = msg;
+  alertBox.className = `auth-alert ${isError ? 'auth-alert-error' : 'auth-alert-success'}`;
+  alertBox.style.display = "block";
+}
+
+function clearAlert() {
+  alertBox.style.display = "none";
+}
+
+tabLogin.addEventListener("click", () => {
+  tabLogin.classList.add("active");
+  tabRegister.classList.remove("active");
+  loginForm.style.display = "block";
+  registerForm.style.display = "none";
+  clearAlert();
+});
+
+tabRegister.addEventListener("click", () => {
+  tabRegister.classList.add("active");
+  tabLogin.classList.remove("active");
+  loginForm.style.display = "none";
+  registerForm.style.display = "block";
+  clearAlert();
+});
+
+// Check redirect query param
+const urlParams = new URLSearchParams(window.location.search);
+const redirectUrl = urlParams.get("redirect") || "./citizen-dashboard.html";
+
+// Handle Login
+loginForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  clearAlert();
+  const btn = document.getElementById("btn-login-submit");
+  btn.disabled = true;
+  btn.textContent = "Authenticating...";
+
+  try {
+    const res = await fetch("/api/v1/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: document.getElementById("login-email").value,
+        password: document.getElementById("login-password").value,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showAlert(data.error || "Login failed");
+      return;
+    }
+    CivicAuth.setSession(data.token, data.user);
+    window.location.href = redirectUrl;
+  } catch (err) {
+    showAlert("Network error. Please try again.");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Sign In to Portal";
+  }
+});
+
+// Handle Registration
+registerForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  clearAlert();
+
+  const pwd = document.getElementById("reg-password").value;
+  const confirm = document.getElementById("reg-confirm").value;
+  if (pwd !== confirm) {
+    showAlert("Passwords do not match");
+    return;
+  }
+
+  const btn = document.getElementById("btn-reg-submit");
+  btn.disabled = true;
+  btn.textContent = "Creating Account...";
+
+  try {
+    const res = await fetch("/api/v1/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        display_name: document.getElementById("reg-name").value,
+        email: document.getElementById("reg-email").value,
+        phone: document.getElementById("reg-phone").value,
+        preferred_language: document.getElementById("reg-lang").value,
+        password: pwd,
+        confirm_password: confirm,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showAlert(data.error || "Registration failed");
+      return;
+    }
+    CivicAuth.setSession(data.token, data.user);
+    showAlert("Account created! Redirecting...", false);
+    setTimeout(() => {
+      window.location.href = redirectUrl;
+    }, 800);
+  } catch (err) {
+    showAlert("Network error. Please try again.");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Create Citizen Account";
+  }
+});
+</script>
+</body>
+</html>

@@ -20,17 +20,17 @@ CREATE OR REPLACE VIEW public_incidents_view AS
 SELECT 
     i.id,
     i.incident_reference,
-    i.title,
-    i.description,
+    COALESCE(p.public_title, UPPER(i.category) || ' - ' || COALESCE(i.incident_reference, i.id)) AS title,
+    COALESCE(p.public_description, i.description) AS description,
     i.category,
     i.status,
     i.severity,
     i.priority,
-    i.latitude,
-    i.longitude,
-    i.address,
+    COALESCE(p.public_latitude, i.latitude) AS latitude,
+    COALESCE(p.public_longitude, i.longitude) AS longitude,
+    COALESCE(p.public_location_name, i.address) AS address,
     i.report_count,
-    i.verification_confidence,
+    i.est_depth_cm,
     i.department_id,
     d.name AS department_name,
     i.created_at,
@@ -38,4 +38,5 @@ SELECT
     i.resolved_at
 FROM incidents_v2 i
 LEFT JOIN departments d ON i.department_id = d.id
+LEFT JOIN incident_publications p ON i.id = p.incident_id
 WHERE i.status NOT IN ('rejected', 'closed_unverified');

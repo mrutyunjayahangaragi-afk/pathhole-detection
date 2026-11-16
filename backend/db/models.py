@@ -35,6 +35,7 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(String(36), primary_key=True, default=_uuid)
+    auth_user_id = Column(String(64), nullable=True, unique=True, index=True)
     display_name = Column(String(255), nullable=False, default="")
     email = Column(String(320), nullable=True, unique=True)
     phone = Column(String(20), nullable=True)

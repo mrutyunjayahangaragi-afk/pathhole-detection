@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from backend.db.engine import get_session_factory
-from backend.db.models import Department, DepartmentMembership, User, Incident, AuditLog
+from backend.db.models import Department, DepartmentMembership, User, Incident, AuditLog, Municipality
 from backend.errors import ValidationError, NotFoundError, CivicLensError
 
 
@@ -73,10 +73,23 @@ class DepartmentManagementService:
         return self._custom_session_factory or get_session_factory()
 
     def seed_default_departments(self) -> int:
-        """Ensures core municipal departments exist in the database."""
+        """Ensures core municipal departments and default municipality exist in the database."""
         db: Session = self._session_factory()
         created_count = 0
         try:
+            # Ensure default municipality exists
+            muni = db.query(Municipality).filter_by(code="BBMP").first()
+            if not muni:
+                muni = Municipality(
+                    id="9951f5f4-8ada-4604-b714-054794edeccd",
+                    name="Bruhat Bengaluru Mahanagara Palike",
+                    code="BBMP",
+                    state="Karnataka",
+                    status="active",
+                )
+                db.add(muni)
+                db.flush()
+
             for dept_spec in DEFAULT_DEPARTMENTS:
                 existing = db.query(Department).filter(
                     (Department.code == dept_spec["code"]) | (Department.name == dept_spec["name"])
@@ -84,6 +97,7 @@ class DepartmentManagementService:
                 if not existing:
                     dept = Department(
                         id=str(uuid.uuid4()),
+                        municipality_id=muni.id,
                         name=dept_spec["name"],
                         code=dept_spec["code"],
                         description=dept_spec["description"],
@@ -94,8 +108,11 @@ class DepartmentManagementService:
                     )
                     db.add(dept)
                     created_count += 1
-                elif not existing.code:
-                    existing.code = dept_spec["code"]
+                else:
+                    if not existing.municipality_id:
+                        existing.municipality_id = muni.id
+                    if not existing.code:
+                        existing.code = dept_spec["code"]
                     existing.updated_at = datetime.now(timezone.utc)
             db.commit()
             return created_count

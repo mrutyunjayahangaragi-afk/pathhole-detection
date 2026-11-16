@@ -950,6 +950,8 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="/static/js/maps/map-config.js"></script>
+<script src="/static/js/maps/map-provider.js"></script>
 <script>
 /* ============================================================
    CIVICLENS LIVE SENSOR MONITOR ENGINE
@@ -1003,23 +1005,7 @@ if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeDrawer);
 const map = L.map('map', { zoomControl: true, attributionControl: true }).setView(DEFAULT_MAP_CENTER, 13);
 
 function initMapTiles() {
-  const cartoUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-  const cartoLayer = L.tileLayer(cartoUrl, {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>',
-    maxZoom: 19
-  }).addTo(map);
-
-  let osmFallbackApplied = false;
-  cartoLayer.on('tileerror', function() {
-    if (!osmFallbackApplied) {
-      osmFallbackApplied = true;
-      console.warn("CARTO basemap tile request failed; falling back to standard OpenStreetMap tiles.");
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
-        maxZoom: 19
-      }).addTo(map);
-    }
-  });
+  window.CivicLensMapProvider.attachBasemap(map, { purpose: 'monitor', style: 'dark_matter' });
 }
 initMapTiles();
 

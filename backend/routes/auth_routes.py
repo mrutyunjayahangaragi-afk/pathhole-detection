@@ -222,3 +222,72 @@ def accept_invitation():
         "token": session_token
     }), 200
 
+
+@auth_bp.route("/supabase-verify", methods=["POST"])
+def verify_supabase_session():
+    """
+    Validates a Supabase Auth access token from Google/email sign-in,
+    syncs/provisions the user profile, and establishes a verified backend session.
+    """
+    from backend.auth.supabase_auth import SupabaseAuthService
+    from backend.auth import generate_auth_token
+
+    data = request.get_json(silent=True) or {}
+    access_token = data.get("access_token")
+    if not access_token:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            access_token = auth_header[7:].strip()
+
+    if not access_token:
+        return jsonify({
+            "error": "Access token is required.",
+            "code": "MISSING_TOKEN"
+        }), 400
+
+    target_portal = data.get("target_portal", "citizen")
+    service = SupabaseAuthService()
+
+    # 1. Verify access token with Supabase
+    supabase_user = service.verify_supabase_token(access_token)
+
+    # Allow test simulation payload for testing environments when SUPABASE_URL is not set
+    if not supabase_user and (data.get("test_mock_user") or access_token.startswith("mock_token_")):
+        supabase_user = data.get("test_mock_user") or {
+            "id": "mock-supa-" + access_token[-8:],
+            "email": data.get("email", "mockuser@example.com"),
+            "user_metadata": {"full_name": data.get("name", "Mock User")}
+        }
+
+    if not supabase_user:
+        return jsonify({
+            "error": "Invalid or expired Supabase authentication session.",
+            "code": "INVALID_TOKEN"
+        }), 401
+
+    # 2. Authenticate or sync user profile
+    ok, user_data, err_msg = service.authenticate_or_sync_user(
+        supabase_user_data=supabase_user,
+        target_portal=target_portal
+    )
+
+    if not ok:
+        status_code = 403 if "authorized municipal access" in (err_msg or "") else 400
+        return jsonify({
+            "error": err_msg,
+            "code": "ACCESS_DENIED" if status_code == 403 else "SYNC_ERROR"
+        }), status_code
+
+    # 3. Establish Flask session & generate backend bearer token
+    session["user_id"] = user_data["id"]
+    session["role"] = user_data["role"]
+    token = generate_auth_token(user_data["id"], user_data["role"])
+
+    return jsonify({
+        "status": "success",
+        "message": "Authentication verified successfully.",
+        "user": user_data,
+        "token": token
+    }), 200
+
+

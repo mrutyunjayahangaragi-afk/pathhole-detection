@@ -16,6 +16,12 @@ def create_all_tables(database_url=None):
     Base.metadata.create_all(engine, checkfirst=True)
     try:
         with engine.begin() as conn:
+            # Ensure auth_user_id exists on users
+            try:
+                conn.execute(text("ALTER TABLE users ADD COLUMN auth_user_id VARCHAR(64);"))
+            except Exception:
+                pass
+
             # Ensure municipality_id exists on departments
             try:
                 conn.execute(text("ALTER TABLE departments ADD COLUMN municipality_id VARCHAR(36) REFERENCES municipalities(id);"))

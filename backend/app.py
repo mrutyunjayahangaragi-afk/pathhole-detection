@@ -38,6 +38,7 @@ from backend.routes.municipal_routes import municipal_bp
 from backend.routes.public_routes import public_bp
 from backend.routes.notification_routes import notification_bp, citizen_tracking_bp
 from backend.routes.telemetry_routes import telemetry_bp
+from backend.routes.map_config_routes import map_config_bp
 
 
 def create_app(config: Optional[Config] = None) -> Flask:
@@ -91,6 +92,7 @@ def create_app(config: Optional[Config] = None) -> Flask:
     app.register_blueprint(notification_bp)
     app.register_blueprint(citizen_tracking_bp)
     app.register_blueprint(telemetry_bp)
+    app.register_blueprint(map_config_bp)
 
     # Register CLI Commands
     try:
@@ -143,7 +145,7 @@ def create_app(config: Optional[Config] = None) -> Flask:
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdnjs.cloudflare.com; "
             "font-src 'self' https://fonts.gstatic.com data:; "
             "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://unpkg.com https://cdnjs.cloudflare.com https://*.basemaps.cartocdn.com; "
-            "connect-src 'self'; "
+            "connect-src 'self' https://*.supabase.co; "
             "frame-ancestors 'self';"
         )
         if request.is_secure or getattr(cfg, "ENV", "") == "production":
@@ -323,6 +325,12 @@ def create_app(config: Optional[Config] = None) -> Flask:
     def serve_municipal_login():
         from flask import send_from_directory
         return send_from_directory(os.path.join(_parent, "frontend", "municipal"), "login.html")
+
+    @app.route("/auth-callback.html", methods=["GET"])
+    @app.route("/auth-callback", methods=["GET"])
+    def serve_auth_callback():
+        from flask import send_from_directory
+        return send_from_directory(os.path.join(_parent, "frontend"), "auth-callback.html")
 
     @app.route("/citizen-dashboard.html", methods=["GET"])
     @app.route("/citizen-dashboard", methods=["GET"])

@@ -214,6 +214,24 @@ class OfficialAuthService:
         finally:
             db.close()
 
+    def get_invitation_by_email(self, email: str) -> Optional[OfficialInvitation]:
+        """Looks up an active, pending invitation for the specified email."""
+        if not email:
+            return None
+        db = self._session_factory()
+        try:
+            now = datetime.now(timezone.utc)
+            inv = db.query(OfficialInvitation).filter(
+                OfficialInvitation.invited_email == email.strip().lower(),
+                OfficialInvitation.status == "PENDING",
+                OfficialInvitation.expires_at > now
+            ).first()
+            if inv:
+                db.expunge(inv)
+            return inv
+        finally:
+            db.close()
+
     def accept_invitation(
         self, raw_token: str, display_name: str, password: str, confirm_password: str
     ) -> Tuple[Dict[str, Any], str]:

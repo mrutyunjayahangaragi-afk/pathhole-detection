@@ -202,8 +202,21 @@ class Config:
             raise ConfigurationError(f"Invalid detection threshold configuration: {e}") from e
         self.AUTO_DETECT_ON_SUBMISSION = _bool_from_env("AUTO_DETECT_ON_SUBMISSION", True)
 
-        # Map Tiles & CARTO API Key
-        self.CARTO_API_KEY = os.environ.get("CARTO_API_KEY", "").strip()
+        # Map Tiles & Centralized Provider Configuration
+        self.MAP_TILE_PROVIDER = os.environ.get("MAP_TILE_PROVIDER", "carto").strip().lower()
+        self.CARTO_BASEMAP_STYLE = os.environ.get("CARTO_BASEMAP_STYLE", "voyager").strip().lower()
+        self.CARTO_BASEMAP_API_KEY = os.environ.get(
+            "CARTO_BASEMAP_API_KEY", os.environ.get("CARTO_API_KEY", "")
+        ).strip()
+        self.CARTO_API_KEY = self.CARTO_BASEMAP_API_KEY  # Backward-compatibility alias
+        self.ALLOW_OSM_DEV_FALLBACK = _bool_from_env("ALLOW_OSM_DEV_FALLBACK", True)
+
+        # Supabase API & Auth Configuration
+        self.SUPABASE_PUBLISHABLE_KEY = os.environ.get(
+            "SUPABASE_PUBLISHABLE_KEY", os.environ.get("SUPABASE_ANON_KEY", "")
+        ).strip()
+        self.SUPABASE_ANON_KEY = self.SUPABASE_PUBLISHABLE_KEY  # Alias
+        self.SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 
         # Duplicate Incident Matching Configuration
         self.DUPLICATE_MATCHING_ENABLED = _bool_from_env("DUPLICATE_MATCHING_ENABLED", True)

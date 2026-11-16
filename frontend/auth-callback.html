@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Authenticating — CivicLens</title>
+  <link rel="icon" type="image/svg+xml" href="./static/images/favicon.svg">
+  <link rel="stylesheet" href="./static/css/design-system.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at 50% 20%, #1e293b 0%, #0f172a 100%);
+      font-family: var(--cl-font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .callback-card {
+      background: rgba(30, 41, 59, 0.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 440px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(59, 130, 246, 0.2);
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 24px auto;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    h2 {
+      font-size: 20px;
+      margin: 0 0 10px 0;
+      font-weight: 600;
+    }
+
+    p {
+      color: #94a3b8;
+      font-size: 14px;
+      line-height: 1.5;
+      margin: 0 0 24px 0;
+    }
+
+    .error-box {
+      display: none;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 20px;
+      color: #fca5a5;
+      font-size: 13px;
+    }
+
+    .btn-return {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 10px 20px;
+      background: #3b82f6;
+      color: #ffffff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 500;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+
+    .btn-return:hover {
+      background: #2563eb;
+    }
+  </style>
+</head>
+<body>
+  <div class="callback-card">
+    <div class="spinner" id="callback-spinner"></div>
+    <h2 id="callback-title">Connecting to Identity Provider</h2>
+    <p id="callback-message">Securing your session and exchanging authorization tokens...</p>
+
+    <div class="error-box" id="callback-error-container">
+      <a href="/frontend/login.html" class="btn-return" id="callback-retry-btn">Return to Sign In</a>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./static/js/auth/supabase-client.js"></script>
+  <script src="./static/js/auth/session-manager.js"></script>
+  <script src="./static/js/auth/role-navigation.js"></script>
+  <script src="./static/js/auth/auth-callback.js"></script>
+</body>
+</html>

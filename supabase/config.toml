@@ -1,0 +1,40 @@
+# CivicLens Supabase Project Configuration
+# =============================================================================
+# Used by Supabase CLI for local development, migrations, and remote linking.
+# =============================================================================
+
+[project]
+id = "civiclens"
+name = "CivicLens Infrastructure & Grievance Triage"
+
+[api]
+port = 54321
+schemas = ["public", "storage"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[auth]
+site_url = "http://localhost:5055"
+additional_redirect_urls = [
+    "http://localhost:5055/frontend/auth-callback.html",
+    "http://127.0.0.1:5055/frontend/auth-callback.html"
+]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+[auth.external.google]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+redirect_uri = "http://localhost:54321/auth/v1/callback"
+skip_nonce_check = false

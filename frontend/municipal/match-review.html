@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>CivicLens — Intelligent Duplicate Incident Matching & Triage</title>
+<link rel="stylesheet" href="../static/css/civiclens.css">
+<!-- Leaflet CSS for Map Comparison -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cl-primary-600: #2563eb;
+    --cl-primary-700: #1d4ed8;
+    --cl-emerald-600: #059669;
+    --cl-amber-500: #f59e0b;
+    --cl-rose-600: #e11d48;
+    --cl-slate-700: #334155;
+    --cl-slate-800: #1e293b;
+    --cl-slate-900: #0f172a;
+  }
+
+  body {
+    background: #0b1120;
+    color: #f1f5f9;
+    font-family: 'Inter', -apple-system, sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+
+  .review-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .review-header {
+    background: var(--cl-slate-900);
+    border-bottom: 1px solid #334155;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+
+  .review-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .review-brand h1 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 0;
+    color: #38bdf8;
+    letter-spacing: 0.5px;
+  }
+
+  .officer-badge {
+    background: rgba(37, 99, 235, 0.2);
+    border: 1px solid #3b82f6;
+    color: #93c5fd;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .main-review-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 16px;
+    flex: 1;
+  }
+
+  @media (min-width: 1024px) {
+    .main-review-grid {
+      grid-template-columns: 340px 1fr;
+      padding: 24px;
+      gap: 24px;
+    }
+  }
+
+  /* Left Queue Sidebar */
+  .queue-panel {
+    background: var(--cl-slate-900);
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 100px);
+  }
+
+  .queue-panel h2 {
+    font-size: 1rem;
+    margin: 0 0 12px 0;
+    color: #cbd5e1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .queue-list {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+  }
+
+  .queue-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .queue-card:hover {
+    border-color: #38bdf8;
+    background: #253349;
+  }
+  .queue-card.active {
+    border-color: #38bdf8;
+    background: #1e3a5f;
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.3);
+  }
+
+  .queue-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .decision-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+  .decision-likely { background: rgba(5, 150, 105, 0.25); color: #34d399; border: 1px solid #059669; }
+  .decision-review { background: rgba(245, 158, 11, 0.25); color: #fbbf24; border: 1px solid #f59e0b; }
+  .decision-new { background: rgba(37, 99, 235, 0.25); color: #60a5fa; border: 1px solid #2563eb; }
+  .decision-none { background: rgba(148, 163, 184, 0.2); color: #94a3b8; border: 1px solid #475569; }
+
+  /* Right Comparison Area */
+  .comparison-area {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .comparison-split {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  @media (min-width: 768px) {
+    .comparison-split {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .compare-card {
+    background: var(--cl-slate-900);
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .compare-card h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .image-viewer {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background: #020617;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .image-viewer img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  /* Defect Crops Tray */
+  .crops-tray {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 4px 0;
+  }
+  .crop-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #1e293b;
+    border: 1px solid #475569;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 0.75rem;
+  }
+
+  /* Dual Marker Map */
+  .map-card {
+    background: var(--cl-slate-900);
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  #compare-map {
+    width: 100%;
+    height: 260px;
+    border-radius: 8px;
+    background: #020617;
+  }
+
+  /* Explainable Signals Card */
+  .signals-card {
+    background: var(--cl-slate-900);
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  .signals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .signal-meter {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 10px;
+  }
+
+  .signal-label {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .signal-bar-track {
+    width: 100%;
+    height: 8px;
+    background: #0f172a;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .signal-bar-fill {
+    height: 100%;
+    background: #38bdf8;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+
+  /* Action Tray */
+  .action-tray {
+    background: var(--cl-slate-900);
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .notes-input {
+    width: 100%;
+    box-sizing: border-box;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    color: #f8fafc;
+    padding: 10px;
+    font-size: 0.85rem;
+    min-height: 60px;
+    resize: vertical;
+  }
+
+  .action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .btn {
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+  }
+
+  .btn-confirm { background: #059669; color: #ffffff; }
+  .btn-confirm:hover { background: #047857; }
+
+  .btn-new { background: #2563eb; color: #ffffff; }
+  .btn-new:hover { background: #1d4ed8; }
+
+  .btn-reject { background: #d97706; color: #ffffff; }
+  .btn-reject:hover { background: #b45309; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    z-index: 9999;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);
+    display: none;
+  }
+  .toast.success { background: #059669; color: #fff; }
+  .toast.error { background: #e11d48; color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="review-layout">
+  <!-- Header -->
+  <header class="review-header">
+    <div class="review-brand">
+      <span style="font-size: 1.4rem;">🔍</span>
+      <div>
+        <h1>CivicLens Triage — Canonical Incident Matching</h1>
+        <div style="font-size: 0.75rem; color: #94a3b8;">Multi-Signal Evidence Correlator</div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span class="officer-badge" id="officer-identity">Municipal Engineer</span>
+      <a href="/dashboard" style="color: #94a3b8; font-size: 0.8rem; text-decoration: none;">← Dashboard</a>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <div class="main-review-grid">
+    <!-- Queue Sidebar -->
+    <aside class="queue-panel">
+      <h2>
+        <span>Matching Queue</span>
+        <span id="queue-count" style="font-size: 0.8rem; color: #38bdf8;">0 items</span>
+      </h2>
+      <div class="queue-list" id="queue-items">
+        <div style="text-align: center; color: #64748b; padding: 20px;">Loading queue...</div>
+      </div>
+    </aside>
+
+    <!-- Comparison & Action Area -->
+    <main class="comparison-area" id="comparison-view" style="display: none;">
+      <!-- Side by side comparison cards -->
+      <div class="comparison-split">
+        <!-- New Citizen Submission -->
+        <div class="compare-card">
+          <h3><span>📥</span> New Citizen Submission</h3>
+          <div class="image-viewer" id="new-image-viewer">
+            <span style="color: #64748b;">No photo attached</span>
+          </div>
+          <div>
+            <div style="font-weight: 600; font-size: 0.95rem; color: #f8fafc;" id="new-item-category">Pothole</div>
+            <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;" id="new-item-desc">-</div>
+          </div>
+          <div style="font-size: 0.75rem; color: #64748b; border-top: 1px solid #1e293b; padding-top: 8px;">
+            <div><strong>Citizen:</strong> <span id="new-item-citizen">-</span></div>
+            <div><strong>Location:</strong> <span id="new-item-coords">-</span></div>
+            <div><strong>Address:</strong> <span id="new-item-address">-</span></div>
+          </div>
+        </div>
+
+        <!-- Proposed Candidate Canonical Incident -->
+        <div class="compare-card">
+          <h3><span>🏛️</span> Proposed Canonical Incident</h3>
+          <div class="image-viewer" id="cand-image-viewer">
+            <span style="color: #64748b;">No existing verified photo</span>
+          </div>
+          <div>
+            <div style="font-weight: 600; font-size: 0.95rem; color: #f8fafc;" id="cand-incident-ref">No Candidate Found</div>
+            <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 4px;" id="cand-incident-desc">-</div>
+          </div>
+          <div style="font-size: 0.75rem; color: #64748b; border-top: 1px solid #1e293b; padding-top: 8px;">
+            <div><strong>Status:</strong> <span id="cand-incident-status">-</span></div>
+            <div><strong>Merged Reports:</strong> <span id="cand-incident-reports">1</span></div>
+            <div><strong>Location:</strong> <span id="cand-incident-coords">-</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spatial Map Comparison -->
+      <div class="map-card">
+        <h3 style="margin: 0 0 10px 0; font-size: 0.9rem; color: #94a3b8;">
+          <span>📍</span> Spatial Proximity Comparison
+        </h3>
+        <div id="compare-map"></div>
+      </div>
+
+      <!-- Multi-Signal Explainability -->
+      <div class="signals-card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="margin: 0; font-size: 0.9rem; color: #94a3b8;"><span>⚡</span> Multi-Signal Evidence Score</h3>
+          <span class="decision-badge" id="eval-decision-pill">EVALUATING</span>
+        </div>
+        <div style="font-size: 0.8rem; color: #38bdf8; margin-top: 6px;" id="eval-reasons-text">
+          Analyzing independent evidence signals...
+        </div>
+
+        <div class="signals-grid">
+          <div class="signal-meter">
+            <div class="signal-label"><span>Geographic Proximity</span><span id="meter-geo-val">0%</span></div>
+            <div class="signal-bar-track"><div class="signal-bar-fill" id="meter-geo-bar" style="width: 0%;"></div></div>
+          </div>
+          <div class="signal-meter">
+            <div class="signal-label"><span>Defect Crop Appearance</span><span id="meter-vis-val">0%</span></div>
+            <div class="signal-bar-track"><div class="signal-bar-fill" id="meter-vis-bar" style="width: 0%;"></div></div>
+          </div>
+          <div class="signal-meter">
+            <div class="signal-label"><span>Perceptual Image Hash</span><span id="meter-phash-val">0%</span></div>
+            <div class="signal-bar-track"><div class="signal-bar-fill" id="meter-phash-bar" style="width: 0%;"></div></div>
+          </div>
+          <div class="signal-meter">
+            <div class="signal-label"><span>Category Match</span><span id="meter-cat-val">0%</span></div>
+            <div class="signal-bar-track"><div class="signal-bar-fill" id="meter-cat-bar" style="width: 0%;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Review Action Tray -->
+      <div class="action-tray">
+        <label style="font-size: 0.8rem; font-weight: 600; color: #cbd5e1;">
+          Reviewer Triage Notes <span style="color: #ef4444;">*</span>
+        </label>
+        <textarea id="review-notes" class="notes-input" placeholder="Enter engineering review reason (e.g. 'Confirmed identical defect on opposite lane', 'New pothole 10m away from INC-001')..."></textarea>
+
+        <div class="action-buttons">
+          <button class="btn btn-confirm" id="btn-confirm-link">
+            <span>✓</span> Confirm Link to Incident
+          </button>
+          <button class="btn btn-new" id="btn-confirm-new">
+            <span>+</span> Create as New Incident
+          </button>
+          <button class="btn btn-reject" id="btn-reject-cand">
+            <span>✕</span> Reject Candidate
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Empty State -->
+    <div id="empty-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: #64748b;">
+      <span style="font-size: 3rem;">🎉</span>
+      <h3 style="margin: 12px 0 4px 0; color: #cbd5e1;">Review Queue is Empty</h3>
+      <p style="margin: 0; font-size: 0.85rem;">All citizen grievance submissions have been matched or triaged.</p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast-msg"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+let currentQueue = [];
+let activeItem = null;
+let activeEvaluation = null;
+let mapInstance = null;
+let newMarker = null;
+let candMarker = null;
+
+function showToast(msg, isSuccess = true) {
+  const t = document.getElementById('toast-msg');
+  t.textContent = msg;
+  t.className = 'toast ' + (isSuccess ? 'success' : 'error');
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 3500);
+}
+
+function initMap() {
+  if (mapInstance) return;
+  mapInstance = L.map('compare-map').setView([12.9716, 77.5946], 14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(mapInstance);
+}
+
+function updateMapMarkers(newLat, newLon, candLat, candLon) {
+  initMap();
+  if (newMarker) mapInstance.removeLayer(newMarker);
+  if (candMarker) mapInstance.removeLayer(candMarker);
+
+  const group = [];
+  if (newLat && newLon) {
+    newMarker = L.circleMarker([newLat, newLon], {
+      color: '#38bdf8',
+      fillColor: '#0284c7',
+      fillOpacity: 0.9,
+      radius: 8
+    }).addTo(mapInstance).bindPopup("<b>New Citizen Report</b>");
+    group.push([newLat, newLon]);
+  }
+
+  if (candLat && candLon) {
+    candMarker = L.circleMarker([candLat, candLon], {
+      color: '#f97316',
+      fillColor: '#ea580c',
+      fillOpacity: 0.9,
+      radius: 8
+    }).addTo(mapInstance).bindPopup("<b>Candidate Incident</b>");
+    group.push([candLat, candLon]);
+  }
+
+  if (group.length > 0) {
+    mapInstance.fitBounds(group, { padding: [40, 40], maxZoom: 17 });
+  }
+}
+
+async function loadReviewQueue() {
+  try {
+    const res = await fetch('/api/v1/matching/queue');
+    if (res.status === 401 || res.status === 403) {
+      document.getElementById('queue-items').innerHTML = '<div style="color: #f87171; padding: 20px;">Staff authentication required. Please login.</div>';
+      return;
+    }
+    const data = await res.json();
+    currentQueue = data.data.items || [];
+    renderQueue();
+  } catch (err) {
+    console.error("Queue load error:", err);
+    document.getElementById('queue-items').innerHTML = '<div style="color: #ef4444; padding: 20px;">Failed to load queue.</div>';
+  }
+}
+
+function renderQueue() {
+  const container = document.getElementById('queue-items');
+  const countEl = document.getElementById('queue-count');
+  countEl.textContent = `${currentQueue.length} items`;
+
+  if (currentQueue.length === 0) {
+    container.innerHTML = '<div style="color: #64748b; padding: 20px; text-align: center;">No pending items.</div>';
+    document.getElementById('comparison-view').style.display = 'none';
+    document.getElementById('empty-state').style.display = 'flex';
+    return;
+  }
+
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('comparison-view').style.display = 'flex';
+
+  container.innerHTML = currentQueue.map((item, idx) => {
+    let badgeClass = 'decision-none';
+    if (item.overall_decision === 'LIKELY_EXISTING_INCIDENT') badgeClass = 'decision-likely';
+    else if (item.overall_decision === 'NEEDS_HUMAN_CONFIRMATION') badgeClass = 'decision-review';
+    else if (item.overall_decision === 'NEW_INCIDENT') badgeClass = 'decision-new';
+
+    return `
+      <div class="queue-card ${idx === 0 ? 'active' : ''}" onclick="selectQueueItem(${idx})">
+        <div class="queue-card-top">
+          <span style="font-weight: 600; font-size: 0.85rem; color: #f8fafc;">${item.category.toUpperCase()}</span>
+          <span class="decision-badge ${badgeClass}">${item.overall_decision.replace(/_/g, ' ')}</span>
+        </div>
+        <div style="font-size: 0.75rem; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+          ${item.description || 'No description'}
+        </div>
+        <div style="font-size: 0.7rem; color: #64748b; margin-top: 4px;">
+          ${item.citizen_name} • ${item.evidence_count} photos
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (currentQueue.length > 0) {
+    selectQueueItem(0);
+  }
+}
+
+async function selectQueueItem(idx) {
+  activeItem = currentQueue[idx];
+  document.querySelectorAll('.queue-card').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+
+  // Populate New Report details
+  document.getElementById('new-item-category').textContent = activeItem.category.toUpperCase();
+  document.getElementById('new-item-desc').textContent = activeItem.description || "No description provided.";
+  document.getElementById('new-item-citizen').textContent = activeItem.citizen_name;
+  document.getElementById('new-item-coords').textContent = (activeItem.latitude && activeItem.longitude) ? `${activeItem.latitude.toFixed(5)}, ${activeItem.longitude.toFixed(5)}` : "Missing GPS";
+  document.getElementById('new-item-address').textContent = activeItem.address || "Address unavailable";
+
+  // Evaluate matching signals
+  try {
+    const res = await fetch(`/api/v1/matching/evaluate/${activeItem.report_item_id}`, { method: 'POST' });
+    const json = await res.json();
+    if (json.status === 'success') {
+      activeEvaluation = json.data;
+      renderEvaluationDetails(activeEvaluation);
+    }
+  } catch (e) {
+    console.error("Evaluation failed:", e);
+  }
+}
+
+function renderEvaluationDetails(ev) {
+  // Decision pill
+  const pill = document.getElementById('eval-decision-pill');
+  pill.textContent = ev.overall_decision.replace(/_/g, ' ');
+  pill.className = 'decision-badge ' + (
+    ev.overall_decision === 'LIKELY_EXISTING_INCIDENT' ? 'decision-likely' :
+    ev.overall_decision === 'NEEDS_HUMAN_CONFIRMATION' ? 'decision-review' : 'decision-new'
+  );
+
+  const candidates = ev.candidates || [];
+  if (candidates.length > 0) {
+    const top = candidates[0];
+    document.getElementById('cand-incident-ref').textContent = top.incident_reference || `Incident ${top.candidate_incident_id.substring(0, 8)}`;
+    document.getElementById('cand-incident-desc').textContent = `Category: ${top.incident_category || 'N/A'}`;
+    document.getElementById('cand-incident-status').textContent = top.incident_status || 'reported';
+    document.getElementById('cand-incident-reports').textContent = `${top.incident_report_count || 1} report(s)`;
+    document.getElementById('cand-incident-coords').textContent = `${top.incident_latitude?.toFixed(5)}, ${top.incident_longitude?.toFixed(5)}`;
+    document.getElementById('eval-reasons-text').textContent = top.decision_reason || "Evaluated by multi-signal engine.";
+
+    // Update meters
+    setMeter('meter-geo', top.geographic_score);
+    setMeter('meter-vis', top.visual_similarity_score);
+    setMeter('meter-phash', top.perceptual_similarity_score);
+    setMeter('meter-cat', top.category_score);
+
+    // Update map
+    updateMapMarkers(activeItem.latitude, activeItem.longitude, top.incident_latitude, top.incident_longitude);
+  } else {
+    document.getElementById('cand-incident-ref').textContent = "No Match Found";
+    document.getElementById('cand-incident-desc').textContent = "Recommendation: Create as New Incident";
+    document.getElementById('eval-reasons-text').textContent = "No nearby or visually similar incidents found.";
+    setMeter('meter-geo', 0);
+    setMeter('meter-vis', 0);
+    setMeter('meter-phash', 0);
+    setMeter('meter-cat', 0);
+    updateMapMarkers(activeItem.latitude, activeItem.longitude, null, null);
+  }
+}
+
+function setMeter(id, val) {
+  const percent = Math.round((val || 0) * 100);
+  document.getElementById(`${id}-val`).textContent = `${percent}%`;
+  document.getElementById(`${id}-bar`).style.width = `${percent}%`;
+}
+
+// Action Button Handlers
+document.getElementById('btn-confirm-link').addEventListener('click', async () => {
+  if (!activeItem || !activeEvaluation || !activeEvaluation.candidates?.length) {
+    showToast("No candidate incident available to link.", false);
+    return;
+  }
+  const notes = document.getElementById('review-notes').value;
+  if (!notes.trim()) {
+    showToast("Please enter review reason notes first.", false);
+    return;
+  }
+  try {
+    const topCand = activeEvaluation.candidates[0];
+    const res = await fetch('/api/v1/matching/confirm-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        report_item_id: activeItem.report_item_id,
+        incident_id: topCand.candidate_incident_id,
+        evaluation_id: activeEvaluation.evaluation_id,
+        review_notes: notes.trim(),
+      })
+    });
+    const json = await res.json();
+    if (res.ok) {
+      showToast("✓ Successfully linked report item to incident!");
+      document.getElementById('review-notes').value = "";
+      loadReviewQueue();
+    } else {
+      showToast(json.error || "Confirmation failed", false);
+    }
+  } catch (err) {
+    showToast("Network error confirming link", false);
+  }
+});
+
+document.getElementById('btn-confirm-new').addEventListener('click', async () => {
+  if (!activeItem) return;
+  const notes = document.getElementById('review-notes').value;
+  if (!notes.trim()) {
+    showToast("Please enter review reason notes first.", false);
+    return;
+  }
+  try {
+    const res = await fetch('/api/v1/matching/confirm-new', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        report_item_id: activeItem.report_item_id,
+        evaluation_id: activeEvaluation ? activeEvaluation.evaluation_id : null,
+        review_notes: notes.trim(),
+      })
+    });
+    const json = await res.json();
+    if (res.ok) {
+      showToast(`+ Created new canonical incident ${json.data.incident_reference}!`);
+      document.getElementById('review-notes').value = "";
+      loadReviewQueue();
+    } else {
+      showToast(json.error || "Creation failed", false);
+    }
+  } catch (err) {
+    showToast("Network error creating new incident", false);
+  }
+});
+
+document.getElementById('btn-reject-cand').addEventListener('click', async () => {
+  if (!activeItem || !activeEvaluation || !activeEvaluation.candidates?.length) {
+    showToast("No candidate incident to reject.", false);
+    return;
+  }
+  const notes = document.getElementById('review-notes').value;
+  if (!notes.trim()) {
+    showToast("Please enter rejection reason notes first.", false);
+    return;
+  }
+  try {
+    const topCand = activeEvaluation.candidates[0];
+    const res = await fetch('/api/v1/matching/reject-candidate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        report_item_id: activeItem.report_item_id,
+        candidate_incident_id: topCand.candidate_incident_id,
+        evaluation_id: activeEvaluation.evaluation_id,
+        review_notes: notes.trim(),
+      })
+    });
+    if (res.ok) {
+      showToast("Candidate rejected. Item kept in queue.");
+      document.getElementById('review-notes').value = "";
+      loadReviewQueue();
+    }
+  } catch (err) {
+    showToast("Error rejecting candidate", false);
+  }
+});
+
+// Initial boot
+loadReviewQueue();
+</script>
+</body>
+</html>

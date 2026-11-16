@@ -9,12 +9,24 @@ Run (with backend already running on :5000):
 """
 
 import argparse
+import os
+from pathlib import Path
 import random
 import time
 
 import requests
 
-API_URL = "http://localhost:5000/api/detections"
+try:
+    from dotenv import load_dotenv
+    env_file = Path(__file__).resolve().parent.parent / ".env"
+    if env_file.exists():
+        load_dotenv(dotenv_path=env_file)
+except ImportError:
+    pass
+
+_PORT = os.environ.get("PORT", "5055")
+_HOST = os.environ.get("HOST", "localhost")
+API_URL = f"http://{_HOST}:{_PORT}/api/detections"
 
 # A handful of fixed "known pothole" locations so repeated passes generate
 # realistic duplicate-merge behavior, plus randomized locations along routes

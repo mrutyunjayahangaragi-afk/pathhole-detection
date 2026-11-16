@@ -197,6 +197,9 @@ class EvidenceAsset(Base):
 
     id = Column(String(36), primary_key=True, default=_uuid)
     content_sha256 = Column(String(64), nullable=True, unique=True)
+    perceptual_hash = Column(String(64), nullable=True)
+    hash_algorithm = Column(String(30), nullable=True, default="dct_phash")
+    hash_version = Column(String(20), nullable=True, default="v1.0")
     storage_key = Column(Text, nullable=True)
     media_type = Column(String(50), nullable=True)
     file_size_bytes = Column(Integer, nullable=True, default=0)
@@ -207,9 +210,11 @@ class EvidenceAsset(Base):
     # Relationships
     report_links = relationship("ReportEvidence", back_populates="evidence_asset")
     detection_runs = relationship("DetectionRun", back_populates="evidence_asset", lazy="dynamic")
+    embeddings = relationship("DetectionEmbedding", back_populates="evidence_asset", lazy="dynamic")
 
     __table_args__ = (
         Index("ix_evidence_sha256_v2", "content_sha256"),
+        Index("ix_evidence_phash", "perceptual_hash"),
     )
 
 
@@ -312,6 +317,7 @@ class Detection(Base):
 
     # Relationships
     detection_run = relationship("DetectionRun", back_populates="detections")
+    embedding = relationship("DetectionEmbedding", back_populates="detection", uselist=False)
 
     __table_args__ = (
         CheckConstraint("confidence_score BETWEEN 0.0 AND 1.0", name="ck_detection_confidence"),
@@ -351,12 +357,101 @@ class IncidentObservation(Base):
     )
 
 
+# ─── Detection Embeddings ─────────────────────────────────────────────
+
+class DetectionEmbedding(Base):
+    __tablename__ = "detection_embeddings"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    detection_id = Column(String(36), ForeignKey("detections_v3.id", ondelete="CASCADE"), nullable=True)
+    evidence_asset_id = Column(String(36), ForeignKey("evidence_assets_v2.id", ondelete="CASCADE"), nullable=True)
+    crop_bbox_json = Column(Text, nullable=True)
+    embedding_vector = Column(JSON, nullable=True)
+    embedding_model = Column(String(100), nullable=False, default="mock_embedding")
+    embedding_model_version = Column(String(50), nullable=False, default="v1.0")
+    embedding_dimension = Column(Integer, nullable=False, default=128)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    # Relationships
+    detection = relationship("Detection", back_populates="embedding")
+    evidence_asset = relationship("EvidenceAsset", back_populates="embeddings")
+
+    __table_args__ = (
+        Index("ix_detection_embeddings_det", "detection_id"),
+        Index("ix_detection_embeddings_asset", "evidence_asset_id"),
+    )
+
+
+# ─── Match Evaluations ───────────────────────────────────────────────
+
+class MatchEvaluation(Base):
+    __tablename__ = "match_evaluations"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    report_item_id = Column(String(36), ForeignKey("report_items.id", ondelete="CASCADE"), nullable=False)
+    matching_algorithm_version = Column(String(50), nullable=False, default="v1.0.0")
+    processing_status = Column(String(20), nullable=False, default="completed")
+    overall_decision = Column(String(30), nullable=False)
+    candidate_count = Column(Integer, nullable=False, default=0)
+    top_score = Column(Float, nullable=True)
+    configuration_version = Column(String(50), nullable=False, default="v1.0")
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Relationships
+    candidates = relationship("MatchCandidate", back_populates="evaluation", cascade="all, delete-orphan")
+    decisions = relationship("MatchDecision", back_populates="evaluation")
+
+    __table_args__ = (
+        CheckConstraint(
+            "processing_status IN ('pending','running','completed','failed')",
+            name="ck_match_eval_status"
+        ),
+        CheckConstraint(
+            "overall_decision IN ('LIKELY_EXISTING_INCIDENT','NEEDS_HUMAN_CONFIRMATION','NEW_INCIDENT','INSUFFICIENT_EVIDENCE')",
+            name="ck_match_eval_decision"
+        ),
+        Index("ix_match_eval_item", "report_item_id"),
+    )
+
+
+# ─── Match Candidates ────────────────────────────────────────────────
+
+class MatchCandidate(Base):
+    __tablename__ = "match_candidates"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    match_evaluation_id = Column(String(36), ForeignKey("match_evaluations.id", ondelete="CASCADE"), nullable=False)
+    candidate_incident_id = Column(String(36), ForeignKey("incidents_v2.id", ondelete="CASCADE"), nullable=False)
+    candidate_rank = Column(Integer, nullable=False, default=1)
+    combined_score = Column(Float, nullable=False, default=0.0)
+    geographic_distance_m = Column(Float, nullable=True)
+    geographic_score = Column(Float, nullable=True)
+    visual_similarity_score = Column(Float, nullable=True)
+    perceptual_similarity_score = Column(Float, nullable=True)
+    exact_match_signal = Column(Boolean, nullable=False, default=False)
+    category_score = Column(Float, nullable=True)
+    text_score = Column(Float, nullable=True)
+    decision_reason = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    # Relationships
+    evaluation = relationship("MatchEvaluation", back_populates="candidates")
+    candidate_incident = relationship("Incident")
+
+    __table_args__ = (
+        Index("ix_match_candidates_eval", "match_evaluation_id"),
+        Index("ix_match_candidates_incident", "candidate_incident_id"),
+    )
+
+
 # ─── Match Decisions ─────────────────────────────────────────────────
 
 class MatchDecision(Base):
     __tablename__ = "match_decisions_v2"
 
     id = Column(String(36), primary_key=True, default=_uuid)
+    match_evaluation_id = Column(String(36), ForeignKey("match_evaluations.id", ondelete="SET NULL"), nullable=True)
     report_item_id = Column(String(36), ForeignKey("report_items.id", ondelete="CASCADE"), nullable=False)
     candidate_incident_id = Column(String(36), ForeignKey("incidents_v2.id", ondelete="SET NULL"), nullable=True)
     visual_similarity_score = Column(Float, nullable=True)
@@ -365,12 +460,15 @@ class MatchDecision(Base):
     overall_score = Column(Float, nullable=True)
     decision = Column(String(30), nullable=False)
     decision_reason = Column(Text, nullable=True)
+    decision_source = Column(String(30), nullable=True, default="human_reviewer")
+    notes = Column(Text, nullable=True)
     reviewed_by = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     reviewed_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
 
     # Relationships
     report_item = relationship("ReportItem", back_populates="match_decisions")
+    evaluation = relationship("MatchEvaluation", back_populates="decisions")
 
     __table_args__ = (
         CheckConstraint(
@@ -379,6 +477,34 @@ class MatchDecision(Base):
         ),
         Index("ix_match_decisions_v2_item", "report_item_id"),
         Index("ix_match_decisions_v2_incident", "candidate_incident_id"),
+        Index("ix_match_decisions_v2_eval", "match_evaluation_id"),
+    )
+
+
+# ─── Incident Consolidations ─────────────────────────────────────────
+
+class IncidentConsolidation(Base):
+    __tablename__ = "incident_consolidations"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    canonical_incident_id = Column(String(36), ForeignKey("incidents_v2.id", ondelete="RESTRICT"), nullable=False)
+    superseded_incident_id = Column(String(36), ForeignKey("incidents_v2.id", ondelete="RESTRICT"), nullable=False)
+    consolidated_by = Column(String(36), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    consolidation_reason = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    # Relationships
+    canonical_incident = relationship("Incident", foreign_keys=[canonical_incident_id])
+    superseded_incident = relationship("Incident", foreign_keys=[superseded_incident_id])
+    consolidator = relationship("User", foreign_keys=[consolidated_by])
+
+    __table_args__ = (
+        CheckConstraint(
+            "canonical_incident_id != superseded_incident_id",
+            name="ck_distinct_consolidations"
+        ),
+        Index("ix_consolidation_canonical", "canonical_incident_id"),
+        Index("ix_consolidation_superseded", "superseded_incident_id"),
     )
 
 

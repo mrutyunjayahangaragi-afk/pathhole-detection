@@ -205,6 +205,11 @@ class Config:
         # Map Tiles & CARTO API Key
         self.CARTO_API_KEY = os.environ.get("CARTO_API_KEY", "").strip()
 
+        # Duplicate Incident Matching Configuration
+        self.DUPLICATE_MATCHING_ENABLED = _bool_from_env("DUPLICATE_MATCHING_ENABLED", True)
+        self.DUPLICATE_AUTO_LINK_ENABLED = _bool_from_env("DUPLICATE_AUTO_LINK_ENABLED", False)
+        self.DUPLICATE_REQUIRE_HUMAN_REVIEW = _bool_from_env("DUPLICATE_REQUIRE_HUMAN_REVIEW", True)
+
 
 class DevelopmentConfig(Config):
     """Development environment configuration."""

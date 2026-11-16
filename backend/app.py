@@ -31,6 +31,7 @@ from backend.services.location_service import LocationService
 from backend.routes.auth_routes import auth_bp
 from backend.routes.citizen_routes import citizen_bp
 from backend.routes.detection_routes import detection_bp
+from backend.routes.matching_routes import matching_bp
 
 
 def create_app(config: Optional[Config] = None) -> Flask:
@@ -76,6 +77,7 @@ def create_app(config: Optional[Config] = None) -> Flask:
     app.register_blueprint(auth_bp)
     app.register_blueprint(citizen_bp)
     app.register_blueprint(detection_bp)
+    app.register_blueprint(matching_bp)
 
     # Instantiate services
     location_service = LocationService(cfg)
@@ -276,6 +278,12 @@ def create_app(config: Optional[Config] = None) -> Flask:
     def serve_public_map():
         from flask import send_from_directory
         return send_from_directory(os.path.join(_parent, "frontend"), "public-map.html")
+
+    @app.route("/match-review.html", methods=["GET"])
+    @app.route("/match-review", methods=["GET"])
+    def serve_match_review():
+        from flask import send_from_directory
+        return send_from_directory(os.path.join(_parent, "frontend", "municipal"), "match-review.html")
 
     return app
 

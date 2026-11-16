@@ -36,9 +36,10 @@ from backend.db.engine import get_engine, get_session_factory
 from backend.db.init_schema import create_all_tables
 from backend.db.models import (
     Base, User, Incident, CitizenReport, ReportItem, EvidenceAsset,
-    ReportEvidence, DetectionRun, Detection, IncidentObservation,
-    MatchDecision, IncidentStatusHistory, Department, IncidentAssignment,
-    AuditLog
+    ReportEvidence, DetectionRun, Detection, DetectionEmbedding,
+    IncidentObservation, MatchEvaluation, MatchCandidate,
+    MatchDecision, IncidentConsolidation, IncidentStatusHistory,
+    Department, IncidentAssignment, AuditLog
 )
 
 # Ordered model sequence respecting Foreign Key dependencies
@@ -52,8 +53,12 @@ MIGRATION_SEQUENCE = [
     ("report_evidence", ReportEvidence),
     ("detection_runs", DetectionRun),
     ("detections_v3", Detection),
+    ("detection_embeddings", DetectionEmbedding),
     ("incident_observations_v2", IncidentObservation),
+    ("match_evaluations", MatchEvaluation),
+    ("match_candidates", MatchCandidate),
     ("match_decisions_v2", MatchDecision),
+    ("incident_consolidations", IncidentConsolidation),
     ("incident_status_history", IncidentStatusHistory),
     ("incident_assignments", IncidentAssignment),
     ("audit_logs_v2", AuditLog),

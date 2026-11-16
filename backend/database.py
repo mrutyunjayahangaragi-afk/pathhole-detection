@@ -38,6 +38,8 @@ CREATE TABLE IF NOT EXISTS detections (
 
 CREATE INDEX IF NOT EXISTS idx_detections_location ON detections(latitude, longitude);
 CREATE INDEX IF NOT EXISTS idx_detections_status ON detections(status);
+CREATE INDEX IF NOT EXISTS idx_detections_status_sev ON detections(status, severity);
+CREATE INDEX IF NOT EXISTS idx_detections_ts ON detections(timestamp);
 """
 
 CIVICLENS_DOMAIN_SCHEMA = """

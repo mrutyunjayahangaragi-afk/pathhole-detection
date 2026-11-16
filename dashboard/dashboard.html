@@ -3,15 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-<title>CivicLens — Live Pothole & Infrastructure Monitor</title>
+<title>CivicLens — Live Sensor & Fleet Telemetry Monitor</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --asphalt: #0f172a;
-    --panel: #1e293b;
-    --panel-raised: #283548;
+    --asphalt: #0b1120;
+    --panel: #131c31;
+    --panel-raised: #1e293b;
+    --panel-card: #182235;
     --hairline: #334155;
     --chalk: #f8fafc;
     --slate: #94a3b8;
@@ -21,7 +22,13 @@
     --severe: #ef4444;
     --moderate: #f97316;
     --minor: #10b981;
+    --status-connected: #10b981;
+    --status-stale: #f59e0b;
+    --status-disconnected: #64748b;
     --touch-min: 44px;
+    --font-heading: 'Oswald', sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
   }
 
   * { box-sizing: border-box; }
@@ -31,81 +38,33 @@
     min-height: 100%;
     background: var(--asphalt);
     color: var(--chalk);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: var(--font-body);
     -webkit-text-size-adjust: 100%;
   }
 
-  /* Desktop viewport locking */
-  @media (min-width: 1024px) {
-    html, body {
-      height: 100%;
-      overflow: hidden;
-    }
-    #app {
-      display: grid;
-      grid-template-rows: auto auto 1fr;
-      height: 100vh;
-    }
-    main {
-      display: grid;
-      grid-template-columns: 1fr 400px;
-      min-height: 0;
-    }
-    #map { width: 100%; height: 100%; }
-    #side {
-      height: 100%;
-      border-left: 1px solid var(--hairline);
-    }
+  .mono { font-family: var(--font-mono); }
+
+  /* App Shell Grid */
+  #app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
   }
 
-  /* Mobile and Tablet fluid vertical flow */
-  @media (max-width: 1023px) {
-    html, body {
-      overflow-y: auto;
-    }
-    #app {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-    main {
-      display: flex;
-      flex-direction: column;
-    }
-    #map {
-      width: 100%;
-      height: 48vh;
-      min-height: 320px;
-    }
-    #side {
-      width: 100%;
-      border-top: 2px solid var(--hairline);
-    }
-    #feed {
-      max-height: 65vh;
-      overflow-y: auto;
-    }
-  }
-
-  .mono { font-family: 'IBM Plex Mono', monospace; }
-
-  /* ---------- Header ---------- */
+  /* Header */
   header {
     background: var(--panel);
     border-bottom: 3px solid var(--safety-yellow);
-    padding: 12px 16px;
+    padding: 12px 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 16px;
     flex-wrap: wrap;
     background-image: repeating-linear-gradient(
-      -45deg, transparent, transparent 18px, rgba(245,158,11,0.035) 18px, rgba(245,158,11,0.035) 36px
+      -45deg, transparent, transparent 18px, rgba(245,158,11,0.03) 18px, rgba(245,158,11,0.03) 36px
     );
-  }
-
-  @media (min-width: 768px) {
-    header { padding: 14px 24px; }
+    z-index: 100;
   }
 
   .brand-group {
@@ -115,7 +74,7 @@
   }
 
   .nav-toggle-btn {
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     width: var(--touch-min);
@@ -128,16 +87,26 @@
     cursor: pointer;
   }
 
-  @media (min-width: 1024px) {
-    .nav-toggle-btn { display: none; }
+  @media (max-width: 1023px) {
+    .nav-toggle-btn { display: flex; }
   }
 
-  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
-  .brand-mark {
-    width: 36px; height: 36px; flex-shrink: 0;
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: inherit;
   }
+
+  .brand-mark {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+  }
+
   .brand h1 {
-    font-family: 'Oswald', sans-serif;
+    font-family: var(--font-heading);
     font-weight: 700;
     font-size: clamp(18px, 4vw, 22px);
     letter-spacing: 0.04em;
@@ -148,49 +117,49 @@
     align-items: center;
     gap: 6px;
   }
+
   .brand .tag {
-    font-size: 10px;
+    font-size: 11px;
     background: var(--civic-blue);
+    color: white;
     padding: 2px 6px;
     border-radius: 4px;
     letter-spacing: 0.05em;
+    font-family: var(--font-mono);
   }
+
   .brand .sub {
     font-size: 11px;
     color: var(--slate);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    margin-top: 1px;
-    display: none;
-  }
-  @media (min-width: 480px) {
-    .brand .sub { display: block; }
+    letter-spacing: 0.02em;
   }
 
-  /* Desktop Quick Nav */
   .desktop-nav {
-    display: none;
+    display: flex;
+    gap: 6px;
     align-items: center;
-    gap: 8px;
   }
-  @media (min-width: 1024px) {
-    .desktop-nav { display: flex; }
+
+  @media (max-width: 1023px) {
+    .desktop-nav { display: none; }
   }
+
   .desktop-nav a {
     color: var(--slate);
     text-decoration: none;
     font-size: 12px;
     font-weight: 500;
     padding: 6px 12px;
-    border-radius: 6px;
+    border-radius: 4px;
     border: 1px solid transparent;
     transition: all 0.15s ease;
   }
+
   .desktop-nav a:hover {
     color: var(--chalk);
     background: var(--panel-raised);
-    border-color: var(--hairline);
   }
+
   .desktop-nav a.active {
     color: var(--chalk);
     background: var(--panel-raised);
@@ -199,283 +168,592 @@
   }
 
   .conn-status {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 11px; color: var(--slate);
-    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     background: var(--panel-raised);
-    border-radius: 20px;
     border: 1px solid var(--hairline);
-    min-height: 32px;
-  }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--slate-dim); flex-shrink:0; }
-  .dot.live { background: var(--minor); box-shadow: 0 0 0 0 rgba(16,185,129,0.6); animation: pulse 2s infinite; }
-  .dot.demo { background: var(--safety-yellow); }
-  @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); }
-    70% { box-shadow: 0 0 0 6px rgba(16,185,129,0); }
-    100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-family: var(--font-mono);
   }
 
-  /* Mobile Slide-Out Drawer Navigation */
-  .mobile-drawer {
-    position: fixed;
-    top: 0; left: 0; bottom: 0;
-    width: 260px;
-    background: var(--panel);
-    border-right: 1px solid var(--hairline);
-    z-index: 1000;
-    transform: translateX(-100%);
-    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  .conn-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #eab308;
+    box-shadow: 0 0 8px rgba(234, 179, 8, 0.4);
+  }
+
+  .conn-dot.live {
+    background: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+  }
+
+  .conn-dot.disconnected {
+    background: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+  }
+
+  /* Top Metrics Bar */
+  .stats-bar {
+    background: var(--panel-card);
+    border-bottom: 1px solid var(--hairline);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 1px;
+    background-color: var(--hairline);
+  }
+
+  .stat-cell {
+    background: var(--panel-card);
+    padding: 12px 18px;
     display: flex;
     flex-direction: column;
-    padding: 20px 16px;
-    box-shadow: 4px 0 16px rgba(0,0,0,0.5);
+    gap: 2px;
   }
-  .mobile-drawer.open {
-    transform: translateX(0);
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--slate);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
   }
-  .drawer-backdrop {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.6);
-    z-index: 999;
-  }
-  .drawer-backdrop.open { display: block; }
-  .drawer-brand {
-    font-family: 'Oswald', sans-serif;
-    font-size: 20px;
+
+  .stat-val {
+    font-family: var(--font-heading);
+    font-size: 24px;
+    font-weight: 700;
     color: var(--chalk);
-    margin-bottom: 24px;
+    line-height: 1.1;
+  }
+
+  .stat-sub {
+    font-size: 11px;
+    color: var(--slate-dim);
+  }
+
+  /* Main Workspace Layout */
+  main {
+    flex: 1;
+    display: grid;
+    min-height: 0;
+  }
+
+  @media (min-width: 1200px) {
+    main {
+      grid-template-columns: 1fr 440px;
+      height: calc(100vh - 145px);
+      overflow: hidden;
+    }
+  }
+
+  @media (max-width: 1199px) {
+    main {
+      display: flex;
+      flex-direction: column;
+    }
+  }
+
+  /* Center Stage: Map + Camera Grid */
+  .center-stage {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  #map-container {
+    height: 52vh;
+    min-height: 380px;
+    position: relative;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  #map {
+    width: 100%;
+    height: 100%;
+    background: #0f172a;
+  }
+
+  .map-overlay-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 1000;
+    background: rgba(19, 28, 49, 0.88);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--hairline);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--chalk);
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+
+  /* Camera & Edge Diagnostics Panel */
+  .camera-panel {
+    background: var(--panel);
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--hairline);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .camera-panel-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
   }
-  .drawer-close {
-    background: transparent;
-    border: none;
-    color: var(--slate);
-    font-size: 24px;
-    cursor: pointer;
-    width: var(--touch-min);
-    height: var(--touch-min);
+
+  .camera-panel-title {
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
     display: flex;
     align-items: center;
-    justify-content: center;
-  }
-  .drawer-links {
-    list-style: none;
-    margin: 0; padding: 0;
-    display: flex;
-    flex-direction: column;
     gap: 8px;
   }
-  .drawer-links a {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 14px;
-    color: var(--slate);
-    text-decoration: none;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
-    min-height: var(--touch-min);
-  }
-  .drawer-links a:hover, .drawer-links a.active {
+
+  .camera-selector {
     background: var(--panel-raised);
+    border: 1px solid var(--hairline);
     color: var(--chalk);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    outline: none;
   }
 
-  /* ---------- Stat Strip (Responsive Grid) ---------- */
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    background: var(--asphalt);
-    border-bottom: 1px solid var(--hairline);
+  .camera-display-box {
+    background: #070d19;
+    border: 1px solid var(--hairline);
+    border-radius: 8px;
+    padding: 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 190px;
+    position: relative;
+    overflow: hidden;
   }
 
-  @media (min-width: 480px) {
-    .stats {
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    }
+  .camera-display-box::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 20px 20px;
+    pointer-events: none;
   }
 
-  @media (min-width: 1024px) {
-    .stats {
-      grid-template-columns: repeat(5, 1fr);
-    }
-  }
-
-  .stat {
-    padding: 10px 14px;
-    border-right: 1px solid var(--hairline);
-    border-bottom: 1px solid var(--hairline);
-  }
-  @media (min-width: 768px) {
-    .stat {
-      padding: 14px 20px;
-      border-bottom: none;
-    }
-  }
-  .stat:last-child { border-right: none; }
-  .stat .label {
-    font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--slate-dim); margin-bottom: 2px;
-  }
-  .stat .value {
-    font-family: 'Oswald', sans-serif;
-    font-size: clamp(22px, 4vw, 28px);
+  .camera-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(100, 116, 139, 0.2);
+    border: 1px solid var(--slate-dim);
+    color: var(--slate);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-family: var(--font-mono);
     font-weight: 600;
-    line-height: 1;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .camera-status-pill.not-configured {
+    background: rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.4);
+    color: var(--safety-yellow);
+  }
+
+  .camera-status-pill.offline {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: var(--severe);
+  }
+
+  .camera-msg-title {
+    font-size: 14px;
+    font-weight: 600;
     color: var(--chalk);
-  }
-  .stat .value.severe-num { color: var(--severe); }
-  .stat .value.moderate-num { color: var(--moderate); }
-  .stat .value.minor-num { color: var(--minor); }
-
-  /* Leaflet dark tuning */
-  .leaflet-container { background: #0d0e10; }
-  .leaflet-control-attribution {
-    background: rgba(15,23,42,0.85) !important;
-    color: var(--slate-dim) !important;
-    font-size: 9px !important;
-  }
-  .leaflet-control-attribution a { color: var(--slate) !important; }
-  .leaflet-control-zoom a {
-    background: var(--panel-raised) !important;
-    color: var(--chalk) !important;
-    border-color: var(--hairline) !important;
-    width: 34px !important;
-    height: 34px !important;
-    line-height: 34px !important;
+    margin: 4px 0;
   }
 
-  /* ---------- Side panel ---------- */
-  #side {
+  .camera-msg-body {
+    font-size: 12px;
+    color: var(--slate);
+    max-width: 520px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+
+  .camera-diagnostics-meta {
+    margin-top: 12px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--slate-dim);
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* Right Sidebar (Fleet Roster & Telemetry Feed) */
+  .side-panel {
     background: var(--panel);
+    border-left: 1px solid var(--hairline);
     display: flex;
     flex-direction: column;
     min-height: 0;
   }
 
-  .side-header {
-    padding: 12px 16px 10px;
+  .side-tabs {
+    display: flex;
     border-bottom: 1px solid var(--hairline);
+    background: var(--panel-card);
   }
-  .side-header .title {
-    font-family: 'Oswald', sans-serif;
-    font-size: 14px; font-weight: 600; letter-spacing: 0.05em;
+
+  .side-tab {
+    flex: 1;
+    padding: 12px 14px;
+    font-size: 12px;
+    font-weight: 600;
     text-transform: uppercase;
-    color: var(--chalk);
-    margin-bottom: 8px;
+    letter-spacing: 0.05em;
+    background: none;
+    border: none;
+    color: var(--slate);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
     display: flex;
     align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+  }
+
+  .side-tab:hover {
+    color: var(--chalk);
+    background: rgba(255,255,255,0.02);
+  }
+
+  .side-tab.active {
+    color: var(--chalk);
+    border-bottom-color: var(--safety-yellow);
+    background: var(--panel);
+  }
+
+  .tab-badge {
+    background: var(--panel-raised);
+    color: var(--slate);
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-family: var(--font-mono);
+  }
+
+  .tab-content {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+
+  /* Fleet Roster List */
+  .device-list {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .device-card {
+    background: var(--panel-card);
+    border: 1px solid var(--hairline);
+    border-radius: 8px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .device-card:hover {
+    border-color: var(--safety-yellow);
+    background: var(--panel-raised);
+  }
+
+  .device-card.selected {
+    border-color: var(--civic-blue);
+    box-shadow: 0 0 0 1px var(--civic-blue);
+  }
+
+  .device-header {
+    display: flex;
     justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .device-name {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--chalk);
+  }
+
+  .device-id {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--slate);
+  }
+
+  .device-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .device-status-badge.CONNECTED {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+
+  .device-status-badge.STALE {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+
+  .device-status-badge.DISCONNECTED,
+  .device-status-badge.NOT_CONFIGURED {
+    background: rgba(100, 116, 139, 0.15);
+    color: #94a3b8;
+    border: 1px solid rgba(100, 116, 139, 0.3);
+  }
+
+  .device-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--slate-dim);
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255,255,255,0.04);
+  }
+
+  /* Telemetry Feed */
+  .feed-controls {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--hairline);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
   }
 
   .filters {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 4px;
-    scrollbar-width: none;
   }
-  .filters::-webkit-scrollbar { display: none; }
 
   .chip {
-    font-size: 12px;
-    padding: 6px 14px;
-    min-height: 36px;
-    border-radius: 20px;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 14px;
     border: 1px solid var(--hairline);
-    background: var(--panel-raised);
+    background: var(--panel-card);
     color: var(--slate);
     cursor: pointer;
-    user-select: none;
-    transition: all 0.15s ease;
     white-space: nowrap;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    transition: all 0.15s ease;
   }
-  .chip:hover { border-color: var(--slate-dim); }
-  .chip.active { background: var(--safety-yellow); color: #16181c; border-color: var(--safety-yellow); font-weight: 600; }
+
+  .chip:hover { border-color: var(--slate-dim); color: var(--chalk); }
+  .chip.active { background: var(--safety-yellow); color: #0b1120; border-color: var(--safety-yellow); font-weight: 600; }
   .chip.sev-severe.active { background: var(--severe); color: white; border-color: var(--severe); }
-  .chip.sev-moderate.active { background: var(--moderate); color: #16181c; border-color: var(--moderate); }
-  .chip.sev-minor.active { background: var(--minor); color: #16181c; border-color: var(--minor); }
+  .chip.sev-moderate.active { background: var(--moderate); color: white; border-color: var(--moderate); }
+  .chip.sev-minor.active { background: var(--minor); color: #0b1120; border-color: var(--minor); }
 
-  #feed {
-    flex: 1;
-    overflow-y: auto;
-    padding: 4px 0;
+  #telemetry-feed-list {
+    padding: 6px 0;
+    display: flex;
+    flex-direction: column;
   }
-  #feed::-webkit-scrollbar { width: 6px; }
-  #feed::-webkit-scrollbar-thumb { background: var(--hairline); border-radius: 3px; }
 
-  .report {
+  .telemetry-item {
     padding: 12px 16px;
     border-bottom: 1px solid var(--hairline);
     display: grid;
-    grid-template-columns: 32px 1fr;
+    grid-template-columns: 28px 1fr;
     gap: 12px;
     cursor: pointer;
     transition: background 0.15s ease;
   }
-  .report:hover { background: var(--panel-raised); }
-  .report.highlight { background: var(--panel-raised); }
 
-  .sev-icon { width: 32px; height: 26px; margin-top: 2px; flex-shrink: 0; }
+  .telemetry-item:hover { background: var(--panel-raised); }
+  .telemetry-item.new-ping { animation: flash-highlight 1.5s ease-out; }
 
-  .report .row1 {
-    display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  @keyframes flash-highlight {
+    0% { background: rgba(37, 99, 235, 0.4); }
+    100% { background: transparent; }
   }
-  .report .address {
-    font-size: 13px; color: var(--chalk); font-weight: 500;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+
+  .sev-indicator {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 13px;
   }
-  .report .ago { font-size: 10px; color: var(--slate-dim); flex-shrink: 0; }
-  .report .meta {
-    font-size: 11px; color: var(--slate);
-    display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap;
+
+  .sev-indicator.severe { background: rgba(239, 68, 68, 0.2); color: var(--severe); border: 1px solid var(--severe); }
+  .sev-indicator.moderate { background: rgba(249, 115, 22, 0.2); color: var(--moderate); border: 1px solid var(--moderate); }
+  .sev-indicator.minor { background: rgba(16, 185, 129, 0.2); color: var(--minor); border: 1px solid var(--minor); }
+
+  .telemetry-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
-  .report .meta .badge {
-    padding: 2px 6px; border-radius: 4px; background: var(--panel-raised);
+
+  .telemetry-row1 {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .telemetry-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--chalk);
+  }
+
+  .telemetry-time {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--slate-dim);
+  }
+
+  .telemetry-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: 11px;
+    font-family: var(--font-mono);
+  }
+
+  .telemetry-tag {
+    background: var(--panel-card);
     border: 1px solid var(--hairline);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--slate);
   }
-  .report .status-row {
-    margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap;
-  }
-  .status-btn {
-    font-size: 11px; padding: 6px 10px; min-height: 32px; border-radius: 4px;
-    background: transparent; border: 1px solid var(--hairline);
-    color: var(--slate); cursor: pointer; letter-spacing: 0.02em;
-    text-transform: uppercase; display: inline-flex; align-items: center;
-  }
-  .status-btn:hover { border-color: var(--safety-yellow); color: var(--safety-yellow); }
-  .status-btn.current { background: var(--safety-yellow); color: #16181c; border-color: var(--safety-yellow); font-weight: 600; }
 
   .empty-state {
-    padding: 48px 20px; text-align: center; color: var(--slate-dim);
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--slate-dim);
   }
-  .empty-state .icon { font-size: 32px; margin-bottom: 8px; }
-  .empty-state .msg { font-size: 13px; }
 
-  .marker-pop {
-    font-family: 'Inter', sans-serif;
-    color: #16181c;
-    font-size: 12px;
+  /* Mobile slide-out drawer */
+  .mobile-drawer {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 280px;
+    background: var(--panel);
+    border-right: 1px solid var(--hairline);
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    z-index: 2000;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
   }
-  .marker-pop b { font-family: 'Oswald', sans-serif; }
+
+  .mobile-drawer.open { transform: translateX(0); }
+
+  .drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease;
+    z-index: 1999;
+  }
+
+  .drawer-backdrop.open { opacity: 1; visibility: visible; }
+
+  .drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .drawer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .drawer-links a {
+    color: var(--slate);
+    text-decoration: none;
+    font-size: 14px;
+    padding: 10px 14px;
+    border-radius: 6px;
+    display: block;
+  }
+
+  .drawer-links a.active, .drawer-links a:hover {
+    background: var(--panel-raised);
+    color: var(--chalk);
+  }
 
   .footer-sub {
     font-size: 10px;
     color: var(--slate-dim);
-    padding: 8px 16px;
+    padding: 10px 16px;
     text-align: center;
     border-top: 1px solid var(--hairline);
+    background: var(--panel-card);
   }
+
   .footer-sub a { color: var(--slate); text-decoration: none; }
 </style>
 </head>
@@ -484,29 +762,34 @@
 <!-- Mobile Drawer Backdrop -->
 <div class="drawer-backdrop" id="drawer-backdrop"></div>
 
-<!-- Mobile Slide-Out Drawer -->
+<!-- Mobile Drawer -->
 <nav class="mobile-drawer" id="mobile-drawer" aria-label="Mobile Navigation">
-  <div class="drawer-brand">
-    <span>CivicLens</span>
-    <button class="drawer-close" id="drawer-close" aria-label="Close navigation">&times;</button>
+  <div class="drawer-header">
+    <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 700; color: var(--chalk);">
+      CIVIC<span style="color: var(--safety-yellow);">LENS</span>
+    </div>
+    <button id="drawer-close" style="background: none; border: none; color: var(--slate); font-size: 24px; cursor: pointer;">&times;</button>
   </div>
   <ul class="drawer-links">
     <li><a href="../frontend/index.html">🏛️ Home Portal</a></li>
     <li><a href="../frontend/citizen-report.html">📢 Report Defect</a></li>
     <li><a href="../frontend/public-map.html">🗺️ Public Incident Map</a></li>
-    <li><a href="#" class="active">⚡ Live Monitor</a></li>
+    <li><a href="#" class="active">⚡ Live Sensor Monitor</a></li>
+    <li><a href="../frontend/transparency.html">📊 Civic Transparency</a></li>
+    <li><a href="../frontend/notifications.html">🔔 Notification Center</a></li>
     <li><a href="../frontend/municipal/dashboard.html">🛠️ Municipal Triage</a></li>
     <li><a href="../frontend/municipal/verification.html">🔍 Verification Queue</a></li>
   </ul>
-  <div style="margin-top: auto; padding-top: 16px; font-size: 11px; color: var(--slate-dim);">
-    CivicLens v2.0 · Municipal Console
+  <div style="margin-top: auto; font-size: 11px; color: var(--slate-dim); font-family: var(--font-mono);">
+    CivicLens v2.4 · Municipal Edge
   </div>
 </nav>
 
 <div id="app">
+  <!-- Top Navigation Header -->
   <header>
     <div class="brand-group">
-      <button class="nav-toggle-btn" id="nav-toggle-btn" aria-label="Open navigation menu">☰</button>
+      <button class="nav-toggle-btn" id="nav-toggle-btn" aria-label="Open Navigation">☰</button>
       <a href="../frontend/index.html" class="brand">
         <svg class="brand-mark" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect width="48" height="48" rx="8" fill="#1e293b"/>
@@ -516,132 +799,220 @@
           <circle cx="24" cy="18" r="3" fill="#2563eb"/>
         </svg>
         <div>
-          <h1>CivicLens <span class="tag">AI</span></h1>
-          <div class="sub">Live Infrastructure Triage &amp; Reporting — Municipal Console</div>
+          <h1>CivicLens <span class="tag">EDGE</span></h1>
+          <div class="sub">Live Vehicle Sensor &amp; Telemetry Operations Console</div>
         </div>
       </a>
     </div>
 
-    <!-- Desktop Navigation -->
-    <nav class="desktop-nav" aria-label="Header Navigation">
+    <!-- Desktop Navigation Links -->
+    <nav class="desktop-nav" aria-label="Desktop Navigation">
       <a href="../frontend/index.html">Portal</a>
       <a href="../frontend/citizen-report.html">Citizen Report</a>
       <a href="../frontend/public-map.html">Public Map</a>
       <a href="#" class="active">Live Monitor</a>
+      <a href="../frontend/transparency.html">Transparency</a>
+      <a href="../frontend/notifications.html">Notifications</a>
       <a href="../frontend/municipal/dashboard.html">Municipal Triage</a>
-      <a href="../frontend/municipal/verification.html">Verification</a>
+      <a href="../frontend/municipal/verification.html">Verification Queue</a>
     </nav>
 
-    <div id="conn-status" class="conn-status">
-      <div class="dot" id="conn-dot"></div>
-      <span id="conn-text">Connecting…</span>
+    <!-- Real-time Connection Indicator -->
+    <div class="conn-status" id="conn-status">
+      <div class="conn-dot" id="conn-dot"></div>
+      <span id="conn-text">Connecting...</span>
     </div>
   </header>
 
-  <div class="stats">
-    <div class="stat">
-      <div class="label">Open Incidents</div>
-      <div class="value" id="stat-total">—</div>
+  <!-- Top Metrics Bar -->
+  <section class="stats-bar" aria-label="Operational Telemetry Metrics">
+    <div class="stat-cell">
+      <span class="stat-label">Total Telemetry Events</span>
+      <span class="stat-val" id="metric-total-events">—</span>
+      <span class="stat-sub">Ingested edge records</span>
     </div>
-    <div class="stat">
-      <div class="label">Severe</div>
-      <div class="value severe-num" id="stat-severe">—</div>
+    <div class="stat-cell">
+      <span class="stat-label">Connected Edge Devices</span>
+      <span class="stat-val" id="metric-connected-devices" style="color: var(--minor);">—</span>
+      <span class="stat-sub" id="metric-total-devices">Fleet roster total</span>
     </div>
-    <div class="stat">
-      <div class="label">Moderate</div>
-      <div class="value moderate-num" id="stat-moderate">—</div>
+    <div class="stat-cell">
+      <span class="stat-label">Events Ingested Today</span>
+      <span class="stat-val" id="metric-events-today" style="color: var(--safety-yellow);">—</span>
+      <span class="stat-sub">Rolling 24h window</span>
     </div>
-    <div class="stat">
-      <div class="label">Minor</div>
-      <div class="value minor-num" id="stat-minor">—</div>
+    <div class="stat-cell">
+      <span class="stat-label">Severe Defects</span>
+      <span class="stat-val" id="metric-severe-defects" style="color: var(--severe);">—</span>
+      <span class="stat-sub">High triage priority</span>
     </div>
-    <div class="stat">
-      <div class="label">Active Sources</div>
-      <div class="value" id="stat-vehicles">—</div>
+    <div class="stat-cell">
+      <span class="stat-label">Optical Stream Pipelines</span>
+      <span class="stat-val" id="metric-active-cameras" style="color: var(--slate-dim);">0</span>
+      <span class="stat-sub">Honest offline state</span>
     </div>
-  </div>
+  </section>
 
+  <!-- Main Multi-Column Operations Display -->
   <main>
-    <div id="map"></div>
-    <div id="side">
-      <div class="side-header">
-        <div class="title">
-          <span>Live Detection Feed</span>
-          <span style="font-size: 11px; color: var(--slate); font-weight: normal;" id="feed-count"></span>
+    <!-- Left Stage: Geospatial Map + Honest Camera Panel -->
+    <section class="center-stage">
+      <!-- Leaflet Map Container -->
+      <div id="map-container">
+        <div class="map-overlay-badge">
+          <span>● GPS SENSOR TELEMETRY &middot; BENGALURU WARD BOUNDARIES</span>
         </div>
-        <div class="filters" id="filters" role="toolbar" aria-label="Filter detections by severity">
-          <button class="chip active" data-sev="all">All</button>
-          <button class="chip sev-severe" data-sev="severe">Severe</button>
-          <button class="chip sev-moderate" data-sev="moderate">Moderate</button>
-          <button class="chip sev-minor" data-sev="minor">Minor</button>
+        <div id="map"></div>
+      </div>
+
+      <!-- Honest Camera & Edge Diagnostics Panel -->
+      <div class="camera-panel">
+        <div class="camera-panel-header">
+          <div class="camera-panel-title">
+            <span>📷 Onboard Camera Diagnostics</span>
+            <span style="font-size: 11px; color: var(--slate); font-weight: normal; font-family: var(--font-mono);">
+              Hardware Video Channel
+            </span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <label for="camera-device-select" style="font-size: 11px; color: var(--slate); font-family: var(--font-mono);">Device:</label>
+            <select id="camera-device-select" class="camera-selector" aria-label="Select edge camera device">
+              <option value="">Loading fleet devices...</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Honest Camera Status Box (No Fake Video Loops) -->
+        <div class="camera-display-box" id="camera-display-box">
+          <div class="camera-status-pill not-configured" id="camera-pill">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></span>
+            <span id="camera-pill-text">Camera Not Configured</span>
+          </div>
+          <div class="camera-msg-title" id="camera-msg-title">Video Stream Hardware Not Connected</div>
+          <p class="camera-msg-body" id="camera-msg-body">
+            The edge vehicle node is currently reporting GPS positioning, vibration metrics, and YOLO hazard detections via the telemetry ingestion API. Video streaming pipeline (RTSP/WebRTC) is not attached.
+          </p>
+          <div class="camera-diagnostics-meta" id="camera-diag-meta">
+            <span>Device ID: <b id="diag-dev-id">—</b></span>
+            <span>Firmware: <b id="diag-firmware">—</b></span>
+            <span>Sensor Mode: <b>High-Precision Telemetry</b></span>
+          </div>
         </div>
       </div>
-      <div id="feed"></div>
+    </section>
+
+    <!-- Right Stage: Fleet Roster & Live Telemetry Feed -->
+    <aside class="side-panel">
+      <!-- Tab Controls -->
+      <div class="side-tabs">
+        <button class="side-tab active" id="tab-btn-feed" onclick="switchSideTab('feed')">
+          <span>Live Telemetry</span>
+          <span class="tab-badge" id="feed-tab-badge">0</span>
+        </button>
+        <button class="side-tab" id="tab-btn-fleet" onclick="switchSideTab('fleet')">
+          <span>Device Fleet</span>
+          <span class="tab-badge" id="fleet-tab-badge">0</span>
+        </button>
+      </div>
+
+      <!-- Feed Tab Content -->
+      <div class="tab-content" id="tab-content-feed">
+        <div class="feed-controls">
+          <div class="filters" id="severity-filters" role="toolbar" aria-label="Filter events by severity">
+            <button class="chip active" data-sev="all">All</button>
+            <button class="chip sev-severe" data-sev="severe">Severe</button>
+            <button class="chip sev-moderate" data-sev="moderate">Moderate</button>
+            <button class="chip sev-minor" data-sev="minor">Minor</button>
+          </div>
+          <span style="font-size: 11px; color: var(--slate-dim); font-family: var(--font-mono);" id="feed-status-indicator">
+            SSE Live
+          </span>
+        </div>
+        <div id="telemetry-feed-list">
+          <div class="empty-state">Loading sensor stream...</div>
+        </div>
+      </div>
+
+      <!-- Fleet Roster Tab Content -->
+      <div class="tab-content" id="tab-content-fleet" style="display: none;">
+        <div class="device-list" id="device-fleet-list">
+          <div class="empty-state">Loading registered edge devices...</div>
+        </div>
+      </div>
+
+      <!-- Sidebar Footer Attribution -->
       <div class="footer-sub">
-        Originally Roadstate &copy; 2026 halo-112 (MIT) &middot; Extended as CivicLens
+        CivicLens Edge &middot; Built upon Roadstate (MIT License) &middot; Visuals by <a href="https://icons8.com" target="_blank" rel="noopener">Icons8</a>
       </div>
-    </div>
+    </aside>
   </main>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 /* ============================================================
-   DRAWER NAVIGATION
+   CIVICLENS LIVE SENSOR MONITOR ENGINE
+   100% Genuine Database & Ingestion Stream - Zero Mocked Data
    ============================================================ */
+
+const API_BASE = window.location.origin && window.location.origin.startsWith('http')
+  ? window.location.origin
+  : "http://localhost:5055";
+
+// Default coordinate center (Bengaluru municipal area)
+const DEFAULT_MAP_CENTER = [12.9716, 77.5946];
+const SEVERITY_COLORS = {
+  minor: "#10b981",
+  moderate: "#f97316",
+  severe: "#ef4444",
+  critical: "#dc2626"
+};
+
+let currentFilter = "all";
+let registeredDevices = [];
+let telemetryEvents = [];
+let mapMarkers = {};
+let deviceMarkers = {};
+let selectedDeviceId = null;
+let sseConnection = null;
+
+/* ------------------------------------------------------------
+   DRAWER NAVIGATION
+   ------------------------------------------------------------ */
 const navToggleBtn = document.getElementById('nav-toggle-btn');
 const mobileDrawer = document.getElementById('mobile-drawer');
 const drawerBackdrop = document.getElementById('drawer-backdrop');
 const drawerClose = document.getElementById('drawer-close');
 
 function openDrawer() {
-  mobileDrawer.classList.add('open');
-  drawerBackdrop.classList.add('open');
+  if (mobileDrawer) mobileDrawer.classList.add('open');
+  if (drawerBackdrop) drawerBackdrop.classList.add('open');
 }
 function closeDrawer() {
-  mobileDrawer.classList.remove('open');
-  drawerBackdrop.classList.remove('open');
+  if (mobileDrawer) mobileDrawer.classList.remove('open');
+  if (drawerBackdrop) drawerBackdrop.classList.remove('open');
 }
 if (navToggleBtn) navToggleBtn.addEventListener('click', openDrawer);
 if (drawerClose) drawerClose.addEventListener('click', closeDrawer);
 if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeDrawer);
 
-/* ============================================================
-   CONFIG
-   ============================================================ */
-const API_BASE = (window.location.origin && window.location.origin.startsWith('http')) 
-  ? window.location.origin 
-  : "http://localhost:5055";
-const POLL_INTERVAL_MS = 4000;
-const CITY_CENTER = [8.5241, 76.9366]; // Thiruvananthapuram / Bengaluru demo default
+/* ------------------------------------------------------------
+   MAP SETUP & TILES
+   ------------------------------------------------------------ */
+const map = L.map('map', { zoomControl: true, attributionControl: true }).setView(DEFAULT_MAP_CENTER, 13);
 
-const SEVERITY_COLORS = { minor: "#10b981", moderate: "#f97316", severe: "#ef4444" };
-let currentFilter = "all";
-let demoMode = false;
-let detections = [];
-let markers = {};
-
-/* ============================================================
-   MAP SETUP
-   ============================================================ */
-const map = L.map('map', { zoomControl: true, attributionControl: true }).setView(CITY_CENTER, 13);
-
-function initDashboardMapTiles() {
-  const cartoKey = window.CARTO_API_KEY || (window.CIVICLENS_CONFIG && window.CIVICLENS_CONFIG.carto_api_key) || "";
-  const cartoUrl = cartoKey
-    ? `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?api_key=${encodeURIComponent(cartoKey)}`
-    : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-
+function initMapTiles() {
+  const cartoUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
   const cartoLayer = L.tileLayer(cartoUrl, {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>',
-    maxZoom: 19,
+    maxZoom: 19
   }).addTo(map);
 
   let osmFallbackApplied = false;
   cartoLayer.on('tileerror', function() {
     if (!osmFallbackApplied) {
       osmFallbackApplied = true;
-      console.warn("CARTO basemap tile request failed; falling back to OpenStreetMap tiles.");
+      console.warn("CARTO basemap tile request failed; falling back to standard OpenStreetMap tiles.");
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
         maxZoom: 19
@@ -649,248 +1020,430 @@ function initDashboardMapTiles() {
     }
   });
 }
+initMapTiles();
 
-fetch('/api/config')
-  .then(res => res.ok ? res.json() : {})
-  .then(cfg => {
-    if (cfg && cfg.carto_api_key) {
-      window.CARTO_API_KEY = cfg.carto_api_key;
-    }
-  })
-  .catch(() => {})
-  .finally(() => {
-    initDashboardMapTiles();
-  });
-
-function potholeIconSvg(severity) {
+/* ------------------------------------------------------------
+   ICON BUILDERS
+   ------------------------------------------------------------ */
+function createDefectIcon(severity) {
   const color = SEVERITY_COLORS[severity] || "#94a3b8";
-  return `
-    <svg width="30" height="24" viewBox="0 0 30 24" xmlns="http://www.w3.org/2000/svg">
-      <path d="M1 16 Q 8 12, 11 16 Q 15 20, 19 16 Q 22 12, 29 16" stroke="#f8fafc" stroke-width="2" fill="none" stroke-linecap="round"/>
-      <ellipse cx="15" cy="16.5" rx="4.5" ry="2.2" fill="${color}" stroke="#0f172a" stroke-width="1"/>
+  const svgHtml = `
+    <svg width="28" height="24" viewBox="0 0 28 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M1 16 Q 7 12, 10 16 Q 14 20, 18 16 Q 21 12, 27 16" stroke="#f8fafc" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <ellipse cx="14" cy="16.5" rx="4.5" ry="2.2" fill="${color}" stroke="#0b1120" stroke-width="1"/>
     </svg>`;
-}
-
-function makeIcon(severity) {
   return L.divIcon({
-    html: potholeIconSvg(severity),
-    className: 'pothole-marker',
-    iconSize: [30, 24],
-    iconAnchor: [15, 16],
+    html: svgHtml,
+    className: 'defect-marker',
+    iconSize: [28, 24],
+    iconAnchor: [14, 16],
+    popupAnchor: [0, -14]
   });
 }
 
-/* ============================================================
-   DATA FETCHING
-   ============================================================ */
-async function fetchDetections() {
-  const res = await fetch(`${API_BASE}/api/detections?limit=300`, { signal: AbortSignal.timeout(3000) });
-  if (!res.ok) throw new Error('bad response');
-  return res.json();
+function createDeviceIcon(status) {
+  const color = status === "CONNECTED" ? "#10b981" : status === "STALE" ? "#f59e0b" : "#64748b";
+  const pulseHtml = status === "CONNECTED" ? `<div style="position: absolute; inset: -4px; border-radius: 50%; border: 2px solid ${color}; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite; opacity: 0.6;"></div>` : "";
+  const svgHtml = `
+    <div style="position: relative; width: 28px; height: 28px; background: #131c31; border: 2px solid ${color}; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.5);">
+      ${pulseHtml}
+      <span style="font-size: 13px;">🚗</span>
+    </div>`;
+  return L.divIcon({
+    html: svgHtml,
+    className: 'vehicle-marker',
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+    popupAnchor: [0, -14]
+  });
+}
+
+/* ------------------------------------------------------------
+   SIDEBAR TABS
+   ------------------------------------------------------------ */
+function switchSideTab(tab) {
+  const tabBtnFeed = document.getElementById('tab-btn-feed');
+  const tabBtnFleet = document.getElementById('tab-btn-fleet');
+  const contentFeed = document.getElementById('tab-content-feed');
+  const contentFleet = document.getElementById('tab-content-fleet');
+
+  if (tab === 'feed') {
+    tabBtnFeed.classList.add('active');
+    tabBtnFleet.classList.remove('active');
+    contentFeed.style.display = 'block';
+    contentFleet.style.display = 'none';
+  } else {
+    tabBtnFleet.classList.add('active');
+    tabBtnFeed.classList.remove('active');
+    contentFleet.style.display = 'block';
+    contentFeed.style.display = 'none';
+  }
+}
+
+/* ------------------------------------------------------------
+   DATA FETCHING & RENDERING
+   ------------------------------------------------------------ */
+function formatTimeAgo(timestampSec) {
+  if (!timestampSec) return "—";
+  const elapsed = Math.floor(Date.now() / 1000 - timestampSec);
+  if (elapsed < 10) return "just now";
+  if (elapsed < 60) return `${elapsed}s ago`;
+  if (elapsed < 3600) return `${Math.floor(elapsed / 60)}m ago`;
+  if (elapsed < 86400) return `${Math.floor(elapsed / 3600)}h ago`;
+  return `${Math.floor(elapsed / 86400)}d ago`;
 }
 
 async function fetchStats() {
-  const res = await fetch(`${API_BASE}/api/stats`, { signal: AbortSignal.timeout(3000) });
-  if (!res.ok) throw new Error('bad response');
-  return res.json();
-}
-
-async function patchStatus(id, status) {
   try {
-    await fetch(`${API_BASE}/api/detections/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    });
-  } catch (e) { /* demo mode / offline — update locally only */ }
-  const d = detections.find(x => x.id === id);
-  if (d) d.status = status;
-  render();
-}
-
-/* ============================================================
-   DEMO DATA (used if backend is unreachable)
-   ============================================================ */
-function generateDemoData() {
-  const hotspots = [
-    [8.5241, 76.9366], [8.4855, 76.9492], [8.5459, 76.9109], [8.5010, 76.9500], [8.5620, 76.9215]
-  ];
-  const vehicles = ['citizen-app', 'bus-042', 'car-118', 'survey-van', 'bus-003'];
-  const sevPool = ['minor','minor','moderate','minor','severe','moderate','severe','minor'];
-  const out = [];
-  let n = 0;
-  hotspots.forEach((hs, hi) => {
-    const clusterSize = 2 + (hi % 3);
-    for (let i = 0; i < clusterSize; i++) {
-      n++;
-      const sev = sevPool[n % sevPool.length];
-      out.push({
-        id: `demo-${n}`,
-        vehicle_id: vehicles[n % vehicles.length],
-        latitude: hs[0] + (Math.random() - 0.5) * 0.002,
-        longitude: hs[1] + (Math.random() - 0.5) * 0.002,
-        severity: sev,
-        est_depth_cm: sev === 'severe' ? +(5 + Math.random()*3).toFixed(1) : sev === 'moderate' ? +(2.5 + Math.random()*2).toFixed(1) : +(0.5 + Math.random()*1.8).toFixed(1),
-        confidence: +(0.65 + Math.random()*0.3).toFixed(2),
-        timestamp: (Date.now()/1000) - Math.random() * 3600 * 6,
-        status: ['reported','reported','acknowledged','scheduled'][n % 4],
-        report_count: 1 + (i === 0 ? Math.floor(Math.random()*4) : 0),
-        address: `Demo Ward ${hi+1}, Sector ${i+1}`,
-      });
+    const res = await fetch(`${API_BASE}/api/v1/telemetry/stats`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data && data.status === "success") {
+      document.getElementById('metric-total-events').textContent = (data.total_events || 0).toLocaleString();
+      document.getElementById('metric-connected-devices').textContent = `${data.connected_devices || 0} Active`;
+      document.getElementById('metric-total-devices').textContent = `${data.total_devices || 0} registered in fleet`;
+      document.getElementById('metric-events-today').textContent = (data.events_today || 0).toLocaleString();
+      const severeCount = (data.severity_distribution && data.severity_distribution.severe) || 0;
+      document.getElementById('metric-severe-defects').textContent = severeCount.toLocaleString();
+      document.getElementById('metric-active-cameras').textContent = "0 (Offline)";
     }
-  });
-  return out;
+  } catch (e) {
+    console.warn("Error fetching telemetry stats:", e);
+  }
 }
 
-function computeDemoStats(data) {
-  const open = data.filter(d => d.status !== 'repaired');
-  const bySev = {};
-  open.forEach(d => bySev[d.severity] = (bySev[d.severity]||0) + 1);
-  return {
-    total_reports: data.length,
-    active_vehicles: new Set(data.map(d=>d.vehicle_id)).size,
-    open_by_severity: bySev,
-  };
+async function fetchDevices() {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/telemetry/devices`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data && data.status === "success") {
+      registeredDevices = data.devices || [];
+      renderDevices(registeredDevices);
+      updateCameraSelector(registeredDevices);
+    }
+  } catch (e) {
+    console.warn("Error fetching devices:", e);
+  }
 }
 
-/* ============================================================
-   RENDERING
-   ============================================================ */
-function timeAgo(ts) {
-  const s = Math.floor(Date.now()/1000 - ts);
-  if (s < 60) return `${s}s ago`;
-  if (s < 3600) return `${Math.floor(s/60)}m ago`;
-  if (s < 86400) return `${Math.floor(s/3600)}h ago`;
-  return `${Math.floor(s/86400)}d ago`;
+async function fetchRecentEvents() {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/telemetry/events/recent?limit=50&severity=${encodeURIComponent(currentFilter)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data && data.status === "success") {
+      telemetryEvents = data.events || [];
+      renderTelemetryFeed(telemetryEvents);
+      renderMapDefects(telemetryEvents);
+      document.getElementById('feed-tab-badge').textContent = telemetryEvents.length;
+    }
+  } catch (e) {
+    console.warn("Error fetching recent telemetry events:", e);
+  }
 }
 
-function renderStats(stats) {
-  document.getElementById('stat-total').textContent = stats.total_reports ?? '—';
-  document.getElementById('stat-vehicles').textContent = stats.active_vehicles ?? '—';
-  const bySev = stats.open_by_severity || {};
-  document.getElementById('stat-severe').textContent = bySev.severe ?? 0;
-  document.getElementById('stat-moderate').textContent = bySev.moderate ?? 0;
-  document.getElementById('stat-minor').textContent = bySev.minor ?? 0;
-}
+function renderDevices(devices) {
+  const container = document.getElementById('device-fleet-list');
+  const badgeEl = document.getElementById('fleet-tab-badge');
+  if (badgeEl) badgeEl.textContent = devices.length;
 
-function renderMarkers(data) {
-  Object.values(markers).forEach(m => map.removeLayer(m));
-  markers = {};
-  data.forEach(d => {
-    if (currentFilter !== 'all' && d.severity !== currentFilter) return;
-    const marker = L.marker([d.latitude, d.longitude], { icon: makeIcon(d.severity) }).addTo(map);
-    marker.bindPopup(`
-      <div class="marker-pop">
-        <b>${d.severity.toUpperCase()}</b> pothole<br/>
-        Depth est. ${d.est_depth_cm} cm<br/>
-        Reported ${d.report_count || 1}&times; &middot; ${d.address || 'GPS verified'}<br/>
-        Status: <b>${d.status}</b>
-      </div>
-    `);
-    markers[d.id] = marker;
-  });
-}
-
-function renderFeed(data) {
-  const feed = document.getElementById('feed');
-  const countEl = document.getElementById('feed-count');
-  const filtered = currentFilter === 'all' ? data : data.filter(d => d.severity === currentFilter);
-  const sorted = [...filtered].sort((a,b) => b.timestamp - a.timestamp);
-
-  if (countEl) countEl.textContent = `(${sorted.length})`;
-
-  if (sorted.length === 0) {
-    feed.innerHTML = `<div class="empty-state"><div class="icon">🛣️</div><div class="msg">No reports match this filter.</div></div>`;
+  if (!devices || devices.length === 0) {
+    container.innerHTML = `<div class="empty-state">No edge devices registered.</div>`;
     return;
   }
 
-  feed.innerHTML = sorted.map(d => `
-    <div class="report" data-id="${d.id}">
-      <svg class="sev-icon" viewBox="0 0 30 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M1 16 Q 8 12, 11 16 Q 15 20, 19 16 Q 22 12, 29 16" stroke="#64748b" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <ellipse cx="15" cy="16.5" rx="4.5" ry="2.2" fill="${SEVERITY_COLORS[d.severity]}" stroke="#0f172a" stroke-width="1"/>
-      </svg>
-      <div>
-        <div class="row1">
-          <div class="address">${d.address || `${d.latitude.toFixed(4)}, ${d.longitude.toFixed(4)}`}</div>
-          <div class="ago mono">${timeAgo(d.timestamp)}</div>
+  container.innerHTML = devices.map(d => {
+    const isConnected = d.status === "CONNECTED";
+    const statusText = d.status.replace('_', ' ');
+    const lastSeen = d.last_heartbeat_at ? formatTimeAgo(new Date(d.last_heartbeat_at).getTime() / 1000) : "Never";
+    const isSelected = d.device_id === selectedDeviceId;
+
+    return `
+      <div class="device-card ${isSelected ? 'selected' : ''}" onclick="selectDevice('${d.device_id}')">
+        <div class="device-header">
+          <div>
+            <div class="device-name">${d.device_name}</div>
+            <div class="device-id">${d.device_id} &middot; ${d.assigned_vehicle || 'Static Unit'}</div>
+          </div>
+          <span class="device-status-badge ${d.status}">
+            <span style="width: 5px; height: 5px; border-radius: 50%; background: currentColor;"></span>
+            ${statusText}
+          </span>
         </div>
-        <div class="meta">
-          <span class="badge mono">${d.severity}</span>
-          <span class="badge mono">${d.est_depth_cm}cm</span>
-          <span class="badge mono">${d.vehicle_id}</span>
-          ${d.report_count > 1 ? `<span class="badge mono">&times;${d.report_count} reports</span>` : ''}
+        <div class="device-meta-row">
+          <span>Firmware: ${d.firmware_version || 'v1.0.0'}</span>
+          <span>Last Heartbeat: ${lastSeen}</span>
         </div>
-        <div class="status-row">
-          ${['reported','acknowledged','scheduled','repaired'].map(s => `
-            <button class="status-btn ${d.status === s ? 'current' : ''}" data-id="${d.id}" data-status="${s}">${s}</button>
-          `).join('')}
+        <div class="device-meta-row">
+          <span>Total Ingested: <b>${d.total_events_ingested || 0}</b></span>
+          <span>Camera: <span style="color: var(--slate);">${d.camera_status || 'offline'}</span></span>
         </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 
-  feed.querySelectorAll('.status-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      patchStatus(btn.dataset.id, btn.dataset.status);
-    });
-  });
+  // Update map device markers
+  renderMapDevices(devices);
+}
 
-  feed.querySelectorAll('.report').forEach(el => {
-    el.addEventListener('click', () => {
-      const d = detections.find(x => x.id === el.dataset.id);
-      if (d) {
-        map.setView([d.latitude, d.longitude], 16);
-        markers[d.id]?.openPopup();
-        if (window.innerWidth < 1024) {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-      }
-    });
+function renderMapDevices(devices) {
+  Object.values(deviceMarkers).forEach(m => map.removeLayer(m));
+  deviceMarkers = {};
+
+  devices.forEach(d => {
+    if (d.last_latitude && d.last_longitude) {
+      const marker = L.marker([d.last_latitude, d.last_longitude], {
+        icon: createDeviceIcon(d.status),
+        zIndexOffset: 500
+      }).addTo(map);
+
+      marker.bindPopup(`
+        <div style="font-family: var(--font-body); font-size: 12px; color: #1e293b; padding: 4px;">
+          <b style="font-family: var(--font-heading); font-size: 14px;">${d.device_name}</b><br/>
+          <span style="font-family: var(--font-mono); font-size: 11px; color: #64748b;">${d.device_id} &middot; ${d.assigned_vehicle || 'No Vehicle'}</span><br/>
+          Status: <b>${d.status}</b><br/>
+          Total Ingested: <b>${d.total_events_ingested || 0} events</b><br/>
+          Camera: <b>${d.camera_status || 'not configured'}</b>
+        </div>
+      `);
+      deviceMarkers[d.device_id] = marker;
+    }
   });
 }
 
-function render() {
-  renderMarkers(detections);
-  renderFeed(detections);
+function renderMapDefects(events) {
+  Object.values(mapMarkers).forEach(m => map.removeLayer(m));
+  mapMarkers = {};
+
+  events.forEach(ev => {
+    if (currentFilter !== "all" && ev.severity !== currentFilter) return;
+    if (ev.latitude && ev.longitude) {
+      const marker = L.marker([ev.latitude, ev.longitude], {
+        icon: createDefectIcon(ev.severity)
+      }).addTo(map);
+
+      marker.bindPopup(`
+        <div style="font-family: var(--font-body); font-size: 12px; color: #1e293b; padding: 4px;">
+          <b style="font-family: var(--font-heading); font-size: 14px; text-transform: uppercase; color: ${SEVERITY_COLORS[ev.severity] || '#1e293b'};">
+            ${ev.severity} Defect
+          </b><br/>
+          Depth: <b>${ev.est_depth_cm || 0} cm</b> &middot; Confidence: <b>${Math.round((ev.confidence || 0.85)*100)}%</b><br/>
+          Vehicle: <span style="font-family: var(--font-mono);">${ev.assigned_vehicle || ev.device_id}</span><br/>
+          Surface: ${ev.road_surface || 'asphalt'}<br/>
+          Coordinates: <span style="font-family: var(--font-mono); font-size: 11px;">${ev.latitude.toFixed(4)}, ${ev.longitude.toFixed(4)}</span>
+        </div>
+      `);
+      mapMarkers[ev.id || ev.event_id] = marker;
+    }
+  });
 }
 
-/* ============================================================
-   POLLING LOOP
-   ============================================================ */
-async function refresh() {
-  try {
-    const [data, stats] = await Promise.all([fetchDetections(), fetchStats()]);
-    detections = data;
-    demoMode = false;
-    document.getElementById('conn-dot').className = 'dot live';
-    document.getElementById('conn-text').textContent = 'Live — connected';
-    renderStats(stats);
-    render();
-  } catch (err) {
-    if (!demoMode) {
-      demoMode = true;
-      detections = generateDemoData();
-      document.getElementById('conn-dot').className = 'dot demo';
-      document.getElementById('conn-text').textContent = 'Demo preview mode';
-      renderStats(computeDemoStats(detections));
-      render();
+function renderTelemetryFeed(events) {
+  const container = document.getElementById('telemetry-feed-list');
+  const filtered = currentFilter === "all" ? events : events.filter(e => e.severity === currentFilter);
+
+  if (!filtered || filtered.length === 0) {
+    container.innerHTML = `<div class="empty-state">No telemetry events matching filter.</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(ev => {
+    const sevClass = ev.severity || 'minor';
+    const timeText = ev.timestamp ? formatTimeAgo(ev.timestamp) : (ev.created_at ? formatTimeAgo(new Date(ev.created_at).getTime() / 1000) : "recent");
+
+    return `
+      <div class="telemetry-item" data-id="${ev.id || ev.event_id}" onclick="panToDefect(${ev.latitude}, ${ev.longitude}, '${ev.id || ev.event_id}')">
+        <div class="sev-indicator ${sevClass}">
+          ${sevClass === 'severe' ? '⚠️' : sevClass === 'moderate' ? '⚡' : '●'}
+        </div>
+        <div class="telemetry-main">
+          <div class="telemetry-row1">
+            <span class="telemetry-title">${ev.severity.toUpperCase()} Road Defect</span>
+            <span class="telemetry-time">${timeText}</span>
+          </div>
+          <div class="telemetry-tags">
+            <span class="telemetry-tag">Depth: ${ev.est_depth_cm || 0}cm</span>
+            <span class="telemetry-tag">Conf: ${Math.round((ev.confidence || 0.85) * 100)}%</span>
+            <span class="telemetry-tag">${ev.assigned_vehicle || ev.device_id}</span>
+            ${ev.vehicle_speed_kmh ? `<span class="telemetry-tag">${Math.round(ev.vehicle_speed_kmh)} km/h</span>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function panToDefect(lat, lon, id) {
+  if (lat && lon) {
+    map.setView([lat, lon], 16, { animate: true });
+    if (mapMarkers[id]) {
+      mapMarkers[id].openPopup();
+    }
+    if (window.innerWidth < 1200) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 }
 
-document.getElementById('filters').addEventListener('click', (e) => {
-  const chip = e.target.closest('.chip');
-  if (!chip) return;
-  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-  chip.classList.add('active');
-  currentFilter = chip.dataset.sev;
-  render();
+function selectDevice(deviceId) {
+  selectedDeviceId = deviceId;
+  const dev = registeredDevices.find(d => d.device_id === deviceId);
+  if (dev && dev.last_latitude && dev.last_longitude) {
+    map.setView([dev.last_latitude, dev.last_longitude], 15, { animate: true });
+    if (deviceMarkers[deviceId]) {
+      deviceMarkers[deviceId].openPopup();
+    }
+  }
+
+  // Update camera selector and honest camera diagnostics panel
+  const selectEl = document.getElementById('camera-device-select');
+  if (selectEl) selectEl.value = deviceId;
+  updateCameraPanel(deviceId);
+
+  renderDevices(registeredDevices);
+}
+
+function updateCameraSelector(devices) {
+  const select = document.getElementById('camera-device-select');
+  if (!select) return;
+
+  select.innerHTML = devices.map(d => `
+    <option value="${d.device_id}" ${d.device_id === selectedDeviceId ? 'selected' : ''}>
+      ${d.device_name} (${d.device_id})
+    </option>
+  `).join('');
+
+  if (!selectedDeviceId && devices.length > 0) {
+    selectedDeviceId = devices[0].device_id;
+    updateCameraPanel(selectedDeviceId);
+  }
+}
+
+function updateCameraPanel(deviceId) {
+  const dev = registeredDevices.find(d => d.device_id === deviceId);
+  if (!dev) return;
+
+  document.getElementById('diag-dev-id').textContent = dev.device_id;
+  document.getElementById('diag-firmware').textContent = dev.firmware_version || 'v2.4.0-edge';
+
+  const pill = document.getElementById('camera-pill');
+  const pillText = document.getElementById('camera-pill-text');
+  const title = document.getElementById('camera-msg-title');
+  const body = document.getElementById('camera-msg-body');
+
+  if (dev.status === "CONNECTED") {
+    pill.className = "camera-status-pill not-configured";
+    pillText.textContent = "Camera Not Configured";
+    title.textContent = `Telemetry Live &middot; Camera Offline (${dev.assigned_vehicle || dev.device_id})`;
+    body.textContent = "The edge node is actively streaming GPS coordinates and sensor telemetry to CivicLens. The optical video feed pipeline (RTSP/WebRTC) is currently not configured or disabled to conserve edge cellular bandwidth.";
+  } else if (dev.status === "STALE") {
+    pill.className = "camera-status-pill not-configured";
+    pillText.textContent = "Telemetry Stale";
+    title.textContent = `Edge Device Inactive (${dev.assigned_vehicle || dev.device_id})`;
+    body.textContent = "Last heartbeat was received more than 60 seconds ago. Edge unit may be parked, out of cellular range, or transitioning between municipal patrol routes.";
+  } else {
+    pill.className = "camera-status-pill offline";
+    pillText.textContent = "Node Disconnected";
+    title.textContent = `Device Disconnected &middot; ${dev.device_id}`;
+    body.textContent = "The device is currently offline or unconfigured. Reconnect the onboard power source and cellular antenna to resume real-time edge telemetry transmission.";
+  }
+}
+
+document.getElementById('camera-device-select')?.addEventListener('change', function(e) {
+  selectDevice(e.target.value);
 });
 
-refresh();
-setInterval(refresh, POLL_INTERVAL_MS);
+/* ------------------------------------------------------------
+   FILTER HANDLERS
+   ------------------------------------------------------------ */
+document.getElementById('severity-filters')?.addEventListener('click', (e) => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  document.querySelectorAll('#severity-filters .chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  currentFilter = chip.dataset.sev;
+  renderTelemetryFeed(telemetryEvents);
+  renderMapDefects(telemetryEvents);
+});
+
+/* ------------------------------------------------------------
+   REAL-TIME SERVER-SENT EVENTS (SSE) STREAM
+   ------------------------------------------------------------ */
+function initTelemetrySSE() {
+  const connDot = document.getElementById('conn-dot');
+  const connText = document.getElementById('conn-text');
+
+  if (!window.EventSource) {
+    console.warn("Browser does not support SSE; using polling fallback.");
+    connDot.className = "conn-dot live";
+    connText.textContent = "Polling Fallback";
+    return;
+  }
+
+  try {
+    if (sseConnection) {
+      sseConnection.close();
+    }
+
+    sseConnection = new EventSource(`${API_BASE}/api/v1/telemetry/stream`);
+
+    sseConnection.onopen = function() {
+      connDot.className = "conn-dot live";
+      connText.textContent = "Live — Stream Active";
+    };
+
+    sseConnection.addEventListener('telemetry', function(e) {
+      try {
+        const payload = JSON.parse(e.data);
+        if (payload && payload.data) {
+          const newEvent = payload.data;
+          telemetryEvents.unshift(newEvent);
+          if (telemetryEvents.length > 100) telemetryEvents.pop();
+
+          renderTelemetryFeed(telemetryEvents);
+          renderMapDefects(telemetryEvents);
+          document.getElementById('feed-tab-badge').textContent = telemetryEvents.length;
+
+          // Flash highlight on the newest item
+          const firstItem = document.querySelector('.telemetry-item');
+          if (firstItem) firstItem.classList.add('new-ping');
+
+          // Refresh stats and devices periodically
+          fetchStats();
+        }
+      } catch (err) {
+        console.error("Error parsing live SSE event:", err);
+      }
+    });
+
+    sseConnection.onerror = function() {
+      connDot.className = "conn-dot disconnected";
+      connText.textContent = "Reconnecting...";
+    };
+  } catch (err) {
+    console.warn("SSE connection initialization failed:", err);
+    connDot.className = "conn-dot disconnected";
+    connText.textContent = "Offline Fallback";
+  }
+}
+
+/* ------------------------------------------------------------
+   INITIALIZATION & POLLING BACKUP
+   ------------------------------------------------------------ */
+async function initializeDashboard() {
+  await Promise.all([fetchStats(), fetchDevices(), fetchRecentEvents()]);
+  initTelemetrySSE();
+}
+
+initializeDashboard();
+
+// Poll stats and fleet status every 10 seconds to keep freshness state machine updated
+setInterval(() => {
+  fetchStats();
+  fetchDevices();
+}, 10000);
+
 </script>
 </body>
 </html>

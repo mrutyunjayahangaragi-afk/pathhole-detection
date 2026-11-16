@@ -12,7 +12,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from backend.db.engine import get_session_factory
-from backend.db.models import Incident, CitizenReport, IncidentPublication
+from backend.db.models import Incident, CitizenReport, IncidentPublication, ReportItem
 
 logger = logging.getLogger("civiclens.transparency")
 
@@ -102,11 +102,29 @@ class PublicTransparencyService:
                     "resolved_at": inc.resolved_at.isoformat() if inc.resolved_at else None,
                 })
 
+            # Calculate genuine cluster consolidation ratio:
+            # How many report items are linked into canonical incidents
+            linked_items = db.query(ReportItem).filter(ReportItem.incident_id.isnot(None)).count()
+            distinct_incidents_with_items = (
+                db.query(func.count(func.distinct(ReportItem.incident_id)))
+                .filter(ReportItem.incident_id.isnot(None))
+                .scalar()
+                or 0
+            )
+            cluster_ratio = (
+                round(linked_items / distinct_incidents_with_items, 2)
+                if distinct_incidents_with_items > 0
+                else 1.0
+            )
+
             return {
                 "status": "success",
                 "total_canonical_incidents": total_incidents,
                 "total_citizen_reports": total_reports,
-                "deduplication_ratio": round(total_reports / total_incidents, 2) if total_incidents > 0 else 1.0,
+                "deduplication_ratio": cluster_ratio,
+                "cluster_consolidation_ratio": cluster_ratio,
+                "consolidated_report_items": linked_items,
+                "clustered_incidents": distinct_incidents_with_items,
                 "status_breakdown": {
                     "awaiting_verification": awaiting_count,
                     "verified": status_counts.get("verified", 0),

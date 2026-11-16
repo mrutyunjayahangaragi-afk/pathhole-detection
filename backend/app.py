@@ -37,6 +37,7 @@ from backend.routes.location_routes import location_bp
 from backend.routes.municipal_routes import municipal_bp
 from backend.routes.public_routes import public_bp
 from backend.routes.notification_routes import notification_bp, citizen_tracking_bp
+from backend.routes.telemetry_routes import telemetry_bp
 
 
 def create_app(config: Optional[Config] = None) -> Flask:
@@ -89,6 +90,7 @@ def create_app(config: Optional[Config] = None) -> Flask:
     app.register_blueprint(public_bp)
     app.register_blueprint(notification_bp)
     app.register_blueprint(citizen_tracking_bp)
+    app.register_blueprint(telemetry_bp)
 
     # Seed default municipal departments if not already present
     try:

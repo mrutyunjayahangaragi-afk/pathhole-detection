@@ -1090,3 +1090,77 @@ class WebPushSubscription(Base):
         Index("ix_push_sub_user", "user_id"),
     )
 
+
+# ─── Live Telemetry Devices & Sensor Ingestion ────────────────────────
+
+class TelemetryDevice(Base):
+    __tablename__ = "telemetry_devices"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    device_id = Column(String(50), unique=True, nullable=False)
+    device_name = Column(String(100), nullable=False)
+    device_type = Column(String(30), nullable=False, default="vehicle_edge")
+    assigned_vehicle = Column(String(50), nullable=True)
+    api_key_hash = Column(String(128), nullable=False)
+    status = Column(String(20), nullable=False, default="NOT_CONFIGURED")
+    camera_stream_url = Column(String(255), nullable=True)
+    camera_status = Column(String(30), nullable=False, default="not_configured")
+    last_heartbeat_at = Column(DateTime(timezone=True), nullable=True)
+    last_latitude = Column(Float, nullable=True)
+    last_longitude = Column(Float, nullable=True)
+    total_events_ingested = Column(Integer, nullable=False, default=0)
+    firmware_version = Column(String(30), nullable=True, default="v1.2.0-edge")
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow)
+
+    # Relationships
+    events = relationship("TelemetryEvent", back_populates="device", lazy="dynamic", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('CONNECTED','STALE','DISCONNECTED','NOT_CONFIGURED','ERROR')",
+            name="ck_telemetry_device_status"
+        ),
+        CheckConstraint(
+            "camera_status IN ('not_configured','offline','active','error')",
+            name="ck_telemetry_camera_status"
+        ),
+        Index("ix_telem_device_id", "device_id"),
+        Index("ix_telem_device_status", "status"),
+        Index("ix_telem_device_heartbeat", "last_heartbeat_at"),
+    )
+
+
+class TelemetryEvent(Base):
+    __tablename__ = "telemetry_events"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    event_id = Column(String(64), unique=True, nullable=False)  # Client idempotency key / UUID
+    device_id = Column(String(36), ForeignKey("telemetry_devices.id", ondelete="CASCADE"), nullable=False)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    severity = Column(String(15), nullable=False, default="minor")
+    est_depth_cm = Column(Float, nullable=True, default=0.0)
+    confidence = Column(Float, nullable=False, default=0.85)
+    vehicle_speed_kmh = Column(Float, nullable=True)
+    image_ref = Column(Text, nullable=True)
+    road_surface = Column(String(50), nullable=True, default="asphalt")
+    raw_payload = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+    ingested_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    # Relationships
+    device = relationship("TelemetryDevice", back_populates="events")
+
+    __table_args__ = (
+        CheckConstraint(
+            "severity IN ('minor','moderate','severe','critical')",
+            name="ck_telem_event_severity"
+        ),
+        Index("ix_telem_dev_ingested", "device_id", "ingested_at"),
+        Index("ix_telem_coords", "latitude", "longitude"),
+        Index("ix_telem_severity", "severity"),
+    )
+
+

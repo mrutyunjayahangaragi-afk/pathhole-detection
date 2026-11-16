@@ -59,6 +59,8 @@ def clean_db(test_db_path):
     from backend.database import get_db
     with get_db(test_db_path) as conn:
         for tbl in [
+            "telemetry_events",
+            "telemetry_devices",
             "report_evidence_v2",
             "report_items_v2",
             "citizen_reports_v2",

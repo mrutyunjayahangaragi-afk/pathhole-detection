@@ -561,12 +561,35 @@ class IncidentStatusHistory(Base):
     )
 
 
+# ─── Municipalities ───────────────────────────────────────────────────
+
+class Municipality(Base):
+    __tablename__ = "municipalities"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    name = Column(String(255), nullable=False, unique=True)
+    code = Column(String(50), nullable=False, unique=True, index=True)
+    state = Column(String(100), nullable=False, default="Karnataka")
+    status = Column(String(20), nullable=False, default="active")
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow)
+
+    # Relationships
+    departments = relationship("Department", back_populates="municipality", cascade="all, delete-orphan")
+    invitations = relationship("OfficialInvitation", back_populates="municipality", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        CheckConstraint("status IN ('active','inactive','suspended')", name="ck_municipality_status"),
+    )
+
+
 # ─── Departments ──────────────────────────────────────────────────────
 
 class Department(Base):
     __tablename__ = "departments"
 
     id = Column(String(36), primary_key=True, default=_uuid)
+    municipality_id = Column(String(36), ForeignKey("municipalities.id", ondelete="SET NULL"), nullable=True)
     name = Column(String(255), nullable=False, unique=True)
     code = Column(String(50), nullable=True, unique=True, index=True)
     description = Column(Text, nullable=True)
@@ -577,9 +600,11 @@ class Department(Base):
     updated_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow)
 
     # Relationships
+    municipality = relationship("Municipality", back_populates="departments")
     assignments = relationship("IncidentAssignment", back_populates="department", lazy="dynamic")
     memberships = relationship("DepartmentMembership", back_populates="department", cascade="all, delete-orphan")
     incidents = relationship("Incident", back_populates="department", foreign_keys="Incident.department_id")
+    invitations = relationship("OfficialInvitation", back_populates="department")
 
 
 # ─── Department Memberships ──────────────────────────────────────────
@@ -606,6 +631,45 @@ class DepartmentMembership(Base):
         UniqueConstraint("user_id", "department_id", name="uq_user_dept"),
         Index("ix_dept_memberships_user", "user_id"),
         Index("ix_dept_memberships_dept", "department_id"),
+    )
+
+
+# ─── Official Invitations ─────────────────────────────────────────────
+
+class OfficialInvitation(Base):
+    __tablename__ = "official_invitations"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    invited_email = Column(String(320), nullable=False)
+    intended_role = Column(String(30), nullable=False)
+    municipality_id = Column(String(36), ForeignKey("municipalities.id", ondelete="SET NULL"), nullable=True)
+    department_id = Column(String(36), ForeignKey("departments.id", ondelete="SET NULL"), nullable=True)
+    token_hash = Column(String(128), unique=True, nullable=False)
+    invited_by_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    accepted_at = Column(DateTime(timezone=True), nullable=True)
+    revoked_at = Column(DateTime(timezone=True), nullable=True)
+    status = Column(String(20), nullable=False, default="PENDING")
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow)
+
+    # Relationships
+    municipality = relationship("Municipality", back_populates="invitations")
+    department = relationship("Department", back_populates="invitations")
+    invited_by = relationship("User", foreign_keys=[invited_by_id])
+
+    __table_args__ = (
+        CheckConstraint(
+            "intended_role IN ('municipal_officer','dept_admin','municipal_admin','system_admin')",
+            name="ck_invitation_role"
+        ),
+        CheckConstraint(
+            "status IN ('PENDING','ACCEPTED','EXPIRED','REVOKED')",
+            name="ck_invitation_status"
+        ),
+        Index("ix_invitations_email", "invited_email"),
+        Index("ix_invitations_status", "status"),
+        Index("ix_invitations_token_hash", "token_hash"),
     )
 
 

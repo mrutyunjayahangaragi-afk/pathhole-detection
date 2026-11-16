@@ -12,24 +12,29 @@
   .public-map-layout {
     display: flex;
     flex-direction: column;
-    flex: 1;
+    flex: 1 1 0;
     position: relative;
+    height: 100%;
     min-height: 0;
+    overflow: hidden;
   }
 
   #public-leaflet-map {
     width: 100%;
     height: 100%;
-    min-height: 65vh;
+    flex: 1 1 auto;
+    min-height: 0;
     background: #0f172a;
-    flex: 1;
+    position: relative;
+    z-index: 1;
   }
 
+  /* Control Overlay */
   .map-control-overlay {
     position: absolute;
-    top: 16px;
-    left: 16px;
-    right: 16px;
+    top: 14px;
+    left: 14px;
+    right: 14px;
     z-index: 500;
     display: flex;
     flex-direction: column;
@@ -39,13 +44,13 @@
 
   .control-card {
     pointer-events: auto;
-    background: rgba(15, 23, 42, 0.92);
-    backdrop-filter: blur(10px);
+    background: rgba(15, 23, 42, 0.94);
+    backdrop-filter: blur(12px);
     border: 1px solid var(--cl-border);
     border-radius: var(--cl-radius-md);
-    padding: 12px 16px;
-    box-shadow: var(--cl-shadow-md);
-    max-width: 600px;
+    padding: 10px 14px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    max-width: 620px;
   }
 
   .map-search-row {
@@ -62,6 +67,11 @@
     color: var(--cl-text);
     padding: 8px 12px;
     font-size: 13px;
+    outline: none;
+  }
+
+  .map-search-input:focus {
+    border-color: var(--cl-primary);
   }
 
   .map-filter-row {
@@ -78,6 +88,8 @@
     color: var(--cl-text);
     padding: 6px 10px;
     font-size: 12px;
+    cursor: pointer;
+    outline: none;
   }
 
   .view-toggle-btn {
@@ -90,11 +102,28 @@
     font-weight: 600;
     cursor: pointer;
     margin-left: auto;
+    transition: all 0.15s ease;
   }
+
+  .view-toggle-btn:hover {
+    background: var(--cl-bg-surface-raised);
+  }
+
   .view-toggle-btn.active {
     background: var(--cl-primary);
     color: #fff;
     border-color: var(--cl-primary);
+  }
+
+  .viewport-counter-pill {
+    font-family: var(--cl-font-mono);
+    font-size: 11px;
+    background: rgba(30, 41, 59, 0.9);
+    border: 1px solid var(--cl-border);
+    padding: 4px 10px;
+    border-radius: 12px;
+    color: var(--cl-primary-light);
+    font-weight: 600;
   }
 
   /* Map Legend */
@@ -103,43 +132,97 @@
     bottom: 24px;
     right: 16px;
     z-index: 500;
-    background: rgba(15, 23, 42, 0.92);
-    backdrop-filter: blur(8px);
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(10px);
     border: 1px solid var(--cl-border);
     border-radius: var(--cl-radius-md);
-    padding: 10px 14px;
-    font-size: 11px;
-    box-shadow: var(--cl-shadow-md);
+    padding: 12px 16px;
+    font-size: 12px;
+    color: #f8fafc;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
+    min-width: 200px;
+  }
+
+  .legend-title {
+    font-family: var(--cl-font-heading);
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--cl-text-muted);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 4px;
+    margin-bottom: 2px;
   }
 
   .legend-item {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    font-size: 11px;
+    color: #e2e8f0;
+    font-weight: 500;
   }
 
-  .legend-icon-badge {
-    width: 14px;
-    height: 14px;
+  .legend-dot {
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
-    display: inline-block;
+    flex-shrink: 0;
+    box-shadow: 0 0 6px currentColor;
   }
 
-  /* List View Container */
+  /* Status Notification Banners (Loading, Zero, Error) */
+  .map-state-banner {
+    position: absolute;
+    top: 110px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 501;
+    background: rgba(15, 23, 42, 0.92);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--cl-border);
+    color: var(--cl-text);
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 12px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    box-shadow: var(--cl-shadow-md);
+  }
+
+  .map-state-banner.visible {
+    display: inline-flex;
+  }
+
+  .map-state-banner.warning {
+    border-color: var(--cl-warning);
+    color: var(--cl-warning-light);
+  }
+
+  .map-state-banner.error {
+    border-color: var(--cl-severe);
+    color: #fca5a5;
+  }
+
+  /* Accessible List View */
   .public-list-view {
     display: none;
-    flex: 1;
+    flex: 1 1 0;
     overflow-y: auto;
-    padding: 16px;
+    padding: 20px;
     background: var(--cl-bg-body);
   }
+
   .public-list-view.active {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 16px;
+    align-content: start;
   }
 
   /* Incident Bottom Sheet & Side Drawer */
@@ -150,32 +233,34 @@
     right: 0;
     background: var(--cl-bg-surface);
     border-top: 2px solid var(--cl-primary);
-    border-radius: 16px 16px 0 0;
-    padding: 16px 20px;
-    box-shadow: var(--cl-shadow-lg);
-    z-index: 600;
-    transform: translateY(100%);
-    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    max-height: 60vh;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
+    padding: 20px 24px;
+    z-index: 1500;
+    transform: translateY(110%);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    max-height: 80vh;
     overflow-y: auto;
   }
+
   @media (min-width: 1024px) {
     .incident-drawer {
+      top: 80px;
       bottom: auto;
-      top: 90px;
-      right: 20px;
       left: auto;
+      right: 20px;
       width: 380px;
-      border-radius: var(--cl-radius-md);
+      border-radius: var(--cl-radius-lg);
       border: 1px solid var(--cl-border);
       border-top: 3px solid var(--cl-primary);
       transform: translateX(120%);
       max-height: calc(100vh - 120px);
     }
   }
+
   .incident-drawer.open {
     transform: translateY(0);
   }
+
   @media (min-width: 1024px) {
     .incident-drawer.open {
       transform: translateX(0);
@@ -188,22 +273,14 @@
     align-items: center;
     margin-bottom: 8px;
   }
+
   .drawer-close {
     background: transparent;
     border: none;
     color: var(--cl-text-muted);
-    font-size: 22px;
+    font-size: 24px;
     cursor: pointer;
-  }
-
-  .viewport-counter-pill {
-    font-family: var(--cl-font-mono);
-    font-size: 11px;
-    background: rgba(30, 41, 59, 0.8);
-    border: 1px solid var(--cl-border);
-    padding: 2px 8px;
-    border-radius: 12px;
-    color: var(--cl-text-secondary);
+    line-height: 1;
   }
 </style>
 </head>
@@ -229,13 +306,13 @@
       <div class="map-control-overlay">
         <div class="control-card">
           <div class="map-search-row">
-            <input type="text" id="map-search-input" class="map-search-input" placeholder="Search ward, street, or INC-XXXX..." />
+            <input type="text" id="map-search-input" class="map-search-input" placeholder="Search ward, street, locality, or INC-XXXX..." />
             <button class="cl-btn cl-btn-primary" id="btn-search-trigger" style="padding: 6px 14px; font-size: 12px;">Search</button>
             <button class="view-toggle-btn" id="btn-toggle-view">List View</button>
           </div>
 
           <div class="map-filter-row">
-            <select id="filter-category" class="filter-select">
+            <select id="filter-category" class="filter-select" aria-label="Filter by category">
               <option value="all">All Categories</option>
               <option value="pothole">Pothole</option>
               <option value="road_damage">Road Damage</option>
@@ -245,16 +322,16 @@
               <option value="garbage">Garbage / Debris</option>
             </select>
 
-            <select id="filter-status" class="filter-select">
-              <option value="all">All Statuses</option>
-              <option value="verified">Verified</option>
+            <select id="filter-status" class="filter-select" aria-label="Filter by status">
+              <option value="all">All Public Statuses</option>
+              <option value="verified">Verified (Awaiting Crew)</option>
               <option value="assigned">Assigned</option>
               <option value="in_progress">In Progress</option>
               <option value="on_hold">On Hold</option>
               <option value="resolved">Resolved</option>
             </select>
 
-            <select id="filter-severity" class="filter-select">
+            <select id="filter-severity" class="filter-select" aria-label="Filter by severity">
               <option value="all">All Severities</option>
               <option value="critical">Critical</option>
               <option value="severe">Severe</option>
@@ -262,36 +339,49 @@
               <option value="minor">Minor</option>
             </select>
 
-            <span class="viewport-counter-pill" id="viewport-count">0 incidents in view</span>
+            <span class="viewport-counter-pill" id="viewport-count">Updating in view...</span>
           </div>
         </div>
       </div>
 
-      <!-- Interactive Map View -->
+      <!-- State Banners (Zero, Loading, Error) -->
+      <div class="map-state-banner" id="map-banner-loading">
+        <span style="display: inline-block; width: 12px; height: 12px; border: 2px solid var(--cl-primary); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite;"></span>
+        <span>Loading published civic infrastructure incidents...</span>
+      </div>
+
+      <div class="map-state-banner warning" id="map-banner-zero">
+        <span>📍 No published incidents in this area. Pan the map or adjust filters.</span>
+      </div>
+
+      <div class="map-state-banner error" id="map-banner-error">
+        <span>⚠️ Failed to fetch incidents for this viewport.</span>
+        <button id="btn-map-retry" class="cl-btn cl-btn-secondary" style="font-size: 11px; padding: 2px 8px; margin-left: 6px;">Retry</button>
+      </div>
+
+      <!-- Interactive Map Canvas -->
       <div id="public-leaflet-map"></div>
 
       <!-- Accessible List View Alternative -->
       <div class="public-list-view" id="public-list-view"></div>
 
-      <!-- Map Legend -->
+      <!-- Readable Map Legend -->
       <div class="map-legend">
-        <div style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--cl-text-muted); margin-bottom: 2px;">
-          Incident Status Legend
-        </div>
+        <div class="legend-title">Public Incident Status</div>
         <div class="legend-item">
-          <span class="legend-icon-badge" style="background: #ef4444;"></span>
+          <span class="legend-dot" style="background: #ef4444; color: #ef4444;"></span>
           <span>Verified (Awaiting Crew)</span>
         </div>
         <div class="legend-item">
-          <span class="legend-icon-badge" style="background: #3b82f6;"></span>
+          <span class="legend-dot" style="background: #3b82f6; color: #3b82f6;"></span>
           <span>In Progress / Assigned</span>
         </div>
         <div class="legend-item">
-          <span class="legend-icon-badge" style="background: #f59e0b;"></span>
+          <span class="legend-dot" style="background: #f59e0b; color: #f59e0b;"></span>
           <span>On Hold (Awaiting Materials)</span>
         </div>
         <div class="legend-item">
-          <span class="legend-icon-badge" style="background: #10b981;"></span>
+          <span class="legend-dot" style="background: #10b981; color: #10b981;"></span>
           <span>Resolved (Repaired)</span>
         </div>
       </div>
@@ -316,7 +406,7 @@
 
       <div style="display: flex; gap: 8px;">
         <a id="drawer-view-link" href="#" class="cl-btn cl-btn-primary" style="flex: 1; text-align: center; text-decoration: none; font-size: 12px; padding: 8px 12px;">
-          View Full Timeline & Evidence →
+          View Full Timeline &amp; Evidence →
         </a>
         <button id="drawer-follow-btn" class="cl-btn cl-btn-secondary" style="font-size: 12px; padding: 8px 12px; display: inline-flex; align-items: center; gap: 6px;">
           <img src="./static/images/icons8/navigation/notifications.svg" alt="" width="14" height="14" aria-hidden="true">
@@ -332,19 +422,36 @@
 <script src="./static/js/nav.js"></script>
 <script src="./static/js/citizen-auth.js"></script>
 <script>
-// Center on Bangalore civic boundary
+/* ============================================================
+   CIVICLENS PUBLIC INCIDENT MAP ENGINE
+   100% PostGIS Bounding-Box Viewport Queries & Canonical Incidents
+   ============================================================ */
+
+// Bengaluru Municipal Geographic Center
 const BENGALURU_CENTER = [12.9716, 77.5946];
-const map = L.map('public-leaflet-map', { zoomControl: true }).setView(BENGALURU_CENTER, 12);
+const map = L.map('public-leaflet-map', {
+  zoomControl: true,
+  attributionControl: true
+}).setView(BENGALURU_CENTER, 13);
 
-// CARTO Basemap with OSM Fallback
+// Invalidate size immediately and after layout paint
+setTimeout(() => { map.invalidateSize(); }, 50);
+setTimeout(() => { map.invalidateSize(); }, 250);
+
+// Use ResizeObserver for responsive layout adaptations
+if (window.ResizeObserver) {
+  const resizeObserver = new ResizeObserver(() => {
+    map.invalidateSize();
+  });
+  const mapContainer = document.getElementById('public-leaflet-map');
+  if (mapContainer) resizeObserver.observe(mapContainer);
+}
+
+// Basemap Tiles: CARTO Dark with OpenStreetMap Fallback
 function initMapTiles() {
-  const cartoKey = window.CARTO_API_KEY || "";
-  const cartoUrl = cartoKey
-    ? `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?api_key=${encodeURIComponent(cartoKey)}`
-    : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-
+  const cartoUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
   const cartoLayer = L.tileLayer(cartoUrl, {
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>',
     maxZoom: 19,
   }).addTo(map);
 
@@ -352,7 +459,8 @@ function initMapTiles() {
   cartoLayer.on('tileerror', function() {
     if (!osmFallbackApplied) {
       osmFallbackApplied = true;
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      console.warn("CARTO basemap tile request failed; falling back to OpenStreetMap tiles.");
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
         maxZoom: 19
       }).addTo(map);
@@ -367,7 +475,7 @@ const STATUS_COLORS = {
   verified: '#ef4444',
   assigned: '#3b82f6',
   in_progress: '#3b82f6',
-  on_hold: '#d97706',
+  on_hold: '#f59e0b',
   resolved: '#10b981',
   closed: '#059669',
 };
@@ -376,6 +484,26 @@ let currentMarkers = [];
 let currentIncidents = [];
 let isListView = false;
 let selectedIncidentId = null;
+
+// UI State Banners
+const bannerLoading = document.getElementById('map-banner-loading');
+const bannerZero = document.getElementById('map-banner-zero');
+const bannerError = document.getElementById('map-banner-error');
+const countPill = document.getElementById('viewport-count');
+
+function showMapState(state) {
+  bannerLoading.classList.remove('visible');
+  bannerZero.classList.remove('visible');
+  bannerError.classList.remove('visible');
+
+  if (state === 'loading') {
+    bannerLoading.classList.add('visible');
+  } else if (state === 'zero') {
+    bannerZero.classList.add('visible');
+  } else if (state === 'error') {
+    bannerError.classList.add('visible');
+  }
+}
 
 const drawer = document.getElementById('incident-drawer');
 const drawerClose = document.getElementById('drawer-close');
@@ -400,31 +528,59 @@ function getFilterParams() {
   return params;
 }
 
-// Debounced viewport fetch
+// Debounced viewport fetch with abort controller
 let debounceTimer = null;
+let activeFetchController = null;
+
 function refreshViewportData() {
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(async () => {
+    if (activeFetchController) {
+      activeFetchController.abort();
+    }
+    activeFetchController = new AbortController();
+
+    showMapState('loading');
+    countPill.textContent = "Updating...";
+
     try {
       const params = getFilterParams();
-      const res = await fetch(`/api/v2/public/incidents/viewport?${params.toString()}`);
-      if (!res.ok) return;
+      const res = await fetch(`/api/v2/public/incidents/viewport?${params.toString()}`, {
+        signal: activeFetchController.signal
+      });
+
+      if (!res.ok) {
+        showMapState('error');
+        countPill.textContent = "Error loading";
+        return;
+      }
+
       const data = await res.json();
       currentIncidents = data.items || [];
 
-      // Update counter
-      document.getElementById('viewport-count').textContent = `${currentIncidents.length} in view`;
+      if (currentIncidents.length === 0) {
+        showMapState('zero');
+        countPill.textContent = "0 in view";
+      } else {
+        showMapState('ready');
+        countPill.textContent = `${currentIncidents.length} in view`;
+      }
 
       renderMapMarkers(currentIncidents);
       renderListView(currentIncidents);
     } catch (e) {
-      console.warn("Failed fetching viewport incidents:", e);
+      if (e.name !== 'AbortError') {
+        showMapState('error');
+        countPill.textContent = "Connection error";
+        console.warn("Failed fetching viewport incidents:", e);
+      }
     }
-  }, 250);
+  }, 200);
 }
 
+document.getElementById('btn-map-retry')?.addEventListener('click', refreshViewportData);
+
 function renderMapMarkers(incidents) {
-  // Clear old markers
   currentMarkers.forEach(m => map.removeLayer(m));
   currentMarkers = [];
 
@@ -440,11 +596,11 @@ function renderMapMarkers(incidents) {
     }).addTo(map);
 
     marker.bindPopup(`
-      <div style="font-family: sans-serif; font-size: 12px; color: #0f172a;">
-        <b style="text-transform: uppercase;">${inc.category.replace('_', ' ')}</b> (${inc.status})<br/>
+      <div style="font-family: var(--cl-font-body); font-size: 12px; color: #0f172a; padding: 4px;">
+        <b style="text-transform: uppercase; color: ${color};">${inc.category.replace('_', ' ')}</b> (${inc.status})<br/>
         <b>${inc.incident_reference}</b><br/>
-        ${inc.location_name}<br/>
-        Merged Reports: <b>${inc.report_count}</b>
+        <span>${inc.location_name || 'Geotagged site'}</span><br/>
+        Merged Citizen Reports: <b>${inc.report_count}</b>
       </div>
     `);
 
@@ -457,8 +613,10 @@ function renderListView(incidents) {
   const container = document.getElementById('public-list-view');
   if (!incidents.length) {
     container.innerHTML = `
-      <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--cl-text-muted);">
-        No canonical incidents found in this viewport. Try panning or adjusting your filters.
+      <div style="grid-column: 1/-1; text-align: center; padding: 48px 20px; color: var(--cl-text-muted);">
+        <div style="font-size: 28px; margin-bottom: 8px;">🗺️</div>
+        <div style="font-size: 14px; font-weight: 600; color: var(--cl-text); margin-bottom: 4px;">No incidents in this view</div>
+        <div style="font-size: 12px;">Pan the map or adjust your category and severity filters above.</div>
       </div>
     `;
     return;
@@ -472,7 +630,7 @@ function renderListView(incidents) {
           <span style="font-family: var(--cl-font-mono); font-size: 11px; color: var(--cl-primary);">${inc.incident_reference}</span>
         </div>
         <h4 style="margin: 0 0 4px 0; font-size: 15px; text-transform: capitalize;">${inc.category.replace('_', ' ')}</h4>
-        <div style="font-size: 12px; color: var(--cl-text-secondary); margin-bottom: 8px;">${inc.location_name}</div>
+        <div style="font-size: 12px; color: var(--cl-text-secondary); margin-bottom: 8px;">${inc.location_name || 'Geotagged site'}</div>
         <p style="font-size: 12px; color: var(--cl-text); margin: 0 0 10px 0; line-height: 1.4;">${inc.description || 'Verified infrastructure defect under municipal workflow.'}</p>
       </div>
       <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--cl-border); padding-top: 10px;">
@@ -489,18 +647,17 @@ function openIncidentDrawer(inc) {
   selectedIncidentId = inc.id;
   document.getElementById('drawer-title').textContent = `${inc.category.replace('_', ' ').toUpperCase()} Hazard`;
   document.getElementById('drawer-ref').textContent = inc.incident_reference;
-  document.getElementById('drawer-location').textContent = inc.location_name;
+  document.getElementById('drawer-location').textContent = inc.location_name || 'Geotagged site';
   document.getElementById('drawer-desc').textContent = inc.description || "Verified infrastructure defect tracked under municipal workflow.";
   document.getElementById('drawer-reports-merged').textContent = `${inc.report_count} Citizen Report${inc.report_count > 1 ? 's' : ''} Merged`;
   document.getElementById('drawer-category').textContent = inc.category.replace('_', ' ');
-  document.getElementById('drawer-priority').textContent = `${inc.priority.toUpperCase()} Priority`;
+  document.getElementById('drawer-priority').textContent = `${(inc.priority || 'normal').toUpperCase()} Priority`;
 
   const badge = document.getElementById('drawer-status-badge');
-  badge.textContent = inc.status.toUpperCase();
-  badge.className = `cl-badge cl-badge-${inc.severity}`;
+  badge.textContent = (inc.status || 'verified').toUpperCase();
+  badge.className = `cl-badge cl-badge-${inc.severity || 'moderate'}`;
 
   document.getElementById('drawer-view-link').href = `/public-incident.html?ref=${encodeURIComponent(inc.incident_reference)}`;
-
   drawer.classList.add('open');
 }
 
@@ -511,8 +668,8 @@ if (followBtn) {
     if (!selectedIncidentId) return;
     const token = localStorage.getItem('civiclens_token');
     if (!token) {
-      alert("Please log in as a citizen to follow incidents and receive authorized updates.");
-      window.location.href = '/citizen-login.html';
+      alert("Please sign in to follow incidents and receive progress notifications.");
+      window.location.href = '/login.html';
       return;
     }
 
@@ -570,7 +727,6 @@ document.getElementById('btn-search-trigger').addEventListener('click', async ()
   const q = document.getElementById('map-search-input').value.trim();
   if (!q) return refreshViewportData();
 
-  // If query looks like reference, fetch directly
   if (q.toUpperCase().startsWith('INC-')) {
     try {
       const res = await fetch(`/api/v2/public/incidents/${encodeURIComponent(q.toUpperCase())}`);
@@ -584,14 +740,14 @@ document.getElementById('btn-search-trigger').addEventListener('click', async ()
     } catch (e) {}
   }
 
-  // Otherwise, filter client side by text match
   const filtered = currentIncidents.filter(it =>
-    it.location_name.toLowerCase().includes(q.toLowerCase()) ||
-    it.incident_reference.toLowerCase().includes(q.toLowerCase()) ||
-    it.category.toLowerCase().includes(q.toLowerCase())
+    (it.location_name && it.location_name.toLowerCase().includes(q.toLowerCase())) ||
+    (it.incident_reference && it.incident_reference.toLowerCase().includes(q.toLowerCase())) ||
+    (it.category && it.category.toLowerCase().includes(q.toLowerCase()))
   );
   renderMapMarkers(filtered);
   renderListView(filtered);
+  countPill.textContent = `${filtered.length} found`;
 });
 
 map.on('moveend', refreshViewportData);

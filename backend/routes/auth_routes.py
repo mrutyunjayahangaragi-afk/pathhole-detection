@@ -7,11 +7,13 @@ and profile updates.
 
 from flask import Blueprint, request, jsonify, session, g
 from backend.services.auth_service import AuthService
-from backend.auth import login_required
+from backend.services.official_auth_service import OfficialAuthService
+from backend.auth import login_required, role_required
 from backend.errors import ValidationError
 
 auth_bp = Blueprint("auth_bp", __name__, url_prefix="/api/v1/auth")
 auth_service = AuthService()
+official_auth_service = OfficialAuthService()
 
 
 @auth_bp.route("/register", methods=["POST"])
@@ -131,3 +133,92 @@ def update_profile():
         "message": "Profile updated successfully",
         "user": updated,
     }), 200
+
+
+# ============================================================================
+# Official Municipal Authentication & Invitation Endpoints
+# ============================================================================
+
+@auth_bp.route("/official-login", methods=["POST"])
+def official_login():
+    """Authenticates municipal official, department administrator, or executive."""
+    data = request.get_json(silent=True) or {}
+    email = data.get("email")
+    password = data.get("password")
+    client_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "127.0.0.1")
+
+    user_dict, token = official_auth_service.authenticate_official(
+        email=email, password=password, client_ip=client_ip
+    )
+
+    session["user_id"] = user_dict["id"]
+    session["role"] = user_dict["role"]
+
+    return jsonify({
+        "status": "success",
+        "message": "Authenticated successfully as municipal official.",
+        "user": user_dict,
+        "token": token
+    }), 200
+
+
+@auth_bp.route("/invitations", methods=["POST"])
+@role_required("system_admin", "municipal_admin", "dept_admin")
+def create_invitation():
+    """Creates a secure, time-limited invitation for an official."""
+    data = request.get_json(silent=True) or {}
+    email = data.get("email")
+    intended_role = data.get("role") or data.get("intended_role")
+    municipality_id = data.get("municipality_id")
+    department_id = data.get("department_id")
+
+    res = official_auth_service.create_invitation(
+        invited_by=g.current_user,
+        email=email,
+        intended_role=intended_role,
+        municipality_id=municipality_id,
+        department_id=department_id
+    )
+    return jsonify({
+        "status": "success",
+        "message": f"Invitation successfully created for {email}.",
+        "invitation": res
+    }), 201
+
+
+@auth_bp.route("/invitations/verify/<token>", methods=["GET"])
+def verify_invitation_token(token: str):
+    """Verifies validity of an invitation token for the acceptance screen."""
+    details = official_auth_service.verify_invitation(token)
+    return jsonify({
+        "status": "success",
+        "invitation": details
+    }), 200
+
+
+@auth_bp.route("/invitations/accept", methods=["POST"])
+def accept_invitation():
+    """Accepts invitation and sets official password."""
+    data = request.get_json(silent=True) or {}
+    token = data.get("token") or data.get("invitation_token")
+    display_name = data.get("display_name") or data.get("name")
+    password = data.get("password")
+    confirm_password = data.get("confirm_password") or password
+
+    user_dict, session_token = official_auth_service.accept_invitation(
+        raw_token=token,
+        display_name=display_name,
+        password=password,
+        confirm_password=confirm_password
+    )
+
+    session["user_id"] = user_dict["id"]
+    session["role"] = user_dict["role"]
+
+    return jsonify({
+        "status": "success",
+        "message": "Invitation accepted and account activated successfully.",
+        "user": user_dict,
+        "token": session_token
+    }), 200
+

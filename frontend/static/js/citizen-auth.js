@@ -40,7 +40,7 @@ const CivicAuth = (function () {
 
   function getLoginUrl(redirectPath) {
     const isFrontendPrefix = window.location.pathname.startsWith("/frontend/");
-    const base = isFrontendPrefix ? "/frontend/citizen-login.html" : "/citizen-login.html";
+    const base = isFrontendPrefix ? "/frontend/login.html" : "/login.html";
     if (redirectPath) {
       return `${base}?redirect=${encodeURIComponent(redirectPath)}`;
     }

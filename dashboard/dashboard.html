@@ -821,6 +821,7 @@
     <div class="conn-status" id="conn-status">
       <div class="conn-dot" id="conn-dot"></div>
       <span id="conn-text">Connecting...</span>
+      <span id="conn-last-seen" style="font-size: 10px; color: var(--slate-dim); margin-left: 4px;"></span>
     </div>
   </header>
 
@@ -1021,6 +1022,15 @@ function initMapTiles() {
   });
 }
 initMapTiles();
+
+setTimeout(() => { map.invalidateSize(); }, 50);
+setTimeout(() => { map.invalidateSize(); }, 300);
+if (window.ResizeObserver) {
+  const mapContainer = document.getElementById('map');
+  if (mapContainer) {
+    new ResizeObserver(() => { map.invalidateSize(); }).observe(mapContainer);
+  }
+}
 
 /* ------------------------------------------------------------
    ICON BUILDERS
@@ -1368,29 +1378,90 @@ document.getElementById('severity-filters')?.addEventListener('click', (e) => {
 });
 
 /* ------------------------------------------------------------
+   CONNECTION STATE MACHINE (7 STATES) & EXPONENTIAL BACKOFF
+   ------------------------------------------------------------ */
+const ConnectionState = {
+  CONNECTING: 'CONNECTING',
+  CONNECTED: 'CONNECTED',
+  DEGRADED: 'DEGRADED',
+  STALE: 'STALE',
+  DISCONNECTED: 'DISCONNECTED',
+  NOT_CONFIGURED: 'NOT_CONFIGURED',
+  ERROR: 'ERROR'
+};
+
+let currentConnectionState = ConnectionState.CONNECTING;
+let reconnectAttempts = 0;
+let reconnectTimeout = null;
+let lastHeartbeatTime = null;
+
+function setConnectionState(state, message) {
+  currentConnectionState = state;
+  const connDot = document.getElementById('conn-dot');
+  const connText = document.getElementById('conn-text');
+  const lastSeenEl = document.getElementById('conn-last-seen');
+
+  connDot.className = 'conn-dot';
+
+  switch (state) {
+    case ConnectionState.CONNECTED:
+      connDot.classList.add('live');
+      connText.textContent = message || "Live — Stream Active";
+      lastHeartbeatTime = Date.now();
+      reconnectAttempts = 0;
+      break;
+    case ConnectionState.CONNECTING:
+      connText.textContent = message || `Connecting (try ${reconnectAttempts + 1})...`;
+      break;
+    case ConnectionState.DEGRADED:
+      connDot.style.background = '#f59e0b';
+      connText.textContent = message || "Degraded — Polling Active";
+      break;
+    case ConnectionState.STALE:
+      connDot.style.background = '#f59e0b';
+      connText.textContent = message || "Telemetry Stale";
+      break;
+    case ConnectionState.DISCONNECTED:
+      connDot.classList.add('disconnected');
+      connText.textContent = message || "Disconnected";
+      break;
+    case ConnectionState.NOT_CONFIGURED:
+      connDot.style.background = '#64748b';
+      connText.textContent = message || "Edge Unconfigured";
+      break;
+    case ConnectionState.ERROR:
+      connDot.classList.add('disconnected');
+      connText.textContent = message || "Stream Error — Retrying";
+      break;
+  }
+
+  if (lastHeartbeatTime && lastSeenEl) {
+    const timeStr = new Date(lastHeartbeatTime).toLocaleTimeString();
+    lastSeenEl.textContent = `· ${timeStr}`;
+  }
+}
+
+/* ------------------------------------------------------------
    REAL-TIME SERVER-SENT EVENTS (SSE) STREAM
    ------------------------------------------------------------ */
 function initTelemetrySSE() {
-  const connDot = document.getElementById('conn-dot');
-  const connText = document.getElementById('conn-text');
-
   if (!window.EventSource) {
     console.warn("Browser does not support SSE; using polling fallback.");
-    connDot.className = "conn-dot live";
-    connText.textContent = "Polling Fallback";
+    setConnectionState(ConnectionState.DEGRADED, "Polling Fallback");
     return;
   }
 
   try {
     if (sseConnection) {
       sseConnection.close();
+      sseConnection = null;
     }
 
+    setConnectionState(ConnectionState.CONNECTING, "Connecting to Stream...");
     sseConnection = new EventSource(`${API_BASE}/api/v1/telemetry/stream`);
 
     sseConnection.onopen = function() {
-      connDot.className = "conn-dot live";
-      connText.textContent = "Live — Stream Active";
+      setConnectionState(ConnectionState.CONNECTED, "Live — Stream Active");
     };
 
     sseConnection.addEventListener('telemetry', function(e) {
@@ -1409,7 +1480,7 @@ function initTelemetrySSE() {
           const firstItem = document.querySelector('.telemetry-item');
           if (firstItem) firstItem.classList.add('new-ping');
 
-          // Refresh stats and devices periodically
+          setConnectionState(ConnectionState.CONNECTED, "Live — Event Received");
           fetchStats();
         }
       } catch (err) {
@@ -1418,13 +1489,20 @@ function initTelemetrySSE() {
     });
 
     sseConnection.onerror = function() {
-      connDot.className = "conn-dot disconnected";
-      connText.textContent = "Reconnecting...";
+      sseConnection.close();
+      sseConnection = null;
+      reconnectAttempts++;
+      const backoffSec = Math.min(Math.pow(2, reconnectAttempts - 1), 30);
+      setConnectionState(ConnectionState.ERROR, `Reconnecting in ${backoffSec}s...`);
+
+      clearTimeout(reconnectTimeout);
+      reconnectTimeout = setTimeout(() => {
+        initTelemetrySSE();
+      }, backoffSec * 1000);
     };
   } catch (err) {
-    console.warn("SSE connection initialization failed:", err);
-    connDot.className = "conn-dot disconnected";
-    connText.textContent = "Offline Fallback";
+    console.warn("SSE initialization error:", err);
+    setConnectionState(ConnectionState.DEGRADED, "Polling Active");
   }
 }
 

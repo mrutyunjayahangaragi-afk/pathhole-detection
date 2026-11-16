@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>CivicLens — Portal Authentication Gateway</title>
+<link rel="stylesheet" href="./static/css/civiclens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  .gateway-wrapper {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--cl-space-6) var(--cl-space-4);
+    background: radial-gradient(circle at top, var(--cl-bg-surface) 0%, var(--cl-bg-canvas) 100%);
+  }
+
+  .gateway-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--cl-space-6);
+    max-width: 780px;
+    width: 100%;
+    margin-top: var(--cl-space-6);
+  }
+
+  .gateway-card {
+    background: var(--cl-bg-surface);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-lg);
+    box-shadow: var(--cl-shadow-lg);
+    padding: var(--cl-space-6);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .gateway-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 32px rgba(0,0,0,0.4);
+  }
+
+  .gateway-card.citizen:hover {
+    border-color: var(--cl-primary);
+  }
+
+  .gateway-card.official:hover {
+    border-color: var(--cl-warning);
+  }
+
+  .gateway-card.citizen {
+    border-top: 4px solid var(--cl-primary);
+  }
+
+  .gateway-card.official {
+    border-top: 4px solid var(--cl-warning);
+  }
+</style>
+</head>
+<body>
+
+<div class="gateway-wrapper">
+  <!-- Brand Header -->
+  <div style="text-align: center; max-width: 500px;">
+    <a href="./index.html" style="text-decoration: none; color: inherit; display: inline-flex; align-items: center; gap: 10px;">
+      <svg width="44" height="44" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="48" height="48" rx="8" fill="#1e293b"/>
+        <path d="M6 32 Q 18 28, 22 32 Q 26 36, 30 32 Q 34 28, 42 32" stroke="#f8fafc" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <ellipse cx="26" cy="33.5" rx="6.5" ry="3" fill="#f59e0b"/>
+        <circle cx="24" cy="18" r="8" stroke="#2563eb" stroke-width="3" fill="none"/>
+        <circle cx="24" cy="18" r="3" fill="#2563eb"/>
+      </svg>
+      <h1 style="font-family: var(--cl-font-heading); font-size: 26px; font-weight: 700; margin: 0; text-transform: uppercase;">
+        Civic<span style="color: var(--cl-primary-light);">Lens</span>
+      </h1>
+    </a>
+    <p style="font-size: 14px; color: var(--cl-text-muted); margin: 8px 0 0 0;">
+      Smart Civic Reporting. Transparent City Improvements.
+    </p>
+  </div>
+
+  <div class="gateway-grid">
+    <!-- Citizen Card -->
+    <a href="./citizen-login.html" class="gateway-card citizen">
+      <div>
+        <div style="font-size: 32px; margin-bottom: 12px;">📢</div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
+          <h2 style="font-family: var(--cl-font-heading); font-size: 20px; margin: 0; text-transform: uppercase;">
+            Citizen Portal
+          </h2>
+          <span class="cl-badge cl-badge-verified" style="font-size: 10px;">PUBLIC ACCESS</span>
+        </div>
+        <p style="font-size: 13px; color: var(--cl-text-secondary); margin: 0 0 16px 0; line-height: 1.5;">
+          Sign in or create an account to submit infrastructure grievances in English or ಕನ್ನಡ, track repair status, and receive real-time notifications.
+        </p>
+      </div>
+      <div class="cl-btn cl-btn-primary" style="text-align: center; font-weight: 600; padding: 10px;">
+        Sign In as Citizen &rarr;
+      </div>
+    </a>
+
+    <!-- Official Card -->
+    <a href="./municipal/login.html" class="gateway-card official">
+      <div>
+        <div style="font-size: 32px; margin-bottom: 12px;">🏛️</div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
+          <h2 style="font-family: var(--cl-font-heading); font-size: 20px; margin: 0; text-transform: uppercase;">
+            Municipal Official
+          </h2>
+          <span class="cl-badge cl-badge-severe" style="font-size: 10px;">RESTRICTED</span>
+        </div>
+        <p style="font-size: 13px; color: var(--cl-text-secondary); margin: 0 0 16px 0; line-height: 1.5;">
+          Administrative portal for BBMP Ward Engineers, Department Leads, and Executive Administrators to triage canonical incidents and dispatch repairs.
+        </p>
+      </div>
+      <div class="cl-btn cl-btn-secondary" style="text-align: center; font-weight: 600; padding: 10px; border-color: var(--cl-warning); color: var(--cl-warning-light);">
+        Official &amp; Officer Access &rarr;
+      </div>
+    </a>
+  </div>
+
+  <div style="margin-top: 32px; font-size: 12px; color: var(--cl-text-muted); text-align: center;">
+    <a href="./index.html" style="color: var(--cl-text-secondary); text-decoration: none;">&larr; Back to CivicLens Home</a>
+  </div>
+</div>
+
+</body>
+</html>

@@ -35,7 +35,7 @@ from backend.config import get_config, normalize_database_url, redact_secret
 from backend.db.engine import get_engine, get_session_factory
 from backend.db.init_schema import create_all_tables
 from backend.db.models import (
-    Base, User, Incident, CitizenReport, ReportItem, EvidenceAsset,
+    Base, User, Municipality, OfficialInvitation, Incident, CitizenReport, ReportItem, EvidenceAsset,
     ReportEvidence, DetectionRun, Detection, DetectionEmbedding,
     IncidentObservation, MatchEvaluation, MatchCandidate,
     MatchDecision, IncidentConsolidation, IncidentStatusHistory,
@@ -51,8 +51,10 @@ from backend.db.models import (
 # Ordered model sequence respecting Foreign Key dependencies
 MIGRATION_SEQUENCE = [
     ("users", User),
+    ("municipalities", Municipality),
     ("departments", Department),
     ("department_memberships", DepartmentMembership),
+    ("official_invitations", OfficialInvitation),
     ("incidents_v2", Incident),
     ("incident_publications", IncidentPublication),
     ("incident_follows", IncidentFollow),

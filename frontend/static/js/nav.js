@@ -22,7 +22,7 @@
 
     let userRole = 'public';
     try {
-      const uStr = localStorage.getItem('civiclens_user');
+      const uStr = localStorage.getItem('civiclens_user_data') || localStorage.getItem('civiclens_user');
       if (uStr) {
         const u = JSON.parse(uStr);
         userRole = u.role || 'citizen';

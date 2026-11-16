@@ -92,6 +92,13 @@ def create_app(config: Optional[Config] = None) -> Flask:
     app.register_blueprint(citizen_tracking_bp)
     app.register_blueprint(telemetry_bp)
 
+    # Register CLI Commands
+    try:
+        from backend.cli import civiclens_cli
+        app.cli.add_command(civiclens_cli)
+    except Exception as e:
+        logger.debug(f"CLI registration deferred: {e}")
+
     # Seed default municipal departments if not already present
     try:
         from backend.services.department_management_service import DepartmentManagementService
@@ -132,10 +139,10 @@ def create_app(config: Optional[Config] = None) -> Flask:
         response.headers["Permissions-Policy"] = "geolocation=(self), camera=(self), microphone=()"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net; "
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; "
+            "script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdnjs.cloudflare.com; "
             "font-src 'self' https://fonts.gstatic.com data:; "
-            "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://unpkg.com https://*.basemaps.cartocdn.com; "
+            "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://unpkg.com https://cdnjs.cloudflare.com https://*.basemaps.cartocdn.com; "
             "connect-src 'self'; "
             "frame-ancestors 'self';"
         )
@@ -304,6 +311,18 @@ def create_app(config: Optional[Config] = None) -> Flask:
     def serve_citizen_login():
         from flask import send_from_directory
         return send_from_directory(os.path.join(_parent, "frontend"), "citizen-login.html")
+
+    @app.route("/login.html", methods=["GET"])
+    @app.route("/login", methods=["GET"])
+    def serve_login_router():
+        from flask import send_from_directory
+        return send_from_directory(os.path.join(_parent, "frontend"), "login.html")
+
+    @app.route("/municipal/login.html", methods=["GET"])
+    @app.route("/municipal/login", methods=["GET"])
+    def serve_municipal_login():
+        from flask import send_from_directory
+        return send_from_directory(os.path.join(_parent, "frontend", "municipal"), "login.html")
 
     @app.route("/citizen-dashboard.html", methods=["GET"])
     @app.route("/citizen-dashboard", methods=["GET"])

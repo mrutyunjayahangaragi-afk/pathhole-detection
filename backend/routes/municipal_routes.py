@@ -20,7 +20,7 @@ from backend.services.municipal_communication_service import MunicipalCommunicat
 from backend.db.engine import get_session_factory
 from backend.db.models import (
     Incident, CitizenReport, ReportItem, ReportEvidence, EvidenceAsset,
-    Detection, MatchCandidate, MatchDecision, User, Department
+    Detection, MatchCandidate, MatchDecision, User, Department, Municipality
 )
 from backend.errors import ValidationError, NotFoundError, CivicLensError
 
@@ -424,6 +424,31 @@ def list_departments():
     include_inactive = request.args.get("include_inactive", "").lower() in ("1", "true", "yes")
     depts = dept_service.list_departments(include_inactive=include_inactive)
     return jsonify({"departments": depts}), 200
+
+
+@municipal_bp.route("/municipalities", methods=["GET"])
+@role_required(*MUNICIPAL_ROLES)
+def list_municipalities():
+    """Lists registered municipalities."""
+    db = get_session_factory()()
+    try:
+        muns = db.query(Municipality).order_by(Municipality.name.asc()).all()
+        return jsonify({
+            "status": "success",
+            "municipalities": [
+                {
+                    "id": m.id,
+                    "name": m.name,
+                    "code": m.code,
+                    "state": m.state,
+                    "status": m.status,
+                    "department_count": len(m.departments) if m.departments else 0
+                }
+                for m in muns
+            ]
+        }), 200
+    finally:
+        db.close()
 
 
 @municipal_bp.route("/departments", methods=["POST"])

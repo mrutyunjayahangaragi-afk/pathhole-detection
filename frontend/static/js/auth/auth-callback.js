@@ -75,11 +75,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 5. Store verified user session
     window.CivicLensSession.setSession(data.token, data.user);
 
+    const requestedRedirect = urlParams.get('redirect');
+
     statusTitle.textContent = 'Welcome, ' + (data.user.display_name || 'User') + '!';
-    statusMessage.textContent = 'Redirecting to your dashboard...';
+    statusMessage.textContent = 'Redirecting to your destination...';
 
     setTimeout(() => {
-      window.CivicLensRoleNav.redirectToPortal(data.user);
+      window.CivicLensRoleNav.redirectToPortal(data.user, requestedRedirect);
     }, 800);
 
   } catch (err) {

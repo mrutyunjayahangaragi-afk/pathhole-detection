@@ -39,6 +39,7 @@ from backend.routes.public_routes import public_bp
 from backend.routes.notification_routes import notification_bp, citizen_tracking_bp
 from backend.routes.telemetry_routes import telemetry_bp
 from backend.routes.map_config_routes import map_config_bp
+from backend.routes.public_config_routes import public_config_bp
 
 
 def create_app(config: Optional[Config] = None) -> Flask:
@@ -93,6 +94,7 @@ def create_app(config: Optional[Config] = None) -> Flask:
     app.register_blueprint(citizen_tracking_bp)
     app.register_blueprint(telemetry_bp)
     app.register_blueprint(map_config_bp)
+    app.register_blueprint(public_config_bp)
 
     # Register CLI Commands
     try:

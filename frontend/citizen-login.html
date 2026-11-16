@@ -162,6 +162,10 @@
 </div>
 
 <script src="./static/js/citizen-auth.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./static/js/auth/supabase-client.js"></script>
+<script src="./static/js/auth/session-manager.js"></script>
+<script src="./static/js/auth/role-navigation.js"></script>
 <script>
 const tabLogin = document.getElementById("tab-login");
 const tabRegister = document.getElementById("tab-register");
@@ -283,7 +287,5 @@ document.getElementById("btn-google-login")?.addEventListener("click", () => {
   window.CivicLensSupabase.signInWithGoogle("citizen");
 });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./static/js/auth/supabase-client.js"></script>
 </body>
 </html>

@@ -211,11 +211,19 @@ class Config:
         self.CARTO_API_KEY = self.CARTO_BASEMAP_API_KEY  # Backward-compatibility alias
         self.ALLOW_OSM_DEV_FALLBACK = _bool_from_env("ALLOW_OSM_DEV_FALLBACK", True)
 
-        # Supabase API & Auth Configuration
-        self.SUPABASE_PUBLISHABLE_KEY = os.environ.get(
-            "SUPABASE_PUBLISHABLE_KEY", os.environ.get("SUPABASE_ANON_KEY", "")
-        ).strip()
-        self.SUPABASE_ANON_KEY = self.SUPABASE_PUBLISHABLE_KEY  # Alias
+        # Supabase API & Auth Configuration (Canonical Resolution)
+        raw_pub_key = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip()
+        raw_anon_key = os.environ.get("SUPABASE_ANON_KEY", "").strip()
+
+        # Reject secret keys being supplied as browser public credentials
+        if raw_pub_key.startswith("sb_secret_") or "service_role" in raw_pub_key.lower():
+            raw_pub_key = ""
+        if raw_anon_key.startswith("sb_secret_") or "service_role" in raw_anon_key.lower():
+            raw_anon_key = ""
+
+        # Priority: modern publishable key -> legacy anon key
+        self.SUPABASE_PUBLISHABLE_KEY = raw_pub_key or raw_anon_key
+        self.SUPABASE_ANON_KEY = self.SUPABASE_PUBLISHABLE_KEY  # Alias for backward compatibility
         self.SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 
         # Duplicate Incident Matching Configuration
@@ -254,6 +262,17 @@ class Config:
         self.VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "").strip()
         self.VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "").strip()
         self.VAPID_CLAIM_EMAIL = os.environ.get("VAPID_CLAIM_EMAIL", "admin@civiclens.org").strip()
+
+    @property
+    def is_supabase_configured(self) -> bool:
+        """Returns True if a valid Supabase URL and browser publishable key are configured."""
+        if not self.SUPABASE_URL or not self.SUPABASE_PUBLISHABLE_KEY:
+            return False
+        if "YOUR_PROJECT_REF" in self.SUPABASE_URL or "YOUR_" in self.SUPABASE_PUBLISHABLE_KEY:
+            return False
+        if not self.SUPABASE_URL.startswith("https://"):
+            return False
+        return True
 
 
 class DevelopmentConfig(Config):

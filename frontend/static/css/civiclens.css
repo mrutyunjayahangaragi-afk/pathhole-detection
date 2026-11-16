@@ -1,38 +1,49 @@
 /**
- * CivicLens Design System & Responsive Framework
- * ===============================================
- * Mobile-first design system with accessible contrast, 44px+ touch targets,
- * fluid typography, dark/light theme tokens, and clean civic tech styling.
- * Supports: Mobile (360-480px), Large Phone (481-600px), Tablet (601-1024px),
- * Laptop (1025-1440px), and Large Desktop (>1440px).
+ * CivicLens Design System & Responsive Framework (v2.0)
+ * =====================================================
+ * Official Civic Technology Design System:
+ * - Clean, accessible Light Theme as the default.
+ * - Dark Theme available via [data-theme="dark"].
+ * - WCAG 2.2 AA compliant contrast ratios and 44px+ touch targets.
+ * - Fluid typography (Inter, Oswald, IBM Plex Mono).
+ * - Full support for 9 viewports: 360px to 1920px+.
  */
 
 :root {
-  /* Color Palette - Civic Modern */
-  --cl-bg-canvas: #0f172a;
-  --cl-bg-surface: #1e293b;
-  --cl-bg-elevated: #283548;
-  --cl-bg-subtle: #172033;
-  --cl-border: #334155;
-  --cl-border-light: #475569;
+  /* Clean Light Theme (Default Civic Interface) */
+  --cl-bg-canvas: #f8fafc;
+  --cl-bg-surface: #ffffff;
+  --cl-bg-elevated: #ffffff;
+  --cl-bg-subtle: #f1f5f9;
+  --cl-border: #e2e8f0;
+  --cl-border-light: #cbd5e1;
 
-  --cl-text-primary: #f8fafc;
-  --cl-text-secondary: #94a3b8;
+  --cl-text-primary: #0f172a;
+  --cl-text-secondary: #475569;
   --cl-text-muted: #64748b;
 
-  --cl-primary: #2563eb;
-  --cl-primary-hover: #1d4ed8;
-  --cl-primary-light: #60a5fa;
+  --cl-primary: #1d4ed8;
+  --cl-primary-hover: #1e40af;
+  --cl-primary-light: #3b82f6;
 
-  --cl-warning: #f59e0b;
-  --cl-warning-subtle: rgba(245, 158, 11, 0.15);
+  --cl-warning: #d97706;
+  --cl-warning-subtle: #fef3c7;
 
-  --cl-severe: #ef4444;
-  --cl-severe-bg: rgba(239, 68, 68, 0.15);
-  --cl-moderate: #f97316;
-  --cl-moderate-bg: rgba(249, 115, 22, 0.15);
-  --cl-minor: #10b981;
-  --cl-minor-bg: rgba(16, 185, 129, 0.15);
+  --cl-severe: #dc2626;
+  --cl-severe-bg: #fef2f2;
+  --cl-severe-border: #fecaca;
+
+  --cl-moderate: #d97706;
+  --cl-moderate-bg: #fffbeb;
+  --cl-moderate-border: #fde68a;
+
+  --cl-minor: #059669;
+  --cl-minor-bg: #ecfdf5;
+  --cl-minor-border: #a7f3d0;
+
+  --cl-info: #2563eb;
+  --cl-info-bg: #eff6ff;
+  --cl-info-border: #bfdbfe;
 
   /* Spacing Scale */
   --cl-space-1: 4px;
@@ -61,9 +72,9 @@
   --cl-min-touch: 44px;
 
   /* Elevation Shadows */
-  --cl-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.25);
-  --cl-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.35), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-  --cl-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
+  --cl-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --cl-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --cl-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 
   /* Border Radius */
   --cl-radius-sm: 4px;
@@ -73,6 +84,47 @@
 
   /* Sidebar width */
   --cl-sidebar-width: 240px;
+}
+
+/* Dark Mode Tokens (Active via [data-theme="dark"]) */
+[data-theme="dark"] {
+  --cl-bg-canvas: #0f172a;
+  --cl-bg-surface: #1e293b;
+  --cl-bg-elevated: #283548;
+  --cl-bg-subtle: #172033;
+  --cl-border: #334155;
+  --cl-border-light: #475569;
+
+  --cl-text-primary: #f8fafc;
+  --cl-text-secondary: #94a3b8;
+  --cl-text-muted: #64748b;
+
+  --cl-primary: #2563eb;
+  --cl-primary-hover: #1d4ed8;
+  --cl-primary-light: #60a5fa;
+
+  --cl-warning: #f59e0b;
+  --cl-warning-subtle: rgba(245, 158, 11, 0.15);
+
+  --cl-severe: #ef4444;
+  --cl-severe-bg: rgba(239, 68, 68, 0.15);
+  --cl-severe-border: rgba(239, 68, 68, 0.3);
+
+  --cl-moderate: #f97316;
+  --cl-moderate-bg: rgba(249, 115, 22, 0.15);
+  --cl-moderate-border: rgba(249, 115, 22, 0.3);
+
+  --cl-minor: #10b981;
+  --cl-minor-bg: rgba(16, 185, 129, 0.15);
+  --cl-minor-border: rgba(16, 185, 129, 0.3);
+
+  --cl-info: #3b82f6;
+  --cl-info-bg: rgba(59, 130, 246, 0.15);
+  --cl-info-border: rgba(59, 130, 246, 0.3);
+
+  --cl-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.25);
+  --cl-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.35);
+  --cl-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
 }
 
 /* Base Reset & Mobile defaults */
@@ -500,3 +552,104 @@ body {
   color: white;
   font-weight: 600;
 }
+
+/* ─── Guided Report Wizard Primitives ──────────────────────────────── */
+.cl-wizard-progress {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--cl-space-6);
+  position: relative;
+}
+.cl-wizard-progress::before {
+  content: '';
+  position: absolute;
+  top: 15px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--cl-border);
+  z-index: 1;
+}
+.cl-wizard-step {
+  position: relative;
+  z-index: 2;
+  background: var(--cl-bg-surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+}
+.cl-step-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--cl-bg-subtle);
+  border: 2px solid var(--cl-border);
+  color: var(--cl-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+.cl-wizard-step.active .cl-step-circle {
+  background: var(--cl-primary);
+  border-color: var(--cl-primary);
+  color: #ffffff;
+}
+.cl-wizard-step.completed .cl-step-circle {
+  background: var(--cl-minor);
+  border-color: var(--cl-minor);
+  color: #ffffff;
+}
+.cl-step-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--cl-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Accessible focus visible rings */
+:focus-visible {
+  outline: 2px solid var(--cl-primary);
+  outline-offset: 2px;
+}
+
+/* Metric Cards */
+.cl-metric-card {
+  background: var(--cl-bg-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: var(--cl-radius-md);
+  padding: var(--cl-space-4) var(--cl-space-5);
+  box-shadow: var(--cl-shadow-sm);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.cl-metric-card:hover {
+  box-shadow: var(--cl-shadow-md);
+}
+.cl-metric-label {
+  font-size: 12px;
+  color: var(--cl-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+.cl-metric-value {
+  font-family: var(--cl-font-heading);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--cl-text-primary);
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+.cl-metric-hint {
+  font-size: 11px;
+  color: var(--cl-text-secondary);
+  font-family: var(--cl-font-mono);
+}
+

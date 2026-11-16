@@ -184,6 +184,8 @@ class IncidentStateMachineService:
             # Update incident status
             incident.status = new_status
             incident.updated_at = datetime.now(timezone.utc)
+            if new_status == IncidentStatus.RESOLVED and not incident.resolved_at:
+                incident.resolved_at = datetime.now(timezone.utc)
 
             # Record Status History
             history_entry = IncidentStatusHistory(

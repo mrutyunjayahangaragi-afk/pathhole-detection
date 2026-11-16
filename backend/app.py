@@ -103,10 +103,10 @@ def create_app(config: Optional[Config] = None) -> Flask:
     incident_service = IncidentService(db_path=cfg.DATABASE_PATH)
 
     # ---------------------------------------------------------------------------
-    # CORS & Preflight
+    # CORS, Security Headers & Preflight
     # ---------------------------------------------------------------------------
     @app.after_request
-    def add_cors_headers(response):
+    def add_security_and_cors_headers(response):
         origins = cfg.CORS_ORIGINS
         req_origin = request.headers.get("Origin")
 
@@ -122,6 +122,31 @@ def create_app(config: Optional[Config] = None) -> Flask:
         response.headers["Access-Control-Allow-Headers"] = (
             "Content-Type, Authorization, X-Requested-With, Accept, Origin, Idempotency-Key"
         )
+
+        # Production Hardened Security Headers (Step 10 Audit)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(self), camera=(self), microphone=()"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; "
+            "font-src 'self' https://fonts.gstatic.com data:; "
+            "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://unpkg.com https://*.basemaps.cartocdn.com; "
+            "connect-src 'self'; "
+            "frame-ancestors 'self';"
+        )
+        if request.is_secure or getattr(cfg, "ENV", "") == "production":
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+
+        # Asset and API Caching
+        if request.path.startswith("/static/"):
+            response.headers["Cache-Control"] = "public, max-age=86400"
+        elif request.path.startswith("/api/"):
+            if "Cache-Control" not in response.headers:
+                response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+
         return response
 
     @app.before_request

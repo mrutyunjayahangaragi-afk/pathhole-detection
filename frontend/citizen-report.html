@@ -227,131 +227,254 @@
           Report Infrastructure Defect
         </h1>
         <p style="color: var(--cl-text-secondary); font-size: var(--cl-text-sm); margin: 0 0 var(--cl-space-5) 0;" id="form-subheading">
-          Provide photos, select or pinpoint defect location, and specify severity. Multiple citizen reports at the same defect site automatically link to a canonical municipal incident.
+          Follow the guided 5-step wizard to document, pinpoint, and submit the road hazard.
         </p>
+
+        <!-- 5-Step Wizard Progress Bar -->
+        <div class="cl-wizard-progress" role="tablist" aria-label="Grievance reporting wizard progress">
+          <div class="cl-wizard-step active" id="step-node-1" role="tab" aria-selected="true" style="cursor: pointer;">
+            <div class="cl-step-circle">1</div>
+            <div class="cl-step-label" id="step-lbl-1">Category</div>
+          </div>
+          <div class="cl-wizard-step" id="step-node-2" role="tab" aria-selected="false" style="cursor: pointer;">
+            <div class="cl-step-circle">2</div>
+            <div class="cl-step-label" id="step-lbl-2">Photos</div>
+          </div>
+          <div class="cl-wizard-step" id="step-node-3" role="tab" aria-selected="false" style="cursor: pointer;">
+            <div class="cl-step-circle">3</div>
+            <div class="cl-step-label" id="step-lbl-3">Location</div>
+          </div>
+          <div class="cl-wizard-step" id="step-node-4" role="tab" aria-selected="false" style="cursor: pointer;">
+            <div class="cl-step-circle">4</div>
+            <div class="cl-step-label" id="step-lbl-4">Details</div>
+          </div>
+          <div class="cl-wizard-step" id="step-node-5" role="tab" aria-selected="false" style="cursor: pointer;">
+            <div class="cl-step-circle">5</div>
+            <div class="cl-step-label" id="step-lbl-5">Review</div>
+          </div>
+        </div>
 
         <!-- Validation Alert -->
         <div id="form-error-alert" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid var(--cl-severe); color: #fca5a5; padding: 10px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 16px;"></div>
 
         <form id="citizen-report-form">
-          <!-- 1. Photo / Video Evidence -->
-          <div class="cl-form-group">
-            <label class="cl-label" for="photo-input" id="lbl-photo">
-              1. Photographic / Video Evidence (Up to 5 files)
-            </label>
-            <input type="file" id="photo-input" multiple accept="image/jpeg,image/png,image/webp,video/mp4" class="cl-input" style="padding-top: 10px;">
-            <div class="evidence-preview-grid" id="preview-grid"></div>
-            <span style="font-size: 11px; color: var(--cl-text-muted); margin-top: 4px; display: block;">
-              Accepted: JPEG, PNG, WebP, MP4 (Max 16 MB each). Clear road photos help engineering triage crews.
-            </span>
-          </div>
-
-          <!-- 2. Defect Title -->
-          <div class="cl-form-group">
-            <label class="cl-label" for="input-title" id="lbl-title">
-              2. Brief Defect Title
-            </label>
-            <input type="text" id="input-title" class="cl-input" placeholder="e.g. Deep pothole on outer ring road near bus stop" required maxlength="200">
-          </div>
-
-          <!-- 3. Location Capture: Interactive Map + GPS -->
-          <div class="cl-form-group">
-            <label class="cl-label" id="lbl-location">
-              3. Defect Location (Interactive Pin &amp; GPS)
-            </label>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <button type="button" class="cl-btn cl-btn-secondary" id="btn-get-gps" style="flex: 1;">
-                📍 Capture Device GPS
-              </button>
-              <button type="button" class="cl-btn cl-btn-secondary" id="btn-center-map">
-                🎯 Recenter Map Pin
-              </button>
+          <!-- STEP 1: Category, Title & Severity -->
+          <div class="wizard-panel" id="panel-step-1">
+            <h3 style="font-size: 1.1rem; margin: 0 0 12px 0; color: var(--cl-text-primary);" id="panel-title-1">
+              Step 1: Category &amp; Severity
+            </h3>
+            <!-- Defect Title -->
+            <div class="cl-form-group">
+              <label class="cl-label" for="input-title" id="lbl-title">
+                Defect Title *
+              </label>
+              <input type="text" id="input-title" class="cl-input" placeholder="e.g. Deep pothole on outer ring road near bus stop" required maxlength="200">
             </div>
-            <div class="gps-status" id="gps-status-box"></div>
 
-            <!-- Leaflet Interactive Map -->
-            <div id="pin-map" role="region" aria-label="Interactive defect location picker map"></div>
-            <span style="font-size: 11px; color: var(--cl-text-muted); margin-top: 4px; display: block;">
-              Tap anywhere on the map or drag the pin to mark the exact location of the defect.
-            </span>
+            <!-- Defect Category -->
+            <div class="cl-form-group">
+              <label class="cl-label" for="category-select" id="lbl-category">
+                Defect Category *
+              </label>
+              <select id="category-select" class="cl-select" required>
+                <option value="pothole" selected>Pothole / Road Depression</option>
+                <option value="road_damage">Asphalt Cave-in / Surface Damage</option>
+                <option value="drainage">Open Manhole / Clogged Storm Drain</option>
+                <option value="broken_streetlight">Broken Streetlight / Electrical Hazard</option>
+                <option value="water_leakage">BWSSB Water Pipeline Leak</option>
+                <option value="garbage">Garbage / Construction Debris on Road</option>
+                <option value="other">Other Civic Infrastructure Defect</option>
+              </select>
+            </div>
 
-            <!-- Coordinate inputs -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
-              <div>
-                <label style="font-size: 11px; color: var(--cl-text-muted);">Latitude</label>
-                <input type="number" step="any" id="input-lat" class="cl-input" placeholder="e.g. 12.9716" required>
+            <!-- Estimated Severity with Official Disclaimer -->
+            <div class="cl-form-group">
+              <label class="cl-label" id="lbl-severity">
+                Estimated Severity
+              </label>
+              <div class="severity-options">
+                <label class="sev-radio-label sev-minor">
+                  <input type="radio" name="severity" value="minor" checked>
+                  Minor
+                </label>
+                <label class="sev-radio-label sev-moderate">
+                  <input type="radio" name="severity" value="moderate">
+                  Moderate
+                </label>
+                <label class="sev-radio-label sev-severe">
+                  <input type="radio" name="severity" value="severe">
+                  Severe
+                </label>
+                <label class="sev-radio-label sev-critical">
+                  <input type="radio" name="severity" value="critical">
+                  Critical
+                </label>
               </div>
-              <div>
-                <label style="font-size: 11px; color: var(--cl-text-muted);">Longitude</label>
-                <input type="number" step="any" id="input-lon" class="cl-input" placeholder="e.g. 77.5946" required>
+              <!-- Severity Disclaimer -->
+              <div class="disclaimer-banner" id="sev-disclaimer">
+                ⚠️ <strong>Citizen Severity Disclaimer:</strong> Your severity selection represents an initial citizen observation. Final priority triage and classification are determined by Municipal Engineering evaluation.
               </div>
             </div>
 
-            <div style="margin-top: 8px;">
-              <label style="font-size: 11px; color: var(--cl-text-muted);" id="lbl-landmark">Street / Landmark Address (Optional)</label>
-              <input type="text" id="input-address" class="cl-input" placeholder="e.g. 100 Feet Rd, Indiranagar, near Metro Pillar 124">
+            <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+              <button type="button" class="cl-btn cl-btn-primary" id="btn-next-1">
+                Next: Add Photos &rarr;
+              </button>
             </div>
           </div>
 
-          <!-- 4. Defect Category -->
-          <div class="cl-form-group">
-            <label class="cl-label" for="category-select" id="lbl-category">
-              4. Defect Category
-            </label>
-            <select id="category-select" class="cl-select" required>
-              <option value="pothole" selected>Pothole / Road Depression</option>
-              <option value="road_damage">Asphalt Cave-in / Surface Damage</option>
-              <option value="drainage">Open Manhole / Clogged Storm Drain</option>
-              <option value="broken_streetlight">Broken Streetlight / Electrical Hazard</option>
-              <option value="water_leakage">BWSSB Water Pipeline Leak</option>
-              <option value="garbage">Garbage / Construction Debris on Road</option>
-              <option value="other">Other Civic Infrastructure Defect</option>
-            </select>
-          </div>
-
-          <!-- 5. Estimated Severity with Official Disclaimer -->
-          <div class="cl-form-group">
-            <label class="cl-label" id="lbl-severity">
-              5. Estimated Severity
-            </label>
-            <div class="severity-options">
-              <label class="sev-radio-label sev-minor">
-                <input type="radio" name="severity" value="minor" checked>
-                Minor
+          <!-- STEP 2: Photo / Video Evidence -->
+          <div class="wizard-panel" id="panel-step-2" style="display: none;">
+            <h3 style="font-size: 1.1rem; margin: 0 0 12px 0; color: var(--cl-text-primary);" id="panel-title-2">
+              Step 2: Photographic Evidence
+            </h3>
+            <div class="cl-form-group">
+              <label class="cl-label" for="photo-input" id="lbl-photo">
+                Upload Photos / Videos (Up to 5 files)
               </label>
-              <label class="sev-radio-label sev-moderate">
-                <input type="radio" name="severity" value="moderate">
-                Moderate
-              </label>
-              <label class="sev-radio-label sev-severe">
-                <input type="radio" name="severity" value="severe">
-                Severe
-              </label>
-              <label class="sev-radio-label sev-critical">
-                <input type="radio" name="severity" value="critical">
-                Critical
-              </label>
+              <input type="file" id="photo-input" multiple accept="image/jpeg,image/png,image/webp,video/mp4" class="cl-input" style="padding-top: 10px;">
+              <div class="evidence-preview-grid" id="preview-grid"></div>
+              <span style="font-size: 11px; color: var(--cl-text-muted); margin-top: 6px; display: block;">
+                Accepted formats: JPEG, PNG, WebP, MP4 (Max 16 MB each). Clear photos of the road surface accelerate municipal triage.
+              </span>
             </div>
-            <!-- Severity Disclaimer -->
-            <div class="disclaimer-banner" id="sev-disclaimer">
-              ⚠️ <strong>Citizen Severity Disclaimer:</strong> Your severity selection represents an initial citizen observation. Final priority triage and classification are determined by Municipal Engineering evaluation.
+
+            <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+              <button type="button" class="cl-btn cl-btn-secondary" id="btn-back-2">
+                &larr; Back
+              </button>
+              <button type="button" class="cl-btn cl-btn-primary" id="btn-next-2">
+                Next: Pin Location &rarr;
+              </button>
             </div>
           </div>
 
-          <!-- 6. Detailed Description -->
-          <div class="cl-form-group">
-            <label class="cl-label" for="description-input" id="lbl-desc">
-              6. Description &amp; Safety Hazards
-            </label>
-            <textarea id="description-input" class="cl-textarea" placeholder="Describe the size, depth, danger to two-wheelers, pedestrians, or water accumulation... (English or ಕನ್ನಡ)" rows="3"></textarea>
-            <div id="lang-detection-badge" style="display: none; margin-top: 6px; font-size: 11px; padding: 4px 8px; border-radius: 4px; background: rgba(59, 130, 246, 0.1); border: 1px solid var(--cl-border); color: var(--cl-primary-light);"></div>
-            <div id="ai-suggestion-badge" style="display: none; margin-top: 6px; font-size: 11px; padding: 4px 8px; border-radius: 4px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; cursor: pointer;"></div>
+          <!-- STEP 3: Location Capture: Interactive Map + GPS -->
+          <div class="wizard-panel" id="panel-step-3" style="display: none;">
+            <h3 style="font-size: 1.1rem; margin: 0 0 12px 0; color: var(--cl-text-primary);" id="panel-title-3">
+              Step 3: Defect Location
+            </h3>
+            <div class="cl-form-group">
+              <label class="cl-label" id="lbl-location">
+                Defect Location (Interactive Pin &amp; GPS) *
+              </label>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button type="button" class="cl-btn cl-btn-secondary" id="btn-get-gps" style="flex: 1;">
+                  📍 Capture Device GPS
+                </button>
+                <button type="button" class="cl-btn cl-btn-secondary" id="btn-center-map">
+                  🎯 Recenter Map Pin
+                </button>
+              </div>
+              <div class="gps-status" id="gps-status-box"></div>
+
+              <!-- Leaflet Interactive Map -->
+              <div id="pin-map" role="region" aria-label="Interactive defect location picker map"></div>
+              <span style="font-size: 11px; color: var(--cl-text-muted); margin-top: 4px; display: block;">
+                Tap anywhere on the map or drag the pin to mark the exact location of the defect.
+              </span>
+
+              <!-- Coordinate inputs -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+                <div>
+                  <label style="font-size: 11px; color: var(--cl-text-muted);">Latitude</label>
+                  <input type="number" step="any" id="input-lat" class="cl-input" placeholder="e.g. 12.9716" required>
+                </div>
+                <div>
+                  <label style="font-size: 11px; color: var(--cl-text-muted);">Longitude</label>
+                  <input type="number" step="any" id="input-lon" class="cl-input" placeholder="e.g. 77.5946" required>
+                </div>
+              </div>
+
+              <div style="margin-top: 8px;">
+                <label style="font-size: 11px; color: var(--cl-text-muted);" id="lbl-landmark">Street / Landmark Address (Optional)</label>
+                <input type="text" id="input-address" class="cl-input" placeholder="e.g. 100 Feet Rd, Indiranagar, near Metro Pillar 124">
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+              <button type="button" class="cl-btn cl-btn-secondary" id="btn-back-3">
+                &larr; Back
+              </button>
+              <button type="button" class="cl-btn cl-btn-primary" id="btn-next-3">
+                Next: Add Details &rarr;
+              </button>
+            </div>
           </div>
 
-          <!-- Submit Button -->
-          <button type="submit" class="cl-btn cl-btn-primary" style="width: 100%; margin-top: var(--cl-space-2);" id="btn-submit">
-            🚀 Submit Defect Report
-          </button>
+          <!-- STEP 4: Detailed Description & Multilingual Support -->
+          <div class="wizard-panel" id="panel-step-4" style="display: none;">
+            <h3 style="font-size: 1.1rem; margin: 0 0 12px 0; color: var(--cl-text-primary);" id="panel-title-4">
+              Step 4: Hazard Details
+            </h3>
+            <div class="cl-form-group">
+              <label class="cl-label" for="description-input" id="lbl-desc">
+                Description &amp; Safety Hazards (English or ಕನ್ನಡ)
+              </label>
+              <textarea id="description-input" class="cl-textarea" placeholder="Describe the size, depth, danger to two-wheelers, pedestrians, or water accumulation... (English or ಕನ್ನಡ)" rows="4"></textarea>
+              <div id="lang-detection-badge" style="display: none; margin-top: 6px; font-size: 11px; padding: 4px 8px; border-radius: 4px; background: rgba(59, 130, 246, 0.1); border: 1px solid var(--cl-border); color: var(--cl-primary-light);"></div>
+              <div id="ai-suggestion-badge" style="display: none; margin-top: 6px; font-size: 11px; padding: 4px 8px; border-radius: 4px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; cursor: pointer;"></div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+              <button type="button" class="cl-btn cl-btn-secondary" id="btn-back-4">
+                &larr; Back
+              </button>
+              <button type="button" class="cl-btn cl-btn-primary" id="btn-next-4">
+                Next: Review &amp; Submit &rarr;
+              </button>
+            </div>
+          </div>
+
+          <!-- STEP 5: Review & Submit -->
+          <div class="wizard-panel" id="panel-step-5" style="display: none;">
+            <h3 style="font-size: 1.1rem; margin: 0 0 12px 0; color: var(--cl-text-primary);" id="panel-title-5">
+              Step 5: Review Your Report
+            </h3>
+            <div class="cl-card" style="background: var(--cl-bg-subtle); padding: var(--cl-space-4); margin-bottom: var(--cl-space-4); border: 1px solid var(--cl-border);">
+              <div style="display: grid; grid-template-columns: 1fr; gap: 10px; font-size: 13px;">
+                <div>
+                  <strong style="color: var(--cl-text-muted);">Title:</strong>
+                  <div id="review-title" style="font-weight: 600; color: var(--cl-text-primary);">--</div>
+                </div>
+                <div style="display: flex; gap: 20px;">
+                  <div>
+                    <strong style="color: var(--cl-text-muted);">Category:</strong>
+                    <div id="review-category" style="font-weight: 600;">--</div>
+                  </div>
+                  <div>
+                    <strong style="color: var(--cl-text-muted);">Severity:</strong>
+                    <div id="review-severity" style="font-weight: 600;">--</div>
+                  </div>
+                </div>
+                <div>
+                  <strong style="color: var(--cl-text-muted);">Location Coordinates:</strong>
+                  <div id="review-coords" class="mono" style="font-size: 12px;">--</div>
+                </div>
+                <div>
+                  <strong style="color: var(--cl-text-muted);">Address / Landmark:</strong>
+                  <div id="review-address">--</div>
+                </div>
+                <div>
+                  <strong style="color: var(--cl-text-muted);">Evidence Attached:</strong>
+                  <div id="review-files">0 files selected</div>
+                </div>
+                <div>
+                  <strong style="color: var(--cl-text-muted);">Description:</strong>
+                  <div id="review-desc" style="white-space: pre-wrap; font-style: italic; color: var(--cl-text-secondary);">--</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+              <button type="button" class="cl-btn cl-btn-secondary" id="btn-back-5">
+                &larr; Back
+              </button>
+              <button type="submit" class="cl-btn cl-btn-primary" id="btn-submit" style="font-weight: 700;">
+                🚀 Submit Defect Report
+              </button>
+            </div>
+          </div>
         </form>
       </div>
     </div>
@@ -368,27 +491,37 @@
 const i18n = {
   en: {
     heading: "Report Infrastructure Defect",
-    subheading: "Provide photos, select or pinpoint defect location, and specify severity. Multiple citizen reports at the same defect site automatically link to a canonical municipal incident.",
-    photo: "1. Photographic / Video Evidence (Up to 5 files)",
-    title: "2. Brief Defect Title",
-    location: "3. Defect Location (Interactive Pin & GPS)",
+    subheading: "Follow the guided 5-step wizard to document, pinpoint, and submit the road hazard.",
+    step1: "Category",
+    step2: "Photos",
+    step3: "Location",
+    step4: "Details",
+    step5: "Review",
+    photo: "Upload Photos / Videos (Up to 5 files)",
+    title: "Defect Title *",
+    location: "Defect Location (Interactive Pin & GPS) *",
     landmark: "Street / Landmark Address (Optional)",
-    category: "4. Defect Category",
-    severity: "5. Estimated Severity",
-    desc: "6. Description & Safety Hazards",
+    category: "Defect Category *",
+    severity: "Estimated Severity",
+    desc: "Description & Safety Hazards (English or ಕನ್ನಡ)",
     submit: "🚀 Submit Defect Report",
     disclaimer: "⚠️ <strong>Citizen Severity Disclaimer:</strong> Your severity selection represents an initial citizen observation. Final priority triage and classification are determined by Municipal Engineering evaluation."
   },
   kn: {
     heading: "ರಸ್ತೆ ಅಥವಾ ಮೂಲಸೌಕರ್ಯ ದೋಷ ವರದಿ ಮಾಡಿ",
-    subheading: "ಫೋಟೋಗಳನ್ನು ಒದಗಿಸಿ, ನಕ್ಷೆಯಲ್ಲಿ ಸ್ಥಳವನ್ನು ಗುರುತಿಸಿ ಮತ್ತು ತೀವ್ರತೆಯನ್ನು ತಿಳಿಸಿ. ಒಂದೇ ಸ್ಥಳದಲ್ಲಿರುವ ಬಹು ವರದಿಗಳು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ವಿಲೀನಗೊಳ್ಳುತ್ತವೆ.",
-    photo: "1. ಫೋಟೋ ಅಥವಾ ವೀಡಿಯೊ ಸಾಕ್ಷ್ಯ (ಗರಿಷ್ಠ 5 ಕಡತಗಳು)",
-    title: "2. ಸಂಕ್ಷಿಪ್ತ ಶೀರ್ಷಿಕೆ",
-    location: "3. ಸ್ಥಳ (ನಕ್ಷೆಯಲ್ಲಿ ಪಿನ್ ಅಥವಾ GPS)",
-    landmark: "ರಸ್ತೆ / ಹತ್ತಿರದ ಪ್ರಮುಖ ಸ್ಥಳ",
-    category: "4. ದೋಷದ ವರ್ಗ",
-    severity: "5. ಅಂದಾಜು ತೀವ್ರತೆ",
-    desc: "6. ವಿವರಣೆ ಮತ್ತು ಅಪಾಯಗಳು",
+    subheading: "ದೋಷವನ್ನು ದಾಖಲಿಸಲು, ನಕ್ಷೆಯಲ್ಲಿ ಗುರುತಿಸಲು ಮತ್ತು ಸಲ್ಲಿಸಲು 5 ಹಂತಗಳ ಮಾರ್ಗದರ್ಶಿಯನ್ನು ಅನುಸರಿಸಿ.",
+    step1: "ವರ್ಗ",
+    step2: "ಫೋಟೋಗಳು",
+    step3: "ಸ್ಥಳ",
+    step4: "ವಿವರಣೆ",
+    step5: "ಪರಿಶೀಲನೆ",
+    photo: "ಫೋಟೋ ಅಥವಾ ವೀಡಿಯೊ ಸಾಕ್ಷ್ಯ (ಗರಿಷ್ಠ 5 ಕಡತಗಳು)",
+    title: "ಸಂಕ್ಷಿಪ್ತ ಶೀರ್ಷಿಕೆ *",
+    location: "ಸ್ಥಳ (ನಕ್ಷೆಯಲ್ಲಿ ಪಿನ್ ಅಥವಾ GPS) *",
+    landmark: "ರಸ್ತೆ / ಹತ್ತಿರದ ಪ್ರಮುಖ ಸ್ಥಳ (ಐಚ್ಛಿಕ)",
+    category: "ದೋಷದ ವರ್ಗ *",
+    severity: "ಅಂದಾಜು ತೀವ್ರತೆ",
+    desc: "ವಿವರಣೆ ಮತ್ತು ಅಪಾಯಗಳು (English ಅಥವಾ ಕನ್ನಡ)",
     submit: "🚀 ವರದಿ ಸಲ್ಲಿಸಿ",
     disclaimer: "⚠️ <strong>ಸೂಚನೆ:</strong> ನಾಗರಿಕರ ತೀವ್ರತೆಯ ಅಂದಾಜು ಪ್ರಾಥಮಿಕ ಮಾಹಿತಿಯಾಗಿದೆ. ಅಂತಿಮ ನಿರ್ಧಾರವನ್ನು ಪಾಲಿಕೆ ಇಂಜಿನಿಯರಿಂಗ್ ತಂಡ ಪರಿಶೀಲಿಸುತ್ತದೆ."
   }
@@ -399,6 +532,8 @@ let idempotencyKey = generateUUID();
 let isManualLocation = false;
 let locationAccuracy = null;
 let selectedFiles = [];
+let currentStep = 1;
+const totalSteps = 5;
 
 function generateUUID() {
   if (crypto && crypto.randomUUID) {
@@ -422,6 +557,11 @@ function setLanguage(lang) {
   const t = i18n[lang];
   document.getElementById('form-heading').textContent = t.heading;
   document.getElementById('form-subheading').textContent = t.subheading;
+  document.getElementById('step-lbl-1').textContent = t.step1;
+  document.getElementById('step-lbl-2').textContent = t.step2;
+  document.getElementById('step-lbl-3').textContent = t.step3;
+  document.getElementById('step-lbl-4').textContent = t.step4;
+  document.getElementById('step-lbl-5').textContent = t.step5;
   document.getElementById('lbl-photo').textContent = t.photo;
   document.getElementById('lbl-title').textContent = t.title;
   document.getElementById('lbl-location').textContent = t.location;
@@ -435,6 +575,83 @@ function setLanguage(lang) {
 
 document.getElementById('btn-en').addEventListener('click', () => setLanguage('en'));
 document.getElementById('btn-kn').addEventListener('click', () => setLanguage('kn'));
+
+// Wizard Navigation
+function showStep(step) {
+  if (step > 1 && currentStep === 1) {
+    const titleVal = document.getElementById('input-title').value.trim();
+    if (!titleVal) {
+      document.getElementById('form-error-alert').textContent = "Please provide a brief title for the defect.";
+      document.getElementById('form-error-alert').style.display = 'block';
+      return;
+    }
+  }
+  document.getElementById('form-error-alert').style.display = 'none';
+
+  currentStep = step;
+  for (let i = 1; i <= totalSteps; i++) {
+    const panel = document.getElementById(`panel-step-${i}`);
+    const node = document.getElementById(`step-node-${i}`);
+    if (panel) {
+      panel.style.display = i === step ? 'block' : 'none';
+    }
+    if (node) {
+      node.classList.remove('active', 'completed');
+      if (i === step) {
+        node.classList.add('active');
+        node.setAttribute('aria-selected', 'true');
+      } else if (i < step) {
+        node.classList.add('completed');
+        node.setAttribute('aria-selected', 'false');
+      } else {
+        node.setAttribute('aria-selected', 'false');
+      }
+    }
+  }
+
+  if (step === 3 && typeof map !== 'undefined') {
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 150);
+  }
+
+  if (step === 5) {
+    populateReviewSummary();
+  }
+
+  window.scrollTo({ top: 120, behavior: 'smooth' });
+}
+
+function populateReviewSummary() {
+  document.getElementById('review-title').textContent = document.getElementById('input-title').value || '(Untitled)';
+  const catSel = document.getElementById('category-select');
+  document.getElementById('review-category').textContent = catSel.options[catSel.selectedIndex].text;
+  const sevVal = document.querySelector('input[name="severity"]:checked')?.value || 'minor';
+  document.getElementById('review-severity').textContent = sevVal.toUpperCase();
+  const latVal = document.getElementById('input-lat').value;
+  const lonVal = document.getElementById('input-lon').value;
+  document.getElementById('review-coords').textContent = `${latVal}, ${lonVal}`;
+  document.getElementById('review-address').textContent = document.getElementById('input-address').value || 'Location marked on map';
+  document.getElementById('review-files').textContent = `${selectedFiles.length} file(s) attached`;
+  document.getElementById('review-desc').textContent = document.getElementById('description-input').value || '(No detailed description provided)';
+}
+
+// Wizard Next/Back Button Bindings
+document.getElementById('btn-next-1')?.addEventListener('click', () => showStep(2));
+document.getElementById('btn-back-2')?.addEventListener('click', () => showStep(1));
+document.getElementById('btn-next-2')?.addEventListener('click', () => showStep(3));
+document.getElementById('btn-back-3')?.addEventListener('click', () => showStep(2));
+document.getElementById('btn-next-3')?.addEventListener('click', () => showStep(4));
+document.getElementById('btn-back-4')?.addEventListener('click', () => showStep(3));
+document.getElementById('btn-next-4')?.addEventListener('click', () => showStep(5));
+document.getElementById('btn-back-5')?.addEventListener('click', () => showStep(4));
+
+for (let i = 1; i <= totalSteps; i++) {
+  const node = document.getElementById(`step-node-${i}`);
+  if (node) {
+    node.addEventListener('click', () => showStep(i));
+  }
+}
 
 // Check Citizen Auth Guard
 document.addEventListener("DOMContentLoaded", function () {
@@ -795,6 +1012,7 @@ btnSubmitAnother.addEventListener('click', function () {
   formErrorAlert.style.display = 'none';
   successBanner.style.display = 'none';
   formCard.style.display = 'block';
+  showStep(1);
 });
 </script>
 </body>

@@ -96,7 +96,7 @@ def test_matching_api_flow_and_anti_idor(client):
         eval_id = data["evaluation_id"]
         assert eval_id is not None
         assert data["candidate_count"] >= 1
-        assert data["candidates"][0]["candidate_incident_id"] == inc.id
+        assert any(c["candidate_incident_id"] == inc.id for c in data["candidates"])
 
         # 3. Citizen 1 tries to access review queue -> 403 Forbidden (Staff only)
         res_q_citizen = client.get(

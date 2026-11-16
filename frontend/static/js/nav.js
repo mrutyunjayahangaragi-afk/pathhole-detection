@@ -18,19 +18,39 @@
     const prefix = getBasePrefix();
     const currentPath = window.location.pathname;
 
-    const navItems = [
-      { key: 'home', i18nKey: 'nav.home', label: 'Home Portal', icon: '🏛️', href: prefix + 'index.html' },
-      { key: 'citizen_dashboard', i18nKey: 'nav.citizen_dashboard', label: 'Citizen Dashboard', icon: '👤', href: prefix + 'citizen-dashboard.html' },
-      { key: 'report', i18nKey: 'nav.report', label: 'Report Defect', icon: '📢', href: prefix + 'citizen-report.html' },
-      { key: 'my_reports', i18nKey: 'nav.my_reports', label: 'My Submissions', icon: '📋', href: prefix + 'my-reports.html' },
-      { key: 'map', i18nKey: 'nav.map', label: 'Public Map', icon: '🗺️', href: prefix + 'public-map.html' },
-      { key: 'transparency', i18nKey: 'nav.transparency', label: 'Civic Transparency', icon: '📊', href: prefix + 'transparency.html' },
-      { key: 'notifications', i18nKey: 'nav.notifications', label: 'Notifications', icon: '🔔', href: prefix + 'notifications.html' },
-      { key: 'dashboard', i18nKey: 'nav.dashboard', label: 'Live Monitor', icon: '⚡', href: prefix + 'dashboard/dashboard.html' },
-      { key: 'municipal', i18nKey: 'nav.municipal', label: 'Municipal Triage', icon: '🛠️', href: prefix + 'municipal/dashboard.html' },
-      { key: 'verification', i18nKey: 'nav.verification', label: 'Verification Queue', icon: '🔍', href: prefix + 'municipal/verification.html' },
-      { key: 'departments', i18nKey: 'nav.departments', label: 'Departments & Officers', icon: '🏢', href: prefix + 'municipal/departments.html' },
+    let userRole = 'public';
+    try {
+      const uStr = localStorage.getItem('civiclens_user');
+      if (uStr) {
+        const u = JSON.parse(uStr);
+        userRole = u.role || 'citizen';
+      }
+    } catch (e) {}
+
+    const isStaff = ['municipal_officer', 'dept_admin', 'municipal_admin', 'system_admin'].includes(userRole);
+    const isCitizen = userRole === 'citizen';
+
+    const allNavItems = [
+      { key: 'home', i18nKey: 'nav.home', label: 'Home Portal', icon: '🏛️', href: prefix + 'index.html', roles: ['all'] },
+      { key: 'citizen_dashboard', i18nKey: 'nav.citizen_dashboard', label: 'Citizen Dashboard', icon: '👤', href: prefix + 'citizen-dashboard.html', roles: ['citizen'] },
+      { key: 'report', i18nKey: 'nav.report', label: 'Report Defect', icon: '📢', href: prefix + 'citizen-report.html', roles: ['citizen', 'public'] },
+      { key: 'my_reports', i18nKey: 'nav.my_reports', label: 'My Submissions', icon: '📋', href: prefix + 'my-reports.html', roles: ['citizen'] },
+      { key: 'map', i18nKey: 'nav.map', label: 'Public Map', icon: '🗺️', href: prefix + 'public-map.html', roles: ['all'] },
+      { key: 'transparency', i18nKey: 'nav.transparency', label: 'Civic Transparency', icon: '📊', href: prefix + 'transparency.html', roles: ['all'] },
+      { key: 'notifications', i18nKey: 'nav.notifications', label: 'Notifications', icon: '🔔', href: prefix + 'notifications.html', roles: ['citizen', 'staff'] },
+      { key: 'municipal', i18nKey: 'nav.municipal', label: 'Municipal Triage', icon: '🛠️', href: prefix + 'municipal/dashboard.html', roles: ['staff'] },
+      { key: 'verification', i18nKey: 'nav.verification', label: 'Verification Queue', icon: '🔍', href: prefix + 'municipal/verification.html', roles: ['staff'] },
+      { key: 'departments', i18nKey: 'nav.departments', label: 'Departments & Officers', icon: '🏢', href: prefix + 'municipal/departments.html', roles: ['staff'] },
+      { key: 'dashboard', i18nKey: 'nav.dashboard', label: 'Live Monitor', icon: '⚡', href: prefix + 'dashboard/dashboard.html', roles: ['staff', 'public'] },
     ];
+
+    const navItems = allNavItems.filter(it => {
+      if (it.roles.includes('all')) return true;
+      if (isStaff && it.roles.includes('staff')) return true;
+      if (isCitizen && it.roles.includes('citizen')) return true;
+      if (!isStaff && !isCitizen && it.roles.includes('public')) return true;
+      return false;
+    });
 
     // Build sidebar markup if container exists
     const sidebarContainer = document.getElementById('cl-sidebar-container');

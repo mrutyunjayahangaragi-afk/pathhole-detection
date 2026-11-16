@@ -118,20 +118,80 @@
     <!-- Hero Section -->
     <section class="hero-section">
       <div class="cl-container">
+        <div style="display: inline-block; padding: 4px 12px; background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(37, 99, 235, 0.25); border-radius: 9999px; font-size: 12px; font-weight: 600; color: var(--cl-primary); margin-bottom: var(--cl-space-3);">
+          Smart Civic Reporting. Transparent City Improvements.
+        </div>
         <h1 class="hero-title">
           Civic<span class="hero-tag">Lens</span>
         </h1>
         <p class="hero-lead">
           AI-Powered Multilingual Civic Grievance &amp; Infrastructure Triage System. 
-          Transforming automated edge detection and citizen reports into a single unified source of truth for municipal action.
+          Transforming automated edge detection and citizen reports into a single, deduplicated source of truth for municipal action.
         </p>
         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <a href="./citizen-report.html" class="cl-btn cl-btn-primary">
+          <a href="./citizen-report.html" class="cl-btn cl-btn-primary" style="font-weight: 600;">
             📢 Report Road Defect
           </a>
-          <a href="../dashboard/dashboard.html" class="cl-btn cl-btn-secondary">
-            ⚡ Live Pothole Monitor
+          <a href="./public-map.html" class="cl-btn cl-btn-secondary">
+            🗺️ Explore Public Map
           </a>
+          <a href="../dashboard/dashboard.html" class="cl-btn cl-btn-secondary">
+            ⚡ Live Sensor Monitor
+          </a>
+        </div>
+
+        <!-- 4 Real-Time Database Metrics -->
+        <div class="cl-metrics-row" style="margin-top: var(--cl-space-8);">
+          <div class="cl-metric-card">
+            <span class="cl-metric-label">Total Citizen Reports</span>
+            <span class="cl-metric-value" id="counter-reports">--</span>
+            <span class="cl-metric-subtext">Verified submissions</span>
+          </div>
+          <div class="cl-metric-card">
+            <span class="cl-metric-label">Canonical Incidents</span>
+            <span class="cl-metric-value" id="counter-incidents">--</span>
+            <span class="cl-metric-subtext">Unique physical sites</span>
+          </div>
+          <div class="cl-metric-card">
+            <span class="cl-metric-label">Resolved Defects</span>
+            <span class="cl-metric-value" id="counter-resolved" style="color: var(--cl-minor);">--</span>
+            <span class="cl-metric-subtext">Completed work orders</span>
+          </div>
+          <div class="cl-metric-card">
+            <span class="cl-metric-label">Deduplication Ratio</span>
+            <span class="cl-metric-value" id="counter-dedup" style="color: var(--cl-primary);">--</span>
+            <span class="cl-metric-subtext">Cluster efficiency</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3-Step Reporting Explanation -->
+    <section class="cl-container" style="padding-top: var(--cl-space-8); padding-bottom: var(--cl-space-4);">
+      <h2 style="font-family: var(--cl-font-heading); font-size: var(--cl-text-xl); text-transform: uppercase; margin: 0 0 var(--cl-space-4) 0; text-align: center;">
+        How CivicLens Works
+      </h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--cl-space-4);">
+        <div class="cl-card" style="padding: var(--cl-space-4); text-align: center;">
+          <div style="font-size: 2rem; margin-bottom: 8px;">📸</div>
+          <h3 style="font-size: 1rem; font-weight: 700; margin: 0 0 6px 0;">1. Snap &amp; Pin</h3>
+          <p style="font-size: 0.85rem; color: var(--cl-text-secondary); margin: 0; line-height: 1.5;">
+            Citizens submit photos and drop an exact GPS pin in English or ಕನ್ನಡ (Kannada).
+          </p>
+        </div>
+        <div class="cl-card" style="padding: var(--cl-space-4); text-align: center;">
+          <div style="font-size: 2rem; margin-bottom: 8px;">🧠</div>
+          <h3 style="font-size: 1rem; font-weight: 700; margin: 0 0 6px 0;">2. AI Multilingual Triage</h3>
+          <p style="font-size: 0.85rem; color: var(--cl-text-secondary); margin: 0; line-height: 1.5;">
+            Computer vision detects defects and spatial algorithms group duplicate reports into one canonical incident.
+          </p>
+        </div>
+        <div class="cl-card" style="padding: var(--cl-space-4); text-align: center;">
+          <div style="font-size: 2rem; margin-bottom: 8px;">✅</div>
+          <h3 style="font-size: 1rem; font-weight: 700; margin: 0 0 6px 0;">3. Track &amp; Verify</h3>
+          <p style="font-size: 0.85rem; color: var(--cl-text-secondary); margin: 0; line-height: 1.5;">
+            Municipal crews repair the hazard and upload before-and-after photographic evidence with public transparency.
+          </p>
         </div>
       </div>
     </section>
@@ -161,7 +221,7 @@
           <div class="portal-icon">📢</div>
           <h3 class="portal-card-title">Citizen Reporting</h3>
           <p class="portal-card-desc">
-            Submit a road hazard with photo upload, interactive map pinpointing, automatic GPS tagging, severity estimate, and multilingual support.
+            Submit a road hazard with guided 5-step wizard, photo upload, interactive pin, and Kannada-English support.
           </p>
           <div class="portal-card-action">Open Citizen Form &rarr;</div>
         </a>
@@ -234,7 +294,7 @@
             PostgreSQL/PostGIS normalized schema with 14 domain entities. Preserves 100% backward compatibility with legacy Roadstate telemetry.
           </p>
           <div style="font-size: var(--cl-text-xs); color: var(--cl-text-muted); font-family: var(--cl-font-mono);">
-            Status: Step 3 Active
+            Status: Production Ready
           </div>
         </div>
       </div>
@@ -250,5 +310,29 @@
 <script src="./static/js/i18n.js"></script>
 <script src="./static/js/nav.js"></script>
 <script src="./static/js/citizen-auth.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // Fetch real-time public statistics
+  fetch("/api/v2/public/statistics")
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.status === "success") {
+        document.getElementById("counter-reports").textContent = Number(data.total_citizen_reports || 0).toLocaleString();
+        document.getElementById("counter-incidents").textContent = Number(data.total_canonical_incidents || 0).toLocaleString();
+        const resolved = (data.status_breakdown && data.status_breakdown.resolved) || 0;
+        document.getElementById("counter-resolved").textContent = Number(resolved).toLocaleString();
+        const ratio = data.deduplication_ratio !== undefined ? data.deduplication_ratio.toFixed(2) + "x" : "1.00x";
+        document.getElementById("counter-dedup").textContent = ratio;
+      }
+    })
+    .catch(() => {
+      // Fallback graceful zero display if endpoint is waking up
+      document.getElementById("counter-reports").textContent = "0";
+      document.getElementById("counter-incidents").textContent = "0";
+      document.getElementById("counter-resolved").textContent = "0";
+      document.getElementById("counter-dedup").textContent = "1.00x";
+    });
+});
+</script>
 </body>
 </html>

@@ -76,7 +76,7 @@ def upgrade() -> None:
     sa.Column('reopened_at', sa.DateTime(timezone=True), nullable=True),
     sa.CheckConstraint("category IN ('pothole','road_damage','bridge_damage','garbage','water_leakage','drainage','broken_streetlight','other')", name='ck_incident_category'),
     sa.CheckConstraint("severity IN ('minor','moderate','severe','critical')", name='ck_incident_severity'),
-    sa.CheckConstraint("status IN ('reported','acknowledged','scheduled','in_progress','repaired','verified','closed')", name='ck_incident_status'),
+    sa.CheckConstraint("status IN ('new','awaiting_verification','verified','assigned','in_progress','on_hold','resolved','reopened','closed','rejected','reported','acknowledged','scheduled','repaired')", name='ck_incident_status'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('incident_reference')
     )

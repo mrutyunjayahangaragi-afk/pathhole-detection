@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>CivicLens — In-App Notification Center</title>
+<link rel="stylesheet" href="./static/css/civiclens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  .notif-container {
+    max-width: 850px;
+    margin: 0 auto;
+    padding: 24px 16px;
+  }
+  .notif-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .notif-card {
+    background: var(--cl-bg-surface);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-md);
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    transition: border-color 0.15s ease;
+  }
+  .notif-card.unread {
+    border-left: 4px solid var(--cl-primary);
+    background: rgba(30, 41, 59, 0.4);
+  }
+  .notif-badge-pill {
+    background: var(--cl-primary);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+  }
+  /* Settings Modal */
+  .modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+  }
+  .modal-backdrop.open {
+    display: flex;
+  }
+  .modal-card {
+    background: var(--cl-bg-surface);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-md);
+    padding: 24px;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: var(--cl-shadow-lg);
+  }
+  .pref-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--cl-border);
+  }
+</style>
+</head>
+<body>
+
+<div class="cl-app-wrapper">
+  <div id="cl-sidebar-container" data-active="notifications"></div>
+
+  <div class="cl-main-content">
+    <header class="cl-mobile-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button class="cl-hamburger-btn" id="cl-hamburger-toggle" aria-label="Toggle navigation">☰</button>
+        <span style="font-family: var(--cl-font-heading); font-size: 1.25rem; font-weight: 700; text-transform: uppercase;">CivicLens</span>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--cl-text-muted); font-family: var(--cl-font-mono);">NOTIFICATIONS</div>
+    </header>
+
+    <div class="notif-container">
+      <div class="notif-header">
+        <div>
+          <h2 style="font-family: var(--cl-font-heading); font-size: 24px; text-transform: uppercase; margin: 0 0 4px 0;">
+            Notification Center <span class="notif-badge-pill" id="unread-counter">0 unread</span>
+          </h2>
+          <div style="font-size: 13px; color: var(--cl-text-secondary);">
+            Authorized grievance updates, inspection findings, and followed incident alerts.
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="cl-btn cl-btn-secondary" id="btn-open-prefs" style="font-size: 12px; padding: 6px 12px;">
+            ⚙️ Channel Preferences
+          </button>
+          <button class="cl-btn cl-btn-primary" id="btn-mark-all-read" style="font-size: 12px; padding: 6px 12px;">
+            ✓ Mark All Read
+          </button>
+        </div>
+      </div>
+
+      <!-- Category Filter Bar -->
+      <div class="cl-chip-bar" id="notif-filters" style="margin-bottom: 16px;">
+        <button class="cl-chip active" data-cat="all">All Notifications</button>
+        <button class="cl-chip" data-cat="report">Grievance Reports</button>
+        <button class="cl-chip" data-cat="incident">Followed Incidents</button>
+        <button class="cl-chip" data-cat="system">System Updates</button>
+      </div>
+
+      <!-- Notifications List -->
+      <div id="notif-list-container">
+        <div style="text-align: center; padding: 40px; color: var(--cl-text-muted);">
+          Loading notifications...
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Preferences Modal -->
+<div class="modal-backdrop" id="modal-prefs">
+  <div class="modal-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h3 style="margin: 0; font-size: 18px;">Notification Preferences</h3>
+      <button class="drawer-close" id="modal-close" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--cl-text-muted);">&times;</button>
+    </div>
+
+    <div class="pref-row">
+      <div>
+        <div style="font-weight: 600; font-size: 14px;">In-App Inbox</div>
+        <div style="font-size: 12px; color: var(--cl-text-muted);">Receive alerts directly inside CivicLens</div>
+      </div>
+      <input type="checkbox" id="pref-in-app" checked />
+    </div>
+
+    <div class="pref-row">
+      <div>
+        <div style="font-weight: 600; font-size: 14px;">Email Notifications</div>
+        <div style="font-size: 12px; color: var(--cl-text-muted);">Status changes sent to registered email</div>
+      </div>
+      <input type="checkbox" id="pref-email" checked />
+    </div>
+
+    <div class="pref-row">
+      <div>
+        <div style="font-weight: 600; font-size: 14px;">SMS Alerts</div>
+        <div style="font-size: 12px; color: var(--cl-text-muted);">High-priority grievance alerts via SMS</div>
+      </div>
+      <input type="checkbox" id="pref-sms" />
+    </div>
+
+    <div class="pref-row">
+      <div>
+        <div style="font-weight: 600; font-size: 14px;">WhatsApp Alerts</div>
+        <div style="font-size: 12px; color: var(--cl-text-muted);">Direct updates via WhatsApp Business API</div>
+      </div>
+      <input type="checkbox" id="pref-whatsapp" />
+    </div>
+
+    <div class="pref-row">
+      <div>
+        <div style="font-weight: 600; font-size: 14px;">Quiet Hours</div>
+        <div style="font-size: 12px; color: var(--cl-text-muted);">Mute non-critical notifications 10 PM - 7 AM</div>
+      </div>
+      <input type="checkbox" id="pref-quiet" />
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
+      <button class="cl-btn cl-btn-secondary" id="btn-cancel-prefs" style="font-size: 12px; padding: 6px 14px;">Cancel</button>
+      <button class="cl-btn cl-btn-primary" id="btn-save-prefs" style="font-size: 12px; padding: 6px 14px;">Save Preferences</button>
+    </div>
+  </div>
+</div>
+
+<script src="./static/js/i18n.js"></script>
+<script src="./static/js/nav.js"></script>
+<script src="./static/js/citizen-auth.js"></script>
+<script>
+let activeCategory = 'all';
+
+async function fetchNotifications() {
+  const token = localStorage.getItem('civiclens_token');
+  if (!token) {
+    document.getElementById('notif-list-container').innerHTML = `
+      <div style="text-align: center; padding: 40px; color: var(--cl-text-muted);">
+        Please <a href="/citizen-login.html" style="color: var(--cl-primary);">log in as a citizen</a> to view your notifications.
+      </div>
+    `;
+    return;
+  }
+
+  try {
+    const url = activeCategory === 'all'
+      ? '/api/v2/notifications'
+      : `/api/v2/notifications?category=${encodeURIComponent(activeCategory)}`;
+
+    const res = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error("Failed fetching");
+
+    const data = await res.json();
+    document.getElementById('unread-counter').textContent = `${data.unread_count || 0} unread`;
+
+    renderNotifications(data.items || []);
+  } catch (e) {
+    document.getElementById('notif-list-container').innerHTML = `
+      <div style="text-align: center; padding: 40px; color: var(--cl-text-muted);">
+        Failed loading notifications from server.
+      </div>
+    `;
+  }
+}
+
+function renderNotifications(items) {
+  const container = document.getElementById('notif-list-container');
+  if (!items.length) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 40px; color: var(--cl-text-muted);">
+        No notifications found.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = items.map(n => `
+    <div class="notif-card ${n.is_read ? '' : 'unread'}" id="notif-card-${n.id}">
+      <div>
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
+          <b style="font-size: 14px; color: var(--cl-text);">${n.title}</b>
+          <span style="font-family: var(--cl-font-mono); font-size: 10px; color: var(--cl-text-muted);">${new Date(n.created_at).toLocaleString()}</span>
+        </div>
+        <p style="font-size: 13px; color: var(--cl-text-secondary); margin: 0 0 8px 0; line-height: 1.4;">
+          ${n.message}
+        </p>
+        <div style="display: flex; gap: 8px;">
+          ${n.related_incident_id ? `<a href="/public-incident.html?id=${n.related_incident_id}" class="cl-btn cl-btn-secondary" style="font-size: 11px; padding: 2px 8px; text-decoration: none;">View Incident →</a>` : ''}
+          ${n.related_report_id ? `<a href="/report-detail.html?id=${n.related_report_id}" class="cl-btn cl-btn-secondary" style="font-size: 11px; padding: 2px 8px; text-decoration: none;">View My Report →</a>` : ''}
+        </div>
+      </div>
+      ${!n.is_read ? `
+        <button class="cl-btn cl-btn-secondary" onclick="markRead('${n.id}')" style="font-size: 11px; padding: 4px 8px; white-space: nowrap;">
+          ✓ Mark Read
+        </button>
+      ` : ''}
+    </div>
+  `).join('');
+}
+
+async function markRead(id) {
+  const token = localStorage.getItem('civiclens_token');
+  if (!token) return;
+  try {
+    const res = await fetch(`/api/v2/notifications/${id}/read`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) fetchNotifications();
+  } catch (e) {}
+}
+
+document.getElementById('btn-mark-all-read').addEventListener('click', async () => {
+  const token = localStorage.getItem('civiclens_token');
+  if (!token) return;
+  try {
+    const res = await fetch('/api/v2/notifications/read-all', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) fetchNotifications();
+  } catch (e) {}
+});
+
+// Category Chips
+document.querySelectorAll('#notif-filters .cl-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#notif-filters .cl-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    activeCategory = chip.dataset.cat;
+    fetchNotifications();
+  });
+});
+
+// Preferences Modal
+const modal = document.getElementById('modal-prefs');
+document.getElementById('btn-open-prefs').addEventListener('click', async () => {
+  modal.classList.add('open');
+  const token = localStorage.getItem('civiclens_token');
+  if (!token) return;
+  try {
+    const res = await fetch('/api/v2/notifications/preferences', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const p = data.preferences || {};
+      document.getElementById('pref-in-app').checked = p.in_app_enabled;
+      document.getElementById('pref-email').checked = p.email_enabled;
+      document.getElementById('pref-sms').checked = p.sms_enabled;
+      document.getElementById('pref-whatsapp').checked = p.whatsapp_enabled;
+      document.getElementById('pref-quiet').checked = p.quiet_hours_enabled;
+    }
+  } catch (e) {}
+});
+
+document.getElementById('modal-close').addEventListener('click', () => modal.classList.remove('open'));
+document.getElementById('btn-cancel-prefs').addEventListener('click', () => modal.classList.remove('open'));
+
+document.getElementById('btn-save-prefs').addEventListener('click', async () => {
+  const token = localStorage.getItem('civiclens_token');
+  if (!token) return;
+  try {
+    const res = await fetch('/api/v2/notifications/preferences', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        in_app_enabled: document.getElementById('pref-in-app').checked,
+        email_enabled: document.getElementById('pref-email').checked,
+        sms_enabled: document.getElementById('pref-sms').checked,
+        whatsapp_enabled: document.getElementById('pref-whatsapp').checked,
+        quiet_hours_enabled: document.getElementById('pref-quiet').checked,
+      })
+    });
+    if (res.ok) {
+      modal.classList.remove('open');
+      alert("Preferences updated successfully.");
+    }
+  } catch (e) {}
+});
+
+fetchNotifications();
+</script>
+</body>
+</html>

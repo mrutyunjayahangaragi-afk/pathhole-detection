@@ -20,35 +20,94 @@
   #public-leaflet-map {
     width: 100%;
     height: 100%;
-    min-height: 60vh;
+    min-height: 65vh;
     background: #0f172a;
     flex: 1;
   }
 
-  .map-overlay-card {
+  .map-control-overlay {
     position: absolute;
     top: 16px;
     left: 16px;
+    right: 16px;
     z-index: 500;
-    background: rgba(30, 41, 59, 0.92);
-    backdrop-filter: blur(8px);
-    border: 1px solid var(--cl-border);
-    border-radius: var(--cl-radius-md);
-    padding: var(--cl-space-3) var(--cl-space-4);
-    box-shadow: var(--cl-shadow-md);
-    max-width: calc(100vw - 32px);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
   }
 
+  .control-card {
+    pointer-events: auto;
+    background: rgba(15, 23, 42, 0.92);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-md);
+    padding: 12px 16px;
+    box-shadow: var(--cl-shadow-md);
+    max-width: 600px;
+  }
+
+  .map-search-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .map-search-input {
+    flex: 1;
+    background: var(--cl-bg-surface);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-sm);
+    color: var(--cl-text);
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .map-filter-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .filter-select {
+    background: var(--cl-bg-surface);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-sm);
+    color: var(--cl-text);
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .view-toggle-btn {
+    background: var(--cl-bg-surface);
+    border: 1px solid var(--cl-border);
+    color: var(--cl-text);
+    padding: 6px 12px;
+    border-radius: var(--cl-radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: auto;
+  }
+  .view-toggle-btn.active {
+    background: var(--cl-primary);
+    color: #fff;
+    border-color: var(--cl-primary);
+  }
+
+  /* Map Legend */
   .map-legend {
     position: absolute;
     bottom: 24px;
     right: 16px;
     z-index: 500;
-    background: rgba(30, 41, 59, 0.92);
+    background: rgba(15, 23, 42, 0.92);
     backdrop-filter: blur(8px);
     border: 1px solid var(--cl-border);
     border-radius: var(--cl-radius-md);
-    padding: var(--cl-space-3);
+    padding: 10px 14px;
     font-size: 11px;
     box-shadow: var(--cl-shadow-md);
     display: flex;
@@ -62,14 +121,29 @@
     gap: 8px;
   }
 
-  .legend-color-dot {
-    width: 10px;
-    height: 10px;
+  .legend-icon-badge {
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
+    display: inline-block;
   }
 
-  /* Bottom sheet on mobile for incident details */
-  .incident-bottom-sheet {
+  /* List View Container */
+  .public-list-view {
+    display: none;
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    background: var(--cl-bg-body);
+  }
+  .public-list-view.active {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  /* Incident Bottom Sheet & Side Drawer */
+  .incident-drawer {
     position: fixed;
     bottom: 0;
     left: 0;
@@ -82,24 +156,54 @@
     z-index: 600;
     transform: translateY(100%);
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    max-height: 50vh;
+    max-height: 60vh;
     overflow-y: auto;
   }
-  .incident-bottom-sheet.open {
+  @media (min-width: 1024px) {
+    .incident-drawer {
+      bottom: auto;
+      top: 90px;
+      right: 20px;
+      left: auto;
+      width: 380px;
+      border-radius: var(--cl-radius-md);
+      border: 1px solid var(--cl-border);
+      border-top: 3px solid var(--cl-primary);
+      transform: translateX(120%);
+      max-height: calc(100vh - 120px);
+    }
+  }
+  .incident-drawer.open {
     transform: translateY(0);
   }
-  .sheet-header {
+  @media (min-width: 1024px) {
+    .incident-drawer.open {
+      transform: translateX(0);
+    }
+  }
+
+  .drawer-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
   }
-  .sheet-close {
+  .drawer-close {
     background: transparent;
     border: none;
     color: var(--cl-text-muted);
-    font-size: 20px;
+    font-size: 22px;
     cursor: pointer;
+  }
+
+  .viewport-counter-pill {
+    font-family: var(--cl-font-mono);
+    font-size: 11px;
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid var(--cl-border);
+    padding: 2px 8px;
+    border-radius: 12px;
+    color: var(--cl-text-secondary);
   }
 </style>
 </head>
@@ -121,54 +225,102 @@
     </header>
 
     <div class="public-map-layout">
-      <!-- Overlay Filter & Title -->
-      <div class="map-overlay-card">
-        <h2 style="font-family: var(--cl-font-heading); font-size: 1.1rem; text-transform: uppercase; margin: 0 0 6px 0;">
-          Public Infrastructure Map
-        </h2>
-        <div class="cl-chip-bar" id="public-filters" style="padding: 0;">
-          <button class="cl-chip active" data-sev="all">All Incidents</button>
-          <button class="cl-chip" data-sev="severe">Severe</button>
-          <button class="cl-chip" data-sev="moderate">Moderate</button>
-          <button class="cl-chip" data-sev="minor">Minor</button>
+      <!-- Overlay Filter & Search Controls -->
+      <div class="map-control-overlay">
+        <div class="control-card">
+          <div class="map-search-row">
+            <input type="text" id="map-search-input" class="map-search-input" placeholder="Search ward, street, or INC-XXXX..." />
+            <button class="cl-btn cl-btn-primary" id="btn-search-trigger" style="padding: 6px 14px; font-size: 12px;">Search</button>
+            <button class="view-toggle-btn" id="btn-toggle-view">List View</button>
+          </div>
+
+          <div class="map-filter-row">
+            <select id="filter-category" class="filter-select">
+              <option value="all">All Categories</option>
+              <option value="pothole">Pothole</option>
+              <option value="road_damage">Road Damage</option>
+              <option value="drainage">Drainage / Manhole</option>
+              <option value="broken_streetlight">Streetlight</option>
+              <option value="water_leakage">Water Leak (BWSSB)</option>
+              <option value="garbage">Garbage / Debris</option>
+            </select>
+
+            <select id="filter-status" class="filter-select">
+              <option value="all">All Statuses</option>
+              <option value="verified">Verified</option>
+              <option value="assigned">Assigned</option>
+              <option value="in_progress">In Progress</option>
+              <option value="on_hold">On Hold</option>
+              <option value="resolved">Resolved</option>
+            </select>
+
+            <select id="filter-severity" class="filter-select">
+              <option value="all">All Severities</option>
+              <option value="critical">Critical</option>
+              <option value="severe">Severe</option>
+              <option value="moderate">Moderate</option>
+              <option value="minor">Minor</option>
+            </select>
+
+            <span class="viewport-counter-pill" id="viewport-count">0 incidents in view</span>
+          </div>
         </div>
       </div>
 
-      <!-- Map Container -->
+      <!-- Interactive Map View -->
       <div id="public-leaflet-map"></div>
+
+      <!-- Accessible List View Alternative -->
+      <div class="public-list-view" id="public-list-view"></div>
 
       <!-- Map Legend -->
       <div class="map-legend">
         <div style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--cl-text-muted); margin-bottom: 2px;">
-          Severity Legend
+          Incident Status Legend
         </div>
         <div class="legend-item">
-          <div class="legend-color-dot" style="background: var(--cl-severe);"></div>
-          <span>Severe Pothole (&gt;5cm)</span>
+          <span class="legend-icon-badge" style="background: #ef4444;"></span>
+          <span>Verified (Awaiting Crew)</span>
         </div>
         <div class="legend-item">
-          <div class="legend-color-dot" style="background: var(--cl-moderate);"></div>
-          <span>Moderate Pothole (2-5cm)</span>
+          <span class="legend-icon-badge" style="background: #3b82f6;"></span>
+          <span>In Progress / Assigned</span>
         </div>
         <div class="legend-item">
-          <div class="legend-color-dot" style="background: var(--cl-minor);"></div>
-          <span>Minor Surface Defect</span>
+          <span class="legend-icon-badge" style="background: #f59e0b;"></span>
+          <span>On Hold (Awaiting Materials)</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-icon-badge" style="background: #10b981;"></span>
+          <span>Resolved (Repaired)</span>
         </div>
       </div>
     </div>
 
-    <!-- Mobile Incident Bottom Sheet -->
-    <div class="incident-bottom-sheet" id="incident-sheet">
-      <div class="sheet-header">
-        <span class="cl-badge cl-badge-severe" id="sheet-badge">Severe Defect</span>
-        <button class="sheet-close" id="sheet-close">&times;</button>
+    <!-- Incident Detail Drawer / Bottom Sheet -->
+    <div class="incident-drawer" id="incident-drawer">
+      <div class="drawer-header">
+        <span class="cl-badge cl-badge-severe" id="drawer-status-badge">Verified</span>
+        <button class="drawer-close" id="drawer-close" aria-label="Close detail panel">&times;</button>
       </div>
-      <h3 style="margin: 0 0 4px 0; font-size: 16px;" id="sheet-title">Pothole Cluster #42</h3>
-      <p style="font-size: 13px; color: var(--cl-text-secondary); margin: 0 0 8px 0;" id="sheet-address">Near 100ft Road, Ward 112</p>
-      <div style="display: flex; gap: 8px; font-size: 11px; font-family: var(--cl-font-mono); color: var(--cl-text-muted);">
-        <span id="sheet-depth">Depth: 6.2cm</span> &bull;
-        <span id="sheet-reports">3 Citizen Reports</span> &bull;
-        <span id="sheet-status">Status: Scheduled</span>
+      <h3 style="margin: 0 0 6px 0; font-size: 17px;" id="drawer-title">Pothole Hazard</h3>
+      <div style="font-family: var(--cl-font-mono); font-size: 11px; color: var(--cl-primary); margin-bottom: 6px;" id="drawer-ref">INC-2026-0001</div>
+      <p style="font-size: 13px; color: var(--cl-text-secondary); margin: 0 0 8px 0;" id="drawer-location">Location Name</p>
+      <p style="font-size: 12px; color: var(--cl-text); margin: 0 0 12px 0; line-height: 1.4;" id="drawer-desc">Public incident description.</p>
+      
+      <div style="display: flex; gap: 8px; font-size: 11px; font-family: var(--cl-font-mono); color: var(--cl-text-muted); margin-bottom: 12px;">
+        <span id="drawer-reports-merged">1 Report Merged</span> &bull;
+        <span id="drawer-category">Pothole</span> &bull;
+        <span id="drawer-priority">Normal Priority</span>
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <a id="drawer-view-link" href="#" class="cl-btn cl-btn-primary" style="flex: 1; text-align: center; text-decoration: none; font-size: 12px; padding: 8px 12px;">
+          View Full Timeline & Evidence →
+        </a>
+        <button id="drawer-follow-btn" class="cl-btn cl-btn-secondary" style="font-size: 12px; padding: 8px 12px;">
+          🔔 Follow
+        </button>
       </div>
     </div>
   </div>
@@ -179,18 +331,19 @@
 <script src="./static/js/nav.js"></script>
 <script src="./static/js/citizen-auth.js"></script>
 <script>
-const CITY_CENTER = [8.5241, 76.9366]; // Default demo center
-const map = L.map('public-leaflet-map', { zoomControl: true }).setView(CITY_CENTER, 13);
+// Center on Bangalore civic boundary
+const BENGALURU_CENTER = [12.9716, 77.5946];
+const map = L.map('public-leaflet-map', { zoomControl: true }).setView(BENGALURU_CENTER, 12);
 
-// Dynamic CARTO tile layer with optional API key and automatic OSM fallback
+// CARTO Basemap with OSM Fallback
 function initMapTiles() {
-  const cartoKey = window.CARTO_API_KEY || (window.CIVICLENS_CONFIG && window.CIVICLENS_CONFIG.carto_api_key) || "";
+  const cartoKey = window.CARTO_API_KEY || "";
   const cartoUrl = cartoKey
     ? `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?api_key=${encodeURIComponent(cartoKey)}`
     : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 
   const cartoLayer = L.tileLayer(cartoUrl, {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>',
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
     maxZoom: 19,
   }).addTo(map);
 
@@ -198,7 +351,6 @@ function initMapTiles() {
   cartoLayer.on('tileerror', function() {
     if (!osmFallbackApplied) {
       osmFallbackApplied = true;
-      console.warn("CARTO basemap tile request failed; falling back to standard OpenStreetMap tiles.");
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
         maxZoom: 19
@@ -206,85 +358,246 @@ function initMapTiles() {
     }
   });
 }
+initMapTiles();
 
-// Check public config for CARTO key
-fetch('/api/config')
-  .then(res => res.ok ? res.json() : {})
-  .then(cfg => {
-    if (cfg && cfg.carto_api_key) {
-      window.CARTO_API_KEY = cfg.carto_api_key;
-    }
-  })
-  .catch(() => {})
-  .finally(() => {
-    initMapTiles();
-  });
-
-const SEVERITY_COLORS = {
-  minor: '#10b981',
-  moderate: '#f97316',
-  severe: '#ef4444'
+const STATUS_COLORS = {
+  new: '#f59e0b',
+  awaiting_verification: '#f59e0b',
+  verified: '#ef4444',
+  assigned: '#3b82f6',
+  in_progress: '#3b82f6',
+  on_hold: '#d97706',
+  resolved: '#10b981',
+  closed: '#059669',
 };
 
-const sheet = document.getElementById('incident-sheet');
-const sheetClose = document.getElementById('sheet-close');
-if (sheetClose) sheetClose.addEventListener('click', () => sheet.classList.remove('open'));
+let currentMarkers = [];
+let currentIncidents = [];
+let isListView = false;
+let selectedIncidentId = null;
 
-function showIncidentSheet(d) {
-  document.getElementById('sheet-title').textContent = `${d.severity.toUpperCase()} Pothole`;
-  document.getElementById('sheet-address').textContent = d.address || `GPS: ${d.latitude.toFixed(4)}, ${d.longitude.toFixed(4)}`;
-  document.getElementById('sheet-depth').textContent = `Depth: ${d.est_depth_cm || 0} cm`;
-  document.getElementById('sheet-reports').textContent = `${d.report_count || 1} Reports Merged`;
-  document.getElementById('sheet-status').textContent = `Status: ${d.status}`;
+const drawer = document.getElementById('incident-drawer');
+const drawerClose = document.getElementById('drawer-close');
+if (drawerClose) drawerClose.addEventListener('click', () => drawer.classList.remove('open'));
 
-  const badge = document.getElementById('sheet-badge');
-  badge.className = `cl-badge cl-badge-${d.severity}`;
-  badge.textContent = d.severity;
+function getFilterParams() {
+  const b = map.getBounds();
+  const category = document.getElementById('filter-category').value;
+  const status = document.getElementById('filter-status').value;
+  const severity = document.getElementById('filter-severity').value;
 
-  sheet.classList.add('open');
+  const params = new URLSearchParams({
+    min_lon: b.getWest().toFixed(6),
+    min_lat: b.getSouth().toFixed(6),
+    max_lon: b.getEast().toFixed(6),
+    max_lat: b.getNorth().toFixed(6),
+    limit: '250',
+  });
+  if (category !== 'all') params.set('category', category);
+  if (status !== 'all') params.set('status', status);
+  if (severity !== 'all') params.set('severity', severity);
+  return params;
 }
 
-// Fetch public incidents or generate demo
-async function loadIncidents() {
-  let detections = [];
-  try {
-    const res = await fetch('/api/detections?limit=200');
-    if (res.ok) detections = await res.json();
-  } catch (e) {
-    // Demo points
-    detections = [
-      { id: '1', latitude: 8.5241, longitude: 76.9366, severity: 'severe', est_depth_cm: 6.5, report_count: 5, address: 'MG Road Junction', status: 'scheduled' },
-      { id: '2', latitude: 8.5312, longitude: 76.9410, severity: 'moderate', est_depth_cm: 3.2, report_count: 2, address: 'Airport Road', status: 'reported' },
-      { id: '3', latitude: 8.5190, longitude: 76.9280, severity: 'minor', est_depth_cm: 1.5, report_count: 1, address: 'Central Avenue', status: 'acknowledged' },
-      { id: '4', latitude: 8.5400, longitude: 76.9500, severity: 'severe', est_depth_cm: 7.1, report_count: 8, address: 'Outer Ring Bypass', status: 'in_progress' },
-    ];
-  }
+// Debounced viewport fetch
+let debounceTimer = null;
+function refreshViewportData() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(async () => {
+    try {
+      const params = getFilterParams();
+      const res = await fetch(`/api/v2/public/incidents/viewport?${params.toString()}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      currentIncidents = data.items || [];
 
-  detections.forEach(d => {
-    const color = SEVERITY_COLORS[d.severity] || '#94a3b8';
-    const marker = L.circleMarker([d.latitude, d.longitude], {
-      radius: 8 + Math.min(d.report_count || 1, 8),
+      // Update counter
+      document.getElementById('viewport-count').textContent = `${currentIncidents.length} in view`;
+
+      renderMapMarkers(currentIncidents);
+      renderListView(currentIncidents);
+    } catch (e) {
+      console.warn("Failed fetching viewport incidents:", e);
+    }
+  }, 250);
+}
+
+function renderMapMarkers(incidents) {
+  // Clear old markers
+  currentMarkers.forEach(m => map.removeLayer(m));
+  currentMarkers = [];
+
+  incidents.forEach(inc => {
+    const color = STATUS_COLORS[inc.status] || '#94a3b8';
+    const marker = L.circleMarker([inc.latitude, inc.longitude], {
+      radius: 8 + Math.min(inc.report_count || 1, 6),
       fillColor: color,
       color: '#ffffff',
       weight: 1.5,
-      opacity: 0.9,
-      fillOpacity: 0.8,
+      opacity: 0.95,
+      fillOpacity: 0.85,
     }).addTo(map);
 
     marker.bindPopup(`
       <div style="font-family: sans-serif; font-size: 12px; color: #0f172a;">
-        <b style="text-transform: uppercase;">${d.severity} Pothole</b><br/>
-        ${d.address || 'GPS verified'}<br/>
-        Depth: ${d.est_depth_cm || 0} cm<br/>
-        Reports: ${d.report_count || 1} &bull; Status: <b>${d.status}</b>
+        <b style="text-transform: uppercase;">${inc.category.replace('_', ' ')}</b> (${inc.status})<br/>
+        <b>${inc.incident_reference}</b><br/>
+        ${inc.location_name}<br/>
+        Merged Reports: <b>${inc.report_count}</b>
       </div>
     `);
 
-    marker.on('click', () => showIncidentSheet(d));
+    marker.on('click', () => openIncidentDrawer(inc));
+    currentMarkers.push(marker);
   });
 }
 
-loadIncidents();
+function renderListView(incidents) {
+  const container = document.getElementById('public-list-view');
+  if (!incidents.length) {
+    container.innerHTML = `
+      <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--cl-text-muted);">
+        No canonical incidents found in this viewport. Try panning or adjusting your filters.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = incidents.map(inc => `
+    <div class="cl-card" style="padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span class="cl-badge cl-badge-${inc.severity}">${inc.severity}</span>
+          <span style="font-family: var(--cl-font-mono); font-size: 11px; color: var(--cl-primary);">${inc.incident_reference}</span>
+        </div>
+        <h4 style="margin: 0 0 4px 0; font-size: 15px; text-transform: capitalize;">${inc.category.replace('_', ' ')}</h4>
+        <div style="font-size: 12px; color: var(--cl-text-secondary); margin-bottom: 8px;">${inc.location_name}</div>
+        <p style="font-size: 12px; color: var(--cl-text); margin: 0 0 10px 0; line-height: 1.4;">${inc.description || 'Verified infrastructure defect under municipal workflow.'}</p>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--cl-border); padding-top: 10px;">
+        <span style="font-size: 11px; color: var(--cl-text-muted); font-family: var(--cl-font-mono);">Reports: ${inc.report_count}</span>
+        <a href="/public-incident.html?ref=${encodeURIComponent(inc.incident_reference)}" class="cl-btn cl-btn-primary" style="font-size: 11px; padding: 4px 10px; text-decoration: none;">
+          Details →
+        </a>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openIncidentDrawer(inc) {
+  selectedIncidentId = inc.id;
+  document.getElementById('drawer-title').textContent = `${inc.category.replace('_', ' ').toUpperCase()} Hazard`;
+  document.getElementById('drawer-ref').textContent = inc.incident_reference;
+  document.getElementById('drawer-location').textContent = inc.location_name;
+  document.getElementById('drawer-desc').textContent = inc.description || "Verified infrastructure defect tracked under municipal workflow.";
+  document.getElementById('drawer-reports-merged').textContent = `${inc.report_count} Citizen Report${inc.report_count > 1 ? 's' : ''} Merged`;
+  document.getElementById('drawer-category').textContent = inc.category.replace('_', ' ');
+  document.getElementById('drawer-priority').textContent = `${inc.priority.toUpperCase()} Priority`;
+
+  const badge = document.getElementById('drawer-status-badge');
+  badge.textContent = inc.status.toUpperCase();
+  badge.className = `cl-badge cl-badge-${inc.severity}`;
+
+  document.getElementById('drawer-view-link').href = `/public-incident.html?ref=${encodeURIComponent(inc.incident_reference)}`;
+
+  drawer.classList.add('open');
+}
+
+// Wire Follow Button in Drawer
+const followBtn = document.getElementById('drawer-follow-btn');
+if (followBtn) {
+  followBtn.addEventListener('click', async () => {
+    if (!selectedIncidentId) return;
+    const token = localStorage.getItem('civiclens_token');
+    if (!token) {
+      alert("Please log in as a citizen to follow incidents and receive authorized updates.");
+      window.location.href = '/citizen-login.html';
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/v2/citizens/incidents/${selectedIncidentId}/follow`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ channels: 'in_app,email' })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        followBtn.textContent = '✓ Following';
+        followBtn.classList.remove('cl-btn-secondary');
+        followBtn.classList.add('cl-btn-primary');
+      } else {
+        alert(data.message || "Failed to follow incident.");
+      }
+    } catch (e) {
+      alert("Error contacting notification service.");
+    }
+  });
+}
+
+// Wire View Toggle (Map vs List)
+const toggleBtn = document.getElementById('btn-toggle-view');
+const mapEl = document.getElementById('public-leaflet-map');
+const listEl = document.getElementById('public-list-view');
+
+toggleBtn.addEventListener('click', () => {
+  isListView = !isListView;
+  if (isListView) {
+    mapEl.style.display = 'none';
+    listEl.classList.add('active');
+    toggleBtn.textContent = 'Map View';
+    toggleBtn.classList.add('active');
+  } else {
+    mapEl.style.display = 'block';
+    listEl.classList.remove('active');
+    toggleBtn.textContent = 'List View';
+    toggleBtn.classList.remove('active');
+    map.invalidateSize();
+  }
+});
+
+// Event Listeners for Filters
+['filter-category', 'filter-status', 'filter-severity'].forEach(id => {
+  document.getElementById(id).addEventListener('change', refreshViewportData);
+});
+
+// Search input
+document.getElementById('btn-search-trigger').addEventListener('click', async () => {
+  const q = document.getElementById('map-search-input').value.trim();
+  if (!q) return refreshViewportData();
+
+  // If query looks like reference, fetch directly
+  if (q.toUpperCase().startsWith('INC-')) {
+    try {
+      const res = await fetch(`/api/v2/public/incidents/${encodeURIComponent(q.toUpperCase())}`);
+      if (res.ok) {
+        const data = await res.json();
+        const inc = data.incident;
+        map.setView([inc.latitude, inc.longitude], 15);
+        openIncidentDrawer(inc);
+        return;
+      }
+    } catch (e) {}
+  }
+
+  // Otherwise, filter client side by text match
+  const filtered = currentIncidents.filter(it =>
+    it.location_name.toLowerCase().includes(q.toLowerCase()) ||
+    it.incident_reference.toLowerCase().includes(q.toLowerCase()) ||
+    it.category.toLowerCase().includes(q.toLowerCase())
+  );
+  renderMapMarkers(filtered);
+  renderListView(filtered);
+});
+
+map.on('moveend', refreshViewportData);
+map.on('zoomend', refreshViewportData);
+
+// Initial Load
+refreshViewportData();
 </script>
 </body>
 </html>

@@ -51,6 +51,9 @@ class User(Base):
     # Relationships
     reports = relationship("CitizenReport", back_populates="citizen", lazy="dynamic")
     department_memberships = relationship("DepartmentMembership", back_populates="user", cascade="all, delete-orphan")
+    notification_preferences = relationship("NotificationPreference", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    follows = relationship("IncidentFollow", back_populates="citizen", cascade="all, delete-orphan")
+    notifications = relationship("UserNotification", back_populates="recipient", cascade="all, delete-orphan")
 
     __table_args__ = (
         CheckConstraint(
@@ -104,6 +107,8 @@ class Incident(Base):
     resolution = relationship("ResolutionRecord", back_populates="incident", uselist=False, cascade="all, delete-orphan")
     internal_notes = relationship("MunicipalInternalNote", back_populates="incident", cascade="all, delete-orphan")
     citizen_updates = relationship("CitizenVisibleUpdate", back_populates="incident", cascade="all, delete-orphan")
+    publication = relationship("IncidentPublication", back_populates="incident", uselist=False, cascade="all, delete-orphan")
+    follows = relationship("IncidentFollow", back_populates="incident", cascade="all, delete-orphan")
 
     __table_args__ = (
         CheckConstraint(
@@ -886,3 +891,202 @@ class AuditLog(Base):
         Index("ix_audit_logs_v2_actor", "actor_id"),
         Index("ix_audit_logs_v2_created", "created_at"),
     )
+
+
+# ─── Step 9: Public Map, Transparency & Notification System Models ──────────
+
+# ─── Incident Publications ──────────────────────────────────────────
+
+class IncidentPublication(Base):
+    __tablename__ = "incident_publications"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    incident_id = Column(String(36), ForeignKey("incidents_v2.id", ondelete="CASCADE"), nullable=False, unique=True)
+    visibility_status = Column(String(30), nullable=False, default="PENDING_PUBLICATION")
+    published_at = Column(DateTime(timezone=True), nullable=True)
+    published_by = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    public_title = Column(String(255), nullable=True)
+    public_description = Column(Text, nullable=True)
+    public_location_name = Column(String(255), nullable=True)
+    public_latitude = Column(Float, nullable=True)
+    public_longitude = Column(Float, nullable=True)
+    visibility_reason = Column(Text, nullable=True)
+    approved_evidence_ids = Column(Text, nullable=True)  # JSON-encoded array of safe asset IDs
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow)
+
+    # Relationships
+    incident = relationship("Incident", back_populates="publication")
+    publisher = relationship("User", foreign_keys=[published_by])
+
+    __table_args__ = (
+        CheckConstraint(
+            "visibility_status IN ('PRIVATE','PENDING_PUBLICATION','PUBLIC','HIDDEN','ARCHIVED')",
+            name="ck_pub_visibility_status"
+        ),
+        Index("ix_inc_pub_visibility", "visibility_status"),
+        Index("ix_inc_pub_coords", "public_latitude", "public_longitude"),
+    )
+
+
+# ─── Incident Follows ────────────────────────────────────────────────
+
+class IncidentFollow(Base):
+    __tablename__ = "incident_follows"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    citizen_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    incident_id = Column(String(36), ForeignKey("incidents_v2.id", ondelete="CASCADE"), nullable=False)
+    notification_channels = Column(String(100), nullable=False, default="in_app,email")
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    # Relationships
+    citizen = relationship("User", back_populates="follows", foreign_keys=[citizen_id])
+    incident = relationship("Incident", back_populates="follows")
+
+    __table_args__ = (
+        UniqueConstraint("citizen_id", "incident_id", name="uq_citizen_incident_follow"),
+        Index("ix_follows_citizen", "citizen_id"),
+        Index("ix_follows_incident", "incident_id"),
+    )
+
+
+# ─── Notification Preferences ────────────────────────────────────────
+
+class NotificationPreference(Base):
+    __tablename__ = "notification_preferences"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    in_app_enabled = Column(Boolean, nullable=False, default=True)
+    email_enabled = Column(Boolean, nullable=False, default=True)
+    sms_enabled = Column(Boolean, nullable=False, default=False)
+    whatsapp_enabled = Column(Boolean, nullable=False, default=False)
+    push_enabled = Column(Boolean, nullable=False, default=False)
+    quiet_hours_enabled = Column(Boolean, nullable=False, default=False)
+    quiet_hours_start = Column(String(5), nullable=True)  # e.g., "22:00"
+    quiet_hours_end = Column(String(5), nullable=True)    # e.g., "07:00"
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow)
+
+    # Relationships
+    user = relationship("User", back_populates="notification_preferences")
+
+    __table_args__ = (
+        Index("ix_notif_pref_user", "user_id"),
+    )
+
+
+# ─── Notification Events (Transactional Outbox) ─────────────────────
+
+class NotificationEvent(Base):
+    __tablename__ = "notification_events"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    event_type = Column(String(50), nullable=False)
+    event_payload = Column(Text, nullable=False)  # JSON-encoded payload
+    idempotency_key = Column(String(100), unique=True, nullable=False)
+    processing_status = Column(String(30), nullable=False, default="PENDING")
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+    processed_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Relationships
+    deliveries = relationship("NotificationDelivery", back_populates="event", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        CheckConstraint(
+            "processing_status IN ('PENDING','PROCESSING','COMPLETED','FAILED')",
+            name="ck_notif_event_status"
+        ),
+        Index("ix_notif_events_status", "processing_status"),
+        Index("ix_notif_events_created", "created_at"),
+    )
+
+
+# ─── Notification Deliveries ─────────────────────────────────────────
+
+class NotificationDelivery(Base):
+    __tablename__ = "notification_deliveries"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    event_id = Column(String(36), ForeignKey("notification_events.id", ondelete="CASCADE"), nullable=False)
+    recipient_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    channel = Column(String(20), nullable=False)
+    provider = Column(String(50), nullable=False, default="internal")
+    provider_reference = Column(String(100), nullable=True)
+    delivery_status = Column(String(30), nullable=False, default="CREATED")
+    attempts = Column(Integer, nullable=False, default=0)
+    next_retry_at = Column(DateTime(timezone=True), nullable=True)
+    last_error_code = Column(String(50), nullable=True)
+    last_error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow)
+
+    # Relationships
+    event = relationship("NotificationEvent", back_populates="deliveries")
+    recipient = relationship("User", foreign_keys=[recipient_id])
+
+    __table_args__ = (
+        CheckConstraint(
+            "channel IN ('in_app','email','sms','whatsapp','push')",
+            name="ck_delivery_channel"
+        ),
+        CheckConstraint(
+            "delivery_status IN ('CREATED','QUEUED','PROCESSING','PROVIDER_ACCEPTED','DELIVERED','FAILED','BLOCKED','CANCELLED')",
+            name="ck_delivery_status"
+        ),
+        Index("ix_notif_deliv_recipient", "recipient_id"),
+        Index("ix_notif_deliv_status", "delivery_status"),
+        Index("ix_notif_deliv_event", "event_id"),
+    )
+
+
+# ─── User In-App Notifications ───────────────────────────────────────
+
+class UserNotification(Base):
+    __tablename__ = "user_notifications"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    recipient_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    event_id = Column(String(36), ForeignKey("notification_events.id", ondelete="SET NULL"), nullable=True)
+    category = Column(String(30), nullable=False, default="general")
+    title = Column(String(255), nullable=False)
+    message = Column(Text, nullable=False)
+    language = Column(String(5), nullable=False, default="en")
+    related_report_id = Column(String(36), nullable=True)
+    related_incident_id = Column(String(36), nullable=True)
+    is_read = Column(Boolean, nullable=False, default=False)
+    read_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    # Relationships
+    recipient = relationship("User", back_populates="notifications", foreign_keys=[recipient_id])
+
+    __table_args__ = (
+        Index("ix_user_notif_recipient", "recipient_id"),
+        Index("ix_user_notif_unread", "recipient_id", "is_read"),
+        Index("ix_user_notif_created", "created_at"),
+    )
+
+
+# ─── Web Push Subscriptions ──────────────────────────────────────────
+
+class WebPushSubscription(Base):
+    __tablename__ = "web_push_subscriptions"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    endpoint = Column(Text, nullable=False)
+    p256dh = Column(String(255), nullable=False)
+    auth = Column(String(255), nullable=False)
+    user_agent = Column(String(255), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id])
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "endpoint", name="uq_user_push_endpoint"),
+        Index("ix_push_sub_user", "user_id"),
+    )
+

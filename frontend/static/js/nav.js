@@ -24,6 +24,8 @@
       { key: 'report', i18nKey: 'nav.report', label: 'Report Defect', icon: '📢', href: prefix + 'citizen-report.html' },
       { key: 'my_reports', i18nKey: 'nav.my_reports', label: 'My Submissions', icon: '📋', href: prefix + 'my-reports.html' },
       { key: 'map', i18nKey: 'nav.map', label: 'Public Map', icon: '🗺️', href: prefix + 'public-map.html' },
+      { key: 'transparency', i18nKey: 'nav.transparency', label: 'Civic Transparency', icon: '📊', href: prefix + 'transparency.html' },
+      { key: 'notifications', i18nKey: 'nav.notifications', label: 'Notifications', icon: '🔔', href: prefix + 'notifications.html' },
       { key: 'dashboard', i18nKey: 'nav.dashboard', label: 'Live Monitor', icon: '⚡', href: prefix + 'dashboard/dashboard.html' },
       { key: 'municipal', i18nKey: 'nav.municipal', label: 'Municipal Triage', icon: '🛠️', href: prefix + 'municipal/dashboard.html' },
       { key: 'verification', i18nKey: 'nav.verification', label: 'Verification Queue', icon: '🔍', href: prefix + 'municipal/verification.html' },

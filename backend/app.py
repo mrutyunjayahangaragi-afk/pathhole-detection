@@ -35,6 +35,8 @@ from backend.routes.matching_routes import matching_bp
 from backend.routes.language_routes import language_bp
 from backend.routes.location_routes import location_bp
 from backend.routes.municipal_routes import municipal_bp
+from backend.routes.public_routes import public_bp
+from backend.routes.notification_routes import notification_bp, citizen_tracking_bp
 
 
 def create_app(config: Optional[Config] = None) -> Flask:
@@ -84,6 +86,9 @@ def create_app(config: Optional[Config] = None) -> Flask:
     app.register_blueprint(language_bp)
     app.register_blueprint(location_bp)
     app.register_blueprint(municipal_bp)
+    app.register_blueprint(public_bp)
+    app.register_blueprint(notification_bp)
+    app.register_blueprint(citizen_tracking_bp)
 
     # Seed default municipal departments if not already present
     try:
@@ -291,6 +296,24 @@ def create_app(config: Optional[Config] = None) -> Flask:
     def serve_public_map():
         from flask import send_from_directory
         return send_from_directory(os.path.join(_parent, "frontend"), "public-map.html")
+
+    @app.route("/public-incident.html", methods=["GET"])
+    @app.route("/public-incident", methods=["GET"])
+    def serve_public_incident():
+        from flask import send_from_directory
+        return send_from_directory(os.path.join(_parent, "frontend"), "public-incident.html")
+
+    @app.route("/notifications.html", methods=["GET"])
+    @app.route("/notifications", methods=["GET"])
+    def serve_notifications():
+        from flask import send_from_directory
+        return send_from_directory(os.path.join(_parent, "frontend"), "notifications.html")
+
+    @app.route("/transparency.html", methods=["GET"])
+    @app.route("/transparency", methods=["GET"])
+    def serve_transparency():
+        from flask import send_from_directory
+        return send_from_directory(os.path.join(_parent, "frontend"), "transparency.html")
 
     @app.route("/match-review.html", methods=["GET"])
     @app.route("/match-review", methods=["GET"])

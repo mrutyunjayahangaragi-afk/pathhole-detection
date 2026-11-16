@@ -16,6 +16,14 @@ from backend.services.inspection_resolution_service import InspectionResolutionS
 from backend.services.municipal_dashboard_service import MunicipalDashboardService
 from backend.services.municipal_communication_service import MunicipalCommunicationService
 
+from backend.services.public_incident_service import PublicIncidentService
+from backend.services.incident_follow_service import IncidentFollowService
+from backend.services.notification_preference_service import NotificationPreferenceService
+from backend.services.notification_outbox_service import NotificationOutboxService
+from backend.services.notification_delivery_service import NotificationDeliveryService
+from backend.services.in_app_notification_service import InAppNotificationService
+from backend.services.public_transparency_service import PublicTransparencyService
+
 __all__ = [
     "LocationService",
     "haversine_distance_m",
@@ -31,4 +39,11 @@ __all__ = [
     "InspectionResolutionService",
     "MunicipalDashboardService",
     "MunicipalCommunicationService",
+    "PublicIncidentService",
+    "IncidentFollowService",
+    "NotificationPreferenceService",
+    "NotificationOutboxService",
+    "NotificationDeliveryService",
+    "InAppNotificationService",
+    "PublicTransparencyService",
 ]

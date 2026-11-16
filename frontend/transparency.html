@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>CivicLens — Public Transparency & Infrastructure Analytics</title>
+<link rel="stylesheet" href="./static/css/civiclens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  .trans-container {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 24px 16px;
+  }
+  .stat-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .breakdown-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  @media (min-width: 768px) {
+    .breakdown-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    font-size: 13px;
+  }
+  .bar-label {
+    width: 130px;
+    text-transform: capitalize;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .bar-track {
+    flex: 1;
+    background: var(--cl-border);
+    height: 10px;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    background: var(--cl-primary);
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.3s ease;
+  }
+  .bar-val {
+    width: 45px;
+    text-align: right;
+    font-family: var(--cl-font-mono);
+    color: var(--cl-text-muted);
+  }
+</style>
+</head>
+<body>
+
+<div class="cl-app-wrapper">
+  <div id="cl-sidebar-container" data-active="transparency"></div>
+
+  <div class="cl-main-content">
+    <header class="cl-mobile-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button class="cl-hamburger-btn" id="cl-hamburger-toggle" aria-label="Toggle navigation">☰</button>
+        <span style="font-family: var(--cl-font-heading); font-size: 1.25rem; font-weight: 700; text-transform: uppercase;">CivicLens</span>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--cl-text-muted); font-family: var(--cl-font-mono);">TRANSPARENCY</div>
+    </header>
+
+    <div class="trans-container">
+      <div style="margin-bottom: 24px;">
+        <h2 style="font-family: var(--cl-font-heading); font-size: 26px; text-transform: uppercase; margin: 0 0 6px 0;">
+          Civic Infrastructure Transparency Portal
+        </h2>
+        <p style="font-size: 14px; color: var(--cl-text-secondary); margin: 0; line-height: 1.5;">
+          Open, verifiable metrics computed directly from BBMP & Municipal engineering records.
+          Shows canonical physical defects vs. raw citizen report volumes with zero synthetic figures.
+        </p>
+      </div>
+
+      <!-- 4 Key Stat Cards -->
+      <div class="stat-grid-4">
+        <div class="cl-metric-card">
+          <div class="cl-metric-label">Canonical Physical Defects</div>
+          <div class="cl-metric-value" id="stat-canonical-incidents">0</div>
+          <div class="cl-metric-hint">Merged unique infrastructure hazards</div>
+        </div>
+
+        <div class="cl-metric-card">
+          <div class="cl-metric-label">Total Citizen Grievances</div>
+          <div class="cl-metric-value" id="stat-citizen-reports">0</div>
+          <div class="cl-metric-hint" id="stat-dedup-ratio">Deduplication Ratio: 1.0x</div>
+        </div>
+
+        <div class="cl-metric-card">
+          <div class="cl-metric-label">Resolution Rate</div>
+          <div class="cl-metric-value" id="stat-resolution-rate">0.0%</div>
+          <div class="cl-metric-hint">Verified repairs completed</div>
+        </div>
+
+        <div class="cl-metric-card">
+          <div class="cl-metric-label">Avg. Resolution Turnaround</div>
+          <div class="cl-metric-value" id="stat-avg-hours">0h</div>
+          <div class="cl-metric-hint">Creation to verified repair closure</div>
+        </div>
+      </div>
+
+      <!-- Breakdowns (Category & Status) -->
+      <div class="breakdown-grid">
+        <div class="cl-card" style="padding: 20px;">
+          <h3 style="margin: 0 0 16px 0; font-size: 16px;">Defects by Category</h3>
+          <div id="category-bars">
+            <div style="color: var(--cl-text-muted); font-size: 13px;">Loading category data...</div>
+          </div>
+        </div>
+
+        <div class="cl-card" style="padding: 20px;">
+          <h3 style="margin: 0 0 16px 0; font-size: 16px;">Triage & Lifecycle Distribution</h3>
+          <div id="status-bars">
+            <div style="color: var(--cl-text-muted); font-size: 13px;">Loading status data...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Resolution Milestones -->
+      <div class="cl-card" style="padding: 20px;">
+        <h3 style="margin: 0 0 12px 0; font-size: 17px;">Recent Verified Public Resolutions</h3>
+        <div class="cl-table-container">
+          <table class="cl-table">
+            <thead>
+              <tr>
+                <th>Reference</th>
+                <th>Category</th>
+                <th>Verified Location</th>
+                <th>Resolution Date</th>
+              </tr>
+            </thead>
+            <tbody id="milestones-table-body">
+              <tr>
+                <td colspan="4" style="text-align: center; color: var(--cl-text-muted); padding: 20px;">
+                  Loading resolution records...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="./static/js/i18n.js"></script>
+<script src="./static/js/nav.js"></script>
+<script>
+async function loadTransparencyStats() {
+  try {
+    const res = await fetch('/api/v2/public/statistics');
+    if (!res.ok) throw new Error("Failed fetching metrics");
+    const data = await res.json();
+
+    document.getElementById('stat-canonical-incidents').textContent = data.total_canonical_incidents || 0;
+    document.getElementById('stat-citizen-reports').textContent = data.total_citizen_reports || 0;
+    document.getElementById('stat-dedup-ratio').textContent = `Deduplication Ratio: ${data.deduplication_ratio || 1.0}x`;
+    document.getElementById('stat-resolution-rate').textContent = `${data.resolution_rate_pct || 0.0}%`;
+    document.getElementById('stat-avg-hours').textContent = `${data.avg_resolution_hours || 0}h`;
+
+    renderBars('category-bars', data.category_breakdown || {}, data.total_canonical_incidents || 1);
+    renderBars('status-bars', data.status_breakdown || {}, data.total_canonical_incidents || 1);
+    renderMilestones(data.recent_milestones || []);
+  } catch (e) {
+    console.error("Failed loading stats:", e);
+  }
+}
+
+function renderBars(containerId, distribution, total) {
+  const container = document.getElementById(containerId);
+  const entries = Object.entries(distribution);
+  if (!entries.length) {
+    container.innerHTML = '<div style="color: var(--cl-text-muted); font-size: 13px;">No data recorded yet.</div>';
+    return;
+  }
+
+  container.innerHTML = entries.map(([key, count]) => {
+    const pct = Math.min(100, Math.round((count / Math.max(1, total)) * 100));
+    return `
+      <div class="bar-row">
+        <span class="bar-label">${key.replace('_', ' ')}</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width: ${pct}%;"></div>
+        </div>
+        <span class="bar-val">${count}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderMilestones(milestones) {
+  const tbody = document.getElementById('milestones-table-body');
+  if (!milestones.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" style="text-align: center; color: var(--cl-text-muted); padding: 20px;">
+          No resolved infrastructure milestones recorded yet.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = milestones.map(m => `
+    <tr>
+      <td>
+        <a href="/public-incident.html?ref=${encodeURIComponent(m.incident_reference)}" style="color: var(--cl-primary); font-family: var(--cl-font-mono); text-decoration: none; font-weight: 600;">
+          ${m.incident_reference}
+        </a>
+      </td>
+      <td style="text-transform: capitalize;">${m.category.replace('_', ' ')}</td>
+      <td>${m.location_name}</td>
+      <td style="font-family: var(--cl-font-mono); font-size: 12px; color: var(--cl-text-muted);">
+        ${m.resolved_at ? new Date(m.resolved_at).toLocaleDateString() : '--'}
+      </td>
+    </tr>
+  `).join('');
+}
+
+loadTransparencyStats();
+</script>
+</body>
+</html>

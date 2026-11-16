@@ -752,7 +752,7 @@ function renderReportDetails(report) {
   document.getElementById("meta-id").textContent = report.id;
   document.getElementById("meta-source").textContent = report.source_channel || "Citizen Web Portal";
   document.getElementById("meta-updated").textContent = report.updated_at ? new Date(report.updated_at).toLocaleString() : dateStr;
-  document.getElementById("meta-incident").textContent = report.canonical_incident_id ? report.canonical_incident_id.substring(0, 8) + '...' : 'Under Triage';
+  document.getElementById("meta-incident").innerHTML = report.canonical_incident_id ? `<a href="/public-incident.html?id=${encodeURIComponent(report.canonical_incident_id)}" style="color: var(--cl-primary); font-weight: 600; text-decoration: underline;">INC-${report.canonical_incident_id.substring(0, 8).toUpperCase()} (View Public) →</a>` : 'Under Triage';
 
   // Initialize Map
   setTimeout(() => {

@@ -42,7 +42,10 @@ from backend.db.models import (
     Department, IncidentAssignment, AuditLog,
     ReportTranslation, AIDescriptionAssistance, LocationRecord,
     DepartmentMembership, InspectionRecord, WorkProgressUpdate,
-    ResolutionRecord, MunicipalInternalNote, CitizenVisibleUpdate
+    ResolutionRecord, MunicipalInternalNote, CitizenVisibleUpdate,
+    IncidentPublication, IncidentFollow, NotificationPreference,
+    NotificationEvent, NotificationDelivery, UserNotification,
+    WebPushSubscription
 )
 
 # Ordered model sequence respecting Foreign Key dependencies
@@ -51,6 +54,9 @@ MIGRATION_SEQUENCE = [
     ("departments", Department),
     ("department_memberships", DepartmentMembership),
     ("incidents_v2", Incident),
+    ("incident_publications", IncidentPublication),
+    ("incident_follows", IncidentFollow),
+    ("notification_preferences", NotificationPreference),
     ("evidence_assets_v2", EvidenceAsset),
     ("citizen_reports_v2", CitizenReport),
     ("report_items", ReportItem),
@@ -73,6 +79,10 @@ MIGRATION_SEQUENCE = [
     ("resolution_records", ResolutionRecord),
     ("municipal_internal_notes", MunicipalInternalNote),
     ("citizen_visible_updates", CitizenVisibleUpdate),
+    ("notification_events", NotificationEvent),
+    ("notification_deliveries", NotificationDelivery),
+    ("user_notifications", UserNotification),
+    ("web_push_subscriptions", WebPushSubscription),
     ("audit_logs_v2", AuditLog),
 ]
 

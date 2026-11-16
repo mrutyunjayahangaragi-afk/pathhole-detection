@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>CivicLens — Public Incident Tracking</title>
+<link rel="stylesheet" href="./static/css/civiclens.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  .public-incident-container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 24px 16px;
+  }
+  .incident-hero-card {
+    background: var(--cl-bg-surface);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-md);
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--cl-shadow-md);
+  }
+  .evidence-pairing-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-top: 16px;
+  }
+  @media (min-width: 640px) {
+    .evidence-pairing-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .evidence-box {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-sm);
+    padding: 12px;
+    text-align: center;
+  }
+  .evidence-box img {
+    max-width: 100%;
+    height: 220px;
+    object-fit: cover;
+    border-radius: var(--cl-radius-sm);
+    background: #0f172a;
+  }
+  .mini-map-box {
+    width: 100%;
+    height: 240px;
+    border-radius: var(--cl-radius-sm);
+    border: 1px solid var(--cl-border);
+    margin-top: 12px;
+  }
+  .timeline-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+    padding-left: 20px;
+    border-left: 2px solid var(--cl-border);
+    margin-top: 16px;
+  }
+  .timeline-item {
+    position: relative;
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -27px;
+    top: 4px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--cl-primary);
+    border: 2px solid var(--cl-bg-surface);
+  }
+</style>
+</head>
+<body>
+
+<div class="cl-app-wrapper">
+  <!-- Shared Navigation Sidebar -->
+  <div id="cl-sidebar-container" data-active="map"></div>
+
+  <!-- Main Content Area -->
+  <div class="cl-main-content">
+    <header class="cl-mobile-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button class="cl-hamburger-btn" id="cl-hamburger-toggle" aria-label="Toggle navigation">☰</button>
+        <span style="font-family: var(--cl-font-heading); font-size: 1.25rem; font-weight: 700; text-transform: uppercase;">CivicLens</span>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--cl-text-muted); font-family: var(--cl-font-mono);">INCIDENT TRACKER</div>
+    </header>
+
+    <div class="public-incident-container">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <a href="/public-map.html" class="cl-btn cl-btn-secondary" style="font-size: 12px; padding: 6px 12px; text-decoration: none;">
+          ← Back to Public Map
+        </a>
+        <button id="btn-follow-incident" class="cl-btn cl-btn-secondary" style="font-size: 12px; padding: 6px 14px;">
+          🔔 Follow Incident
+        </button>
+      </div>
+
+      <!-- Hero Card -->
+      <div class="incident-hero-card" id="incident-hero">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
+              <span class="cl-badge cl-badge-severe" id="inc-severity">Severe</span>
+              <span class="cl-badge cl-badge-info" id="inc-status">Verified</span>
+              <span style="font-family: var(--cl-font-mono); font-size: 12px; color: var(--cl-primary);" id="inc-ref">INC-2026-0000</span>
+            </div>
+            <h2 style="margin: 0; font-size: 22px; text-transform: capitalize;" id="inc-title">Infrastructure Defect</h2>
+          </div>
+          <div style="text-align: right; font-family: var(--cl-font-mono); font-size: 12px; color: var(--cl-text-muted);" id="inc-meta-dates">
+            Published: --
+          </div>
+        </div>
+
+        <p style="font-size: 14px; color: var(--cl-text); line-height: 1.5; margin-bottom: 16px;" id="inc-desc">
+          Loading verified incident details...
+        </p>
+
+        <div style="display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--cl-text-secondary); margin-bottom: 16px;">
+          <div>📍 <b id="inc-location">Location Name</b></div>
+          <div>👥 <b id="inc-reports-count">1</b> Citizen Grievance Merged</div>
+          <div>🏷️ Category: <b id="inc-cat-label">Pothole</b></div>
+        </div>
+
+        <!-- Mini Location Map -->
+        <div class="mini-map-box" id="inc-mini-map"></div>
+      </div>
+
+      <!-- Before and After Resolution Evidence (Pairing) -->
+      <div class="cl-card" id="resolution-card" style="padding: 20px; margin-bottom: 24px; display: none;">
+        <h3 style="margin: 0 0 8px 0; font-size: 18px; color: var(--cl-success);">✓ Repair Resolution & Verification Evidence</h3>
+        <p style="font-size: 13px; color: var(--cl-text-secondary); margin-bottom: 16px;" id="resolution-notes">
+          Physical road repair verified by municipal engineering inspection crew.
+        </p>
+        <div class="evidence-pairing-grid">
+          <div class="evidence-box">
+            <div style="font-size: 12px; font-weight: 700; color: #ef4444; margin-bottom: 6px; text-transform: uppercase;">
+              📷 Before (Reported Hazard)
+            </div>
+            <img id="img-before-repair" src="" alt="Defect Before Repair" />
+          </div>
+          <div class="evidence-box">
+            <div style="font-size: 12px; font-weight: 700; color: #10b981; margin-bottom: 6px; text-transform: uppercase;">
+              ✓ After (Completed Repair)
+            </div>
+            <img id="img-after-repair" src="" alt="Repaired Infrastructure" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Verified Public Updates Timeline -->
+      <div class="cl-card" style="padding: 20px; margin-bottom: 24px;">
+        <h3 style="margin: 0 0 12px 0; font-size: 17px;">Official Municipal Progress Timeline</h3>
+        <div class="timeline-list" id="timeline-container">
+          <div style="color: var(--cl-text-muted); font-size: 13px;">No public updates posted yet.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="./static/js/i18n.js"></script>
+<script src="./static/js/nav.js"></script>
+<script src="./static/js/citizen-auth.js"></script>
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const incidentRef = urlParams.get('ref') || urlParams.get('id');
+
+let currentIncident = null;
+let miniMap = null;
+
+async function loadIncidentDetails() {
+  if (!incidentRef) {
+    document.getElementById('inc-title').textContent = "Incident Reference Missing";
+    document.getElementById('inc-desc').textContent = "Please provide a valid incident reference (e.g. ?ref=INC-XXXX).";
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/v2/public/incidents/${encodeURIComponent(incidentRef)}`);
+    if (!res.ok) {
+      document.getElementById('inc-title').textContent = "Incident Not Found or Private";
+      document.getElementById('inc-desc').textContent = "This incident either does not exist or has not been approved for public visibility.";
+      return;
+    }
+
+    const data = await res.json();
+    currentIncident = data.incident;
+    renderIncident(currentIncident);
+  } catch (e) {
+    document.getElementById('inc-desc').textContent = "Failed connecting to public API.";
+  }
+}
+
+function renderIncident(inc) {
+  document.getElementById('inc-ref').textContent = inc.incident_reference;
+  document.getElementById('inc-title').textContent = inc.title || `${inc.category.replace('_', ' ').toUpperCase()} Hazard`;
+  document.getElementById('inc-desc').textContent = inc.description || "Verified infrastructure defect.";
+  document.getElementById('inc-location').textContent = inc.location_name;
+  document.getElementById('inc-reports-count').textContent = inc.report_count;
+  document.getElementById('inc-cat-label').textContent = inc.category.replace('_', ' ');
+
+  const sevBadge = document.getElementById('inc-severity');
+  sevBadge.textContent = inc.severity.toUpperCase();
+  sevBadge.className = `cl-badge cl-badge-${inc.severity}`;
+
+  const statusBadge = document.getElementById('inc-status');
+  statusBadge.textContent = inc.status.toUpperCase();
+
+  document.getElementById('inc-meta-dates').textContent = `Created: ${inc.created_at ? new Date(inc.created_at).toLocaleDateString() : '--'}`;
+
+  // Mini Map
+  if (!miniMap && inc.latitude && inc.longitude) {
+    miniMap = L.map('inc-mini-map', { zoomControl: false }).setView([inc.latitude, inc.longitude], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(miniMap);
+    L.marker([inc.latitude, inc.longitude]).addTo(miniMap)
+      .bindPopup(`<b>${inc.incident_reference}</b><br/>${inc.location_name}`).openPopup();
+  }
+
+  // Resolution Pair
+  if (inc.resolution && (inc.resolution.before_evidence_url || inc.resolution.after_evidence_url)) {
+    const resCard = document.getElementById('resolution-card');
+    resCard.style.display = 'block';
+    if (inc.resolution.resolution_summary) {
+      document.getElementById('resolution-notes').textContent = inc.resolution.resolution_summary;
+    }
+    if (inc.resolution.before_evidence_url) {
+      document.getElementById('img-before-repair').src = inc.resolution.before_evidence_url;
+    }
+    if (inc.resolution.after_evidence_url) {
+      document.getElementById('img-after-repair').src = inc.resolution.after_evidence_url;
+    }
+  }
+
+  // Timeline
+  const tContainer = document.getElementById('timeline-container');
+  if (inc.timeline && inc.timeline.length) {
+    tContainer.innerHTML = inc.timeline.map(t => `
+      <div class="timeline-item">
+        <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 2px;">
+          <b style="color: var(--cl-primary);">${t.status_label}</b>
+          <span style="color: var(--cl-text-muted); font-family: var(--cl-font-mono);">${new Date(t.created_at).toLocaleString()}</span>
+        </div>
+        <div style="font-size: 13px; color: var(--cl-text);">${t.message}</div>
+      </div>
+    `).join('');
+  } else {
+    tContainer.innerHTML = `
+      <div class="timeline-item">
+        <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 2px;">
+          <b style="color: var(--cl-primary);">Verified</b>
+          <span style="color: var(--cl-text-muted); font-family: var(--cl-font-mono);">${new Date(inc.created_at).toLocaleDateString()}</span>
+        </div>
+        <div style="font-size: 13px; color: var(--cl-text);">Official municipal verification completed. Work queued.</div>
+      </div>
+    `;
+  }
+}
+
+// Follow Button
+const followBtn = document.getElementById('btn-follow-incident');
+followBtn.addEventListener('click', async () => {
+  if (!currentIncident) return;
+  const token = localStorage.getItem('civiclens_token');
+  if (!token) {
+    alert("Please log in as a citizen to follow this incident.");
+    window.location.href = '/citizen-login.html';
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/v2/citizens/incidents/${currentIncident.id}/follow`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ channels: 'in_app,email' })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      followBtn.textContent = '✓ Following Incident';
+      followBtn.classList.remove('cl-btn-secondary');
+      followBtn.classList.add('cl-btn-primary');
+    } else {
+      alert(data.message || "Failed to follow.");
+    }
+  } catch (e) {
+    alert("Network error.");
+  }
+});
+
+loadIncidentDetails();
+</script>
+</body>
+</html>

@@ -210,6 +210,38 @@ class Config:
         self.DUPLICATE_AUTO_LINK_ENABLED = _bool_from_env("DUPLICATE_AUTO_LINK_ENABLED", False)
         self.DUPLICATE_REQUIRE_HUMAN_REVIEW = _bool_from_env("DUPLICATE_REQUIRE_HUMAN_REVIEW", True)
 
+        # Public Map & Viewport Query Configuration
+        try:
+            self.PUBLIC_MAP_DEFAULT_RADIUS_KM = float(os.environ.get("PUBLIC_MAP_DEFAULT_RADIUS_KM", "25.0"))
+            self.PUBLIC_MAP_MAX_VIEWPORT_POINTS = int(os.environ.get("PUBLIC_MAP_MAX_VIEWPORT_POINTS", "500"))
+        except ValueError as e:
+            raise ConfigurationError(f"Invalid public map configuration: {e}") from e
+
+        # Notification System Configuration
+        self.NOTIFICATION_PROVIDER_EMAIL = os.environ.get("NOTIFICATION_PROVIDER_EMAIL", "console").strip().lower()
+        self.SMTP_HOST = os.environ.get("SMTP_HOST", "").strip()
+        try:
+            self.SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
+        except ValueError:
+            self.SMTP_PORT = 587
+        self.SMTP_USER = os.environ.get("SMTP_USER", "").strip()
+        self.SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "").strip()
+        self.SMTP_FROM_EMAIL = os.environ.get("SMTP_FROM_EMAIL", "notifications@civiclens.org").strip()
+
+        self.NOTIFICATION_PROVIDER_SMS = os.environ.get("NOTIFICATION_PROVIDER_SMS", "console").strip().lower()
+        self.TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "").strip()
+        self.TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "").strip()
+        self.TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "").strip()
+
+        self.NOTIFICATION_PROVIDER_WHATSAPP = os.environ.get("NOTIFICATION_PROVIDER_WHATSAPP", "disabled").strip().lower()
+        self.META_WHATSAPP_TOKEN = os.environ.get("META_WHATSAPP_TOKEN", "").strip()
+        self.META_WHATSAPP_PHONE_ID = os.environ.get("META_WHATSAPP_PHONE_ID", "").strip()
+
+        self.NOTIFICATION_PROVIDER_PUSH = os.environ.get("NOTIFICATION_PROVIDER_PUSH", "disabled").strip().lower()
+        self.VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "").strip()
+        self.VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "").strip()
+        self.VAPID_CLAIM_EMAIL = os.environ.get("VAPID_CLAIM_EMAIL", "admin@civiclens.org").strip()
+
 
 class DevelopmentConfig(Config):
     """Development environment configuration."""

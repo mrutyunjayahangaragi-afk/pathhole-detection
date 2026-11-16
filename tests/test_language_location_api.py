@@ -9,35 +9,21 @@ import uuid
 from unittest.mock import patch, MagicMock
 import pytest
 from backend.app import create_app
-from backend.config import Config
+from backend.config import TestingConfig
 from backend.services.auth_service import AuthService
 from backend.services.citizen_report_service import CitizenReportService
 
 
 @pytest.fixture
-def test_app():
-    cfg = Config()
-    cfg.TESTING = True
-    app = create_app(cfg)
-    return app
-
-
-@pytest.fixture
-def client(test_app):
-    return test_app.test_client()
-
-
-@pytest.fixture
-def citizen_token():
-    auth = AuthService()
+def citizen_token(client):
     uid = uuid.uuid4().hex[:6]
-    res = auth.register_citizen(
-        display_name=f"API User {uid}",
-        email=f"api_user_{uid}@example.com",
-        password="Password123!",
-        confirm_password="Password123!",
-    )
-    return res["token"]
+    res = client.post("/api/v1/auth/register", json={
+        "display_name": f"API User {uid}",
+        "email": f"api_user_{uid}@example.com",
+        "password": "Password123!",
+        "confirm_password": "Password123!",
+    })
+    return res.get_json()["token"]
 
 
 def test_api_language_detection(client):

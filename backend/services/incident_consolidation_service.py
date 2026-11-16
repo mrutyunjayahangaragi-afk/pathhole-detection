@@ -27,7 +27,11 @@ class IncidentConsolidationService:
     """Manages safe, auditable consolidation of two canonical incident records."""
 
     def __init__(self, session_factory=None):
-        self._session_factory = session_factory or get_session_factory()
+        self._custom_session_factory = session_factory
+
+    @property
+    def _session_factory(self):
+        return self._custom_session_factory or get_session_factory()
 
     def consolidate_incidents(
         self,

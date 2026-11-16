@@ -25,7 +25,6 @@ matching_bp = Blueprint("matching_bp", __name__, url_prefix="/api/v1/matching")
 matching_service = DuplicateMatchingService()
 decision_service = MatchDecisionService()
 consolidation_service = IncidentConsolidationService()
-session_factory = get_session_factory()
 
 
 def _is_staff() -> bool:
@@ -42,7 +41,7 @@ def evaluate_report_item(item_id: str):
     Triggers multi-signal candidate evaluation for a report item.
     Allowed for the report owner or municipal officers.
     """
-    db = session_factory()
+    db = get_session_factory()()
     try:
         item = db.query(ReportItem).filter_by(id=item_id).first()
         if not item:
@@ -72,7 +71,7 @@ def get_evaluation(eval_id: str):
     """
     Retrieves full details of a match evaluation and its scored candidates.
     """
-    db = session_factory()
+    db = get_session_factory()()
     try:
         eval_record = db.query(MatchEvaluation).filter_by(id=eval_id).first()
         if not eval_record:

@@ -40,13 +40,16 @@ from backend.db.models import (
     IncidentObservation, MatchEvaluation, MatchCandidate,
     MatchDecision, IncidentConsolidation, IncidentStatusHistory,
     Department, IncidentAssignment, AuditLog,
-    ReportTranslation, AIDescriptionAssistance, LocationRecord
+    ReportTranslation, AIDescriptionAssistance, LocationRecord,
+    DepartmentMembership, InspectionRecord, WorkProgressUpdate,
+    ResolutionRecord, MunicipalInternalNote, CitizenVisibleUpdate
 )
 
 # Ordered model sequence respecting Foreign Key dependencies
 MIGRATION_SEQUENCE = [
     ("users", User),
     ("departments", Department),
+    ("department_memberships", DepartmentMembership),
     ("incidents_v2", Incident),
     ("evidence_assets_v2", EvidenceAsset),
     ("citizen_reports_v2", CitizenReport),
@@ -65,6 +68,11 @@ MIGRATION_SEQUENCE = [
     ("incident_consolidations", IncidentConsolidation),
     ("incident_status_history", IncidentStatusHistory),
     ("incident_assignments", IncidentAssignment),
+    ("inspection_records", InspectionRecord),
+    ("work_progress_updates", WorkProgressUpdate),
+    ("resolution_records", ResolutionRecord),
+    ("municipal_internal_notes", MunicipalInternalNote),
+    ("citizen_visible_updates", CitizenVisibleUpdate),
     ("audit_logs_v2", AuditLog),
 ]
 

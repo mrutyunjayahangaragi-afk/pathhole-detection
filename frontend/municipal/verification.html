@@ -43,7 +43,7 @@
 
   .panel-img-box {
     width: 100%;
-    height: 200px;
+    height: 220px;
     background: var(--cl-bg-subtle);
     border: 1px solid var(--cl-border);
     border-radius: var(--cl-radius-md);
@@ -96,7 +96,6 @@
 
   <!-- Main Content Area -->
   <div class="cl-main-content">
-    <!-- Mobile Header -->
     <header class="cl-mobile-header">
       <div style="display: flex; align-items: center; gap: 10px;">
         <button class="cl-hamburger-btn" id="cl-hamburger-toggle" aria-label="Toggle navigation">☰</button>
@@ -112,116 +111,243 @@
             Human Verification Queue
           </h1>
           <p style="color: var(--cl-text-secondary); margin: 0; font-size: var(--cl-text-sm);">
-            Candidate duplicate reports flagged as <b style="color: var(--cl-warning);">NEEDS_HUMAN_CONFIRMATION</b> by the AI duplicate matching engine.
+            Review incoming citizen reports and verify canonical defects before municipal dispatch.
           </p>
         </div>
-        <div class="mono" style="font-size: 13px; color: var(--cl-text-muted);">
-          Queue: <b>1 of 3 items</b>
+        <div class="mono" style="font-size: 13px; color: var(--cl-text-muted);" id="queue-status-text">
+          Loading queue...
         </div>
       </div>
 
-      <!-- AI Match Metrics Banner -->
-      <div class="match-meta-box">
-        <div>
-          <div style="font-size: 11px; text-transform: uppercase; color: var(--cl-text-muted); letter-spacing: 0.05em;">AI Match Assessment</div>
-          <div style="font-size: 15px; font-weight: 600; color: var(--cl-warning); margin-top: 2px;">
-            ⚠️ Spatial Proximity Ambiguity (14.2m apart)
+      <!-- Queue Container -->
+      <div id="queue-active-card">
+        <!-- AI Match Metrics Banner -->
+        <div class="match-meta-box">
+          <div>
+            <div style="font-size: 11px; text-transform: uppercase; color: var(--cl-text-muted); letter-spacing: 0.05em;">Triage Status</div>
+            <div style="font-size: 15px; font-weight: 600; color: var(--cl-warning); margin-top: 2px;" id="verification-status-heading">
+              ⚠️ Awaiting Engineering Verification
+            </div>
+          </div>
+          <div style="display: flex; gap: 16px; font-family: var(--cl-font-mono); font-size: 12px;">
+            <div>Priority: <b style="color: var(--cl-text-primary);" id="cur-priority">Normal</b></div>
+            <div>Category: <b style="color: var(--cl-text-primary);" id="cur-category">Pothole</b></div>
+            <div>Reports: <b style="color: var(--cl-text-primary);" id="cur-reports">1</b></div>
           </div>
         </div>
-        <div style="display: flex; gap: 16px; font-family: var(--cl-font-mono); font-size: 12px;">
-          <div>Distance: <b style="color: var(--cl-text-primary);">14.2m</b></div>
-          <div>Visual Sim: <b style="color: var(--cl-text-primary);">61%</b></div>
-          <div>Confidence: <b style="color: var(--cl-text-primary);">0.58</b></div>
+
+        <!-- Side-by-Side Comparison Grid -->
+        <div class="comparison-grid">
+          <!-- Left: Incoming Defect Dossier -->
+          <div class="comparison-panel">
+            <span class="panel-badge" style="background: rgba(37, 99, 235, 0.15); color: var(--cl-primary-light); border: 1px solid var(--cl-primary);">
+              Reported Defect Dossier
+            </span>
+            <div class="panel-img-box" id="cur-img-box">
+              <span>No photographic evidence attached</span>
+            </div>
+            <h3 style="font-size: 16px; margin: 0 0 8px 0;" id="cur-title">Incident Title</h3>
+            <div style="font-size: 13px; color: var(--cl-text-secondary); margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px;">
+              <div><b>Reference:</b> <span id="cur-ref" class="mono">-</span></div>
+              <div><b>Coordinates:</b> <span id="cur-coords" class="mono">-</span></div>
+              <div><b>Reported Address:</b> <span id="cur-address">-</span></div>
+            </div>
+            <div style="background: var(--cl-bg-subtle); padding: 10px; border-radius: 6px; font-size: 13px; font-style: italic; color: var(--cl-text-primary);" id="cur-desc">
+              No description text provided.
+            </div>
+          </div>
+
+          <!-- Right: Verification Controls & Assessment -->
+          <div class="comparison-panel">
+            <span class="panel-badge" style="background: var(--cl-warning-subtle); color: var(--cl-warning); border: 1px solid var(--cl-warning);">
+              Municipal Engineering Triage
+            </span>
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Confirmed Defect Category</label>
+              <input type="text" class="cl-input" id="verify-category" value="pothole">
+            </div>
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Assessed Severity Priority</label>
+              <select class="cl-select" id="verify-priority">
+                <option value="normal">Normal Priority (7-day SLA)</option>
+                <option value="high">High Priority (48-hour SLA)</option>
+                <option value="critical">Critical Hazard (24-hour SLA)</option>
+                <option value="low">Low Priority (14-day SLA)</option>
+              </select>
+            </div>
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Verification / Rejection Notes</label>
+              <textarea class="cl-input" id="verify-reason" rows="3" placeholder="Confirm street defect or explain rejection reason..."></textarea>
+            </div>
+
+            <div class="action-bar">
+              <button class="cl-btn cl-btn-primary" id="btn-verify">
+                ✅ Verify Defect (Route to Dept)
+              </button>
+              <button class="cl-btn cl-btn-secondary" style="color: var(--cl-severe);" id="btn-reject">
+                ❌ Reject Submission
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Side-by-Side Comparison Grid -->
-      <div class="comparison-grid">
-        <!-- Left: Incoming Citizen Report -->
-        <div class="comparison-panel">
-          <span class="panel-badge" style="background: rgba(37, 99, 235, 0.15); color: var(--cl-primary-light); border: 1px solid var(--cl-primary);">
-            New Incoming Report
-          </span>
-          <div class="panel-img-box">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="2"/>
-              <circle cx="8.5" cy="8.5" r="1.5"/>
-              <path d="M21 15l-5-5L5 21"/>
-            </svg>
-          </div>
-          <h3 style="font-size: 16px; margin: 0 0 8px 0;">Citizen Report #CR-8821</h3>
-          <div style="font-size: 13px; color: var(--cl-text-secondary); margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px;">
-            <div><b>Submitted:</b> 18 minutes ago (Mobile App)</div>
-            <div><b>Coordinates:</b> 12.97184, 77.59461 (GPS &plusmn;4m)</div>
-            <div><b>Address:</b> 5th Main near bakery, Ward 112</div>
-            <div><b>Reported Category:</b> Pothole (Severe)</div>
-          </div>
-          <div style="background: var(--cl-bg-subtle); padding: 10px; border-radius: 6px; font-size: 13px; font-style: italic; color: var(--cl-text-primary);">
-            &ldquo;Deep pothole right after the speed breaker, scrap marks from cars bottoming out.&rdquo;
-          </div>
-        </div>
-
-        <!-- Right: Candidate Existing Incident -->
-        <div class="comparison-panel">
-          <span class="panel-badge" style="background: var(--cl-warning-subtle); color: var(--cl-warning); border: 1px solid var(--cl-warning);">
-            Existing Incident (Candidate)
-          </span>
-          <div class="panel-img-box">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="2"/>
-              <circle cx="8.5" cy="8.5" r="1.5"/>
-              <path d="M21 15l-5-5L5 21"/>
-            </svg>
-          </div>
-          <h3 style="font-size: 16px; margin: 0 0 8px 0;">Incident INC-00109</h3>
-          <div style="font-size: 13px; color: var(--cl-text-secondary); margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px;">
-            <div><b>First Reported:</b> 2 days ago (Telemetry Car-100)</div>
-            <div><b>Coordinates:</b> 12.97172, 77.59453</div>
-            <div><b>Current Status:</b> Scheduled for Repair</div>
-            <div><b>Merged Reports:</b> 3 citizen reports linked</div>
-          </div>
-          <div style="background: var(--cl-bg-subtle); padding: 10px; border-radius: 6px; font-size: 13px; font-style: italic; color: var(--cl-text-primary);">
-            &ldquo;Pothole detected by stereo camera, estimated depth 6.8cm.&rdquo;
-          </div>
-        </div>
-      </div>
-
-      <!-- Human Decision Action Bar -->
-      <div class="cl-card">
-        <h3 style="font-family: var(--cl-font-heading); font-size: 1.1rem; text-transform: uppercase; margin: 0 0 6px 0;">
-          Officer Verdict
-        </h3>
-        <p style="font-size: 13px; color: var(--cl-text-secondary); margin: 0 0 var(--cl-space-4) 0;">
-          Are these reports describing the exact same physical pothole, or two distinct potholes close together on the same road?
+      <!-- Empty Queue View -->
+      <div id="queue-empty-box" style="display: none; text-align: center; padding: 60px 20px; background: var(--cl-bg-surface); border: 1px solid var(--cl-border); border-radius: var(--cl-radius-lg);">
+        <div style="font-size: 48px; margin-bottom: 12px;">🎉</div>
+        <h2 style="font-family: var(--cl-font-heading); text-transform: uppercase; margin-bottom: 8px;">Verification Queue Clear!</h2>
+        <p style="color: var(--cl-text-secondary); max-width: 480px; margin: 0 auto 20px auto;">
+          All incoming citizen reports and unverified incidents have been triaged. New submissions requiring officer review will appear here automatically.
         </p>
-        <div class="action-bar">
-          <button class="cl-btn cl-btn-primary" id="btn-merge">
-            🔗 Confirm Duplicate (Merge with INC-00109)
-          </button>
-          <button class="cl-btn cl-btn-secondary" id="btn-distinct">
-            ✨ Mark Distinct (Create New Incident)
-          </button>
-          <button class="cl-btn cl-btn-secondary" style="color: var(--cl-severe);" id="btn-reject">
-            ❌ Reject Submission
-          </button>
-        </div>
+        <a href="./dashboard.html" class="cl-btn cl-btn-primary">View Operations Dashboard →</a>
       </div>
     </div>
   </div>
 </div>
 
 <script src="../static/js/i18n.js"></script>
+<script src="../static/js/citizen-auth.js"></script>
 <script src="../static/js/nav.js"></script>
 <script>
-document.getElementById('btn-merge').addEventListener('click', function() {
-  alert("Decision recorded: Report #CR-8821 merged into canonical incident INC-00109. Citizen notified.");
-});
-document.getElementById('btn-distinct').addEventListener('click', function() {
-  alert("Decision recorded: Report #CR-8821 registered as new canonical incident INC-00146. Assigned to Ward 112 queue.");
-});
-document.getElementById('btn-reject').addEventListener('click', function() {
-  alert("Report #CR-8821 rejected due to insufficient or unverified evidence.");
-});
+  let queueItems = [];
+  let currentIndex = 0;
+  let authHeaders = {};
+  const token = localStorage.getItem('civiclens_token');
+  if (token) {
+    authHeaders['Authorization'] = 'Bearer ' + token;
+  }
+
+  async function loadVerificationQueue() {
+    try {
+      const res = await fetch('/api/v2/municipal/incidents?status=awaiting_verification&limit=50', {
+        credentials: 'include',
+        headers: authHeaders
+      });
+
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          window.location.href = '../citizen-login.html?redirect=' + encodeURIComponent(window.location.pathname);
+          return;
+        }
+        return;
+      }
+
+      const data = await res.json();
+      queueItems = data.incidents || [];
+      currentIndex = 0;
+      renderCurrentItem();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function renderCurrentItem() {
+    const activeBox = document.getElementById('queue-active-card');
+    const emptyBox = document.getElementById('queue-empty-box');
+    const statusText = document.getElementById('queue-status-text');
+
+    if (queueItems.length === 0 || currentIndex >= queueItems.length) {
+      activeBox.style.display = 'none';
+      emptyBox.style.display = 'block';
+      statusText.textContent = 'Queue: 0 items';
+      return;
+    }
+
+    activeBox.style.display = 'block';
+    emptyBox.style.display = 'none';
+    statusText.textContent = `Queue: ${currentIndex + 1} of ${queueItems.length} items`;
+
+    const inc = queueItems[currentIndex];
+    document.getElementById('cur-title').textContent = inc.title || `${inc.category} defect`;
+    document.getElementById('cur-ref').textContent = inc.reference;
+    document.getElementById('cur-priority').textContent = (inc.priority || 'normal').toUpperCase();
+    document.getElementById('cur-category').textContent = inc.category || 'Pothole';
+    document.getElementById('cur-reports').textContent = inc.reports_count || 1;
+    document.getElementById('cur-coords').textContent = inc.latitude ? `${inc.latitude.toFixed(5)}, ${inc.longitude.toFixed(5)}` : 'No GPS';
+    document.getElementById('verify-category').value = inc.category || 'pothole';
+
+    // Fetch detailed dossier for photo and description
+    try {
+      const dRes = await fetch(`/api/v2/municipal/incidents/${inc.id}`, { credentials: 'include', headers: authHeaders });
+      if (dRes.ok) {
+        const full = await dRes.json();
+        const imgBox = document.getElementById('cur-img-box');
+        let photoFound = false;
+
+        (full.citizen_reports || []).forEach(r => {
+          if (r.address) document.getElementById('cur-address').textContent = r.address;
+          if (r.description) document.getElementById('cur-desc').textContent = r.description;
+          if (r.evidence && r.evidence.length > 0 && !photoFound) {
+            imgBox.innerHTML = `<img src="${r.evidence[0].url}" alt="Reported defect photo">`;
+            photoFound = true;
+          }
+        });
+
+        if (!photoFound) {
+          imgBox.innerHTML = '<span>No photographic evidence attached</span>';
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  // Verify Button
+  document.getElementById('btn-verify').addEventListener('click', async () => {
+    if (currentIndex >= queueItems.length) return;
+    const inc = queueItems[currentIndex];
+    const cat = document.getElementById('verify-category').value.trim() || 'pothole';
+    const prio = document.getElementById('verify-priority').value;
+    const reason = document.getElementById('verify-reason').value.trim() || 'Verified by municipal officer';
+
+    const res = await fetch(`/api/v2/municipal/incidents/${inc.id}/verify`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confirmed_defect_type: cat, priority: prio, reason: reason })
+    });
+
+    if (res.ok) {
+      alert(`Incident ${inc.reference} verified and moved to verified triage queue!`);
+      document.getElementById('verify-reason').value = '';
+      currentIndex++;
+      renderCurrentItem();
+    } else {
+      const err = await res.json();
+      alert('Error: ' + (err.error || 'Failed to verify incident'));
+    }
+  });
+
+  // Reject Button
+  document.getElementById('btn-reject').addEventListener('click', async () => {
+    if (currentIndex >= queueItems.length) return;
+    const inc = queueItems[currentIndex];
+    const reason = document.getElementById('verify-reason').value.trim();
+
+    if (!reason || reason.length < 5) {
+      alert('A clear rejection reason (at least 5 characters) is required to reject a submission.');
+      return;
+    }
+
+    const res = await fetch(`/api/v2/municipal/incidents/${inc.id}/reject`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: reason })
+    });
+
+    if (res.ok) {
+      alert(`Incident ${inc.reference} rejected.`);
+      document.getElementById('verify-reason').value = '';
+      currentIndex++;
+      renderCurrentItem();
+    } else {
+      const err = await res.json();
+      alert('Error: ' + (err.error || 'Failed to reject incident'));
+    }
+  });
+
+  window.addEventListener('DOMContentLoaded', loadVerificationQueue);
 </script>
 </body>
 </html>

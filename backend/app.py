@@ -34,6 +34,7 @@ from backend.routes.detection_routes import detection_bp
 from backend.routes.matching_routes import matching_bp
 from backend.routes.language_routes import language_bp
 from backend.routes.location_routes import location_bp
+from backend.routes.municipal_routes import municipal_bp
 
 
 def create_app(config: Optional[Config] = None) -> Flask:
@@ -82,6 +83,14 @@ def create_app(config: Optional[Config] = None) -> Flask:
     app.register_blueprint(matching_bp)
     app.register_blueprint(language_bp)
     app.register_blueprint(location_bp)
+    app.register_blueprint(municipal_bp)
+
+    # Seed default municipal departments if not already present
+    try:
+        from backend.services.department_management_service import DepartmentManagementService
+        DepartmentManagementService().seed_default_departments()
+    except Exception as e:
+        logger.debug(f"Default departments seed deferred or handled: {e}")
 
     # Instantiate services
     location_service = LocationService(cfg)

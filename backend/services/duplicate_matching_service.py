@@ -71,11 +71,11 @@ class DuplicateMatchingService:
 
         # Resolve session_factory
         if callable(first_arg) and not isinstance(first_arg, (LocationService, Config)):
-            self._session_factory = first_arg
+            self._custom_session_factory = first_arg
         elif session_factory:
-            self._session_factory = session_factory
+            self._custom_session_factory = session_factory
         else:
-            self._session_factory = get_session_factory()
+            self._custom_session_factory = None
 
         self.phash_service = PerceptualHashService()
         self.crop_service = DefectCropService()
@@ -85,6 +85,10 @@ class DuplicateMatchingService:
             phash_service=self.phash_service,
             visual_service=self.visual_service,
         )
+
+    @property
+    def _session_factory(self):
+        return self._custom_session_factory or get_session_factory()
 
     def evaluate_report_against_existing(
         self, conn, lat: float, lon: float, report_id: str = ""

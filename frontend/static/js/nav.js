@@ -27,6 +27,7 @@
       { key: 'dashboard', i18nKey: 'nav.dashboard', label: 'Live Monitor', icon: '⚡', href: prefix + 'dashboard/dashboard.html' },
       { key: 'municipal', i18nKey: 'nav.municipal', label: 'Municipal Triage', icon: '🛠️', href: prefix + 'municipal/dashboard.html' },
       { key: 'verification', i18nKey: 'nav.verification', label: 'Verification Queue', icon: '🔍', href: prefix + 'municipal/verification.html' },
+      { key: 'departments', i18nKey: 'nav.departments', label: 'Departments & Officers', icon: '🏢', href: prefix + 'municipal/departments.html' },
     ];
 
     // Build sidebar markup if container exists

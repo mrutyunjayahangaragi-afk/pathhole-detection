@@ -7,6 +7,7 @@ confirming links/new incidents, and strictly verifies anti-IDOR authorization.
 
 import uuid
 from backend.app import create_app
+from backend.config import TestingConfig
 from backend.db.engine import get_session_factory
 from backend.db.models import Incident, CitizenReport, ReportItem, User, MatchEvaluation, MatchCandidate, MatchDecision
 from backend.services.auth_service import AuthService
@@ -37,9 +38,7 @@ def _create_user_with_token(client, email: str, role: str) -> tuple[str, str]:
     return u["id"], token
 
 
-def test_matching_api_flow_and_anti_idor():
-    app = create_app()
-    client = app.test_client()
+def test_matching_api_flow_and_anti_idor(client):
     factory = get_session_factory()
 
     officer_email = f"officer_{uuid.uuid4().hex[:6]}@bbmp.gov.in"

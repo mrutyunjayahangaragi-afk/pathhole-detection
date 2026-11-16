@@ -50,10 +50,11 @@ class User(Base):
 
     # Relationships
     reports = relationship("CitizenReport", back_populates="citizen", lazy="dynamic")
+    department_memberships = relationship("DepartmentMembership", back_populates="user", cascade="all, delete-orphan")
 
     __table_args__ = (
         CheckConstraint(
-            "role IN ('citizen','municipal_officer','dept_admin','system_admin')",
+            "role IN ('citizen','municipal_officer','dept_admin','municipal_admin','system_admin')",
             name="ck_users_role"
         ),
     )
@@ -69,7 +70,12 @@ class Incident(Base):
     category = Column(String(50), nullable=False, default="pothole")
     description = Column(Text, nullable=True)
     severity = Column(String(10), nullable=False, default="minor")
+    priority = Column(String(10), nullable=False, default="normal")
     status = Column(String(20), nullable=False, default="reported")
+
+    # Department & Officer Assignment
+    department_id = Column(String(36), ForeignKey("departments.id", ondelete="SET NULL"), nullable=True)
+    assigned_officer_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
     # Location — stored as lat/lon floats for SQLite compat
     # PostGIS geography column added via Alembic migration when on PostgreSQL
@@ -87,10 +93,17 @@ class Incident(Base):
     reopened_at = Column(DateTime(timezone=True), nullable=True)
 
     # Relationships
+    department = relationship("Department", back_populates="incidents", foreign_keys=[department_id])
+    assigned_officer = relationship("User", foreign_keys=[assigned_officer_id])
     report_items = relationship("ReportItem", back_populates="incident", lazy="dynamic")
     observations = relationship("IncidentObservation", back_populates="incident", lazy="dynamic")
     status_history = relationship("IncidentStatusHistory", back_populates="incident", lazy="dynamic")
     assignments = relationship("IncidentAssignment", back_populates="incident", lazy="dynamic")
+    inspections = relationship("InspectionRecord", back_populates="incident", cascade="all, delete-orphan")
+    work_progress = relationship("WorkProgressUpdate", back_populates="incident", cascade="all, delete-orphan")
+    resolution = relationship("ResolutionRecord", back_populates="incident", uselist=False, cascade="all, delete-orphan")
+    internal_notes = relationship("MunicipalInternalNote", back_populates="incident", cascade="all, delete-orphan")
+    citizen_updates = relationship("CitizenVisibleUpdate", back_populates="incident", cascade="all, delete-orphan")
 
     __table_args__ = (
         CheckConstraint(
@@ -98,7 +111,11 @@ class Incident(Base):
             name="ck_incident_severity"
         ),
         CheckConstraint(
-            "status IN ('reported','acknowledged','scheduled','in_progress','repaired','verified','closed')",
+            "priority IN ('low','normal','high','critical')",
+            name="ck_incident_priority"
+        ),
+        CheckConstraint(
+            "status IN ('new','awaiting_verification','verified','assigned','in_progress','on_hold','resolved','reopened','closed','rejected','reported','acknowledged','scheduled','repaired')",
             name="ck_incident_status"
         ),
         CheckConstraint(
@@ -108,7 +125,10 @@ class Incident(Base):
         Index("ix_incidents_v2_coords", "latitude", "longitude"),
         Index("ix_incidents_v2_status", "status"),
         Index("ix_incidents_v2_severity", "severity"),
+        Index("ix_incidents_v2_priority", "priority"),
         Index("ix_incidents_v2_category", "category"),
+        Index("ix_incidents_v2_dept", "department_id"),
+        Index("ix_incidents_v2_officer", "assigned_officer_id"),
     )
 
 
@@ -543,14 +563,172 @@ class Department(Base):
 
     id = Column(String(36), primary_key=True, default=_uuid)
     name = Column(String(255), nullable=False, unique=True)
+    code = Column(String(50), nullable=True, unique=True, index=True)
     description = Column(Text, nullable=True)
     contact_email = Column(String(320), nullable=True)
     contact_phone = Column(String(20), nullable=True)
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow)
 
     # Relationships
     assignments = relationship("IncidentAssignment", back_populates="department", lazy="dynamic")
+    memberships = relationship("DepartmentMembership", back_populates="department", cascade="all, delete-orphan")
+    incidents = relationship("Incident", back_populates="department", foreign_keys="Incident.department_id")
+
+
+# ─── Department Memberships ──────────────────────────────────────────
+
+class DepartmentMembership(Base):
+    __tablename__ = "department_memberships"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    department_id = Column(String(36), ForeignKey("departments.id", ondelete="CASCADE"), nullable=False)
+    role_in_dept = Column(String(30), nullable=False, default="officer")
+    is_active = Column(Boolean, nullable=False, default=True)
+    joined_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    # Relationships
+    user = relationship("User", back_populates="department_memberships")
+    department = relationship("Department", back_populates="memberships")
+
+    __table_args__ = (
+        CheckConstraint(
+            "role_in_dept IN ('officer','lead','admin')",
+            name="ck_dept_member_role"
+        ),
+        UniqueConstraint("user_id", "department_id", name="uq_user_dept"),
+        Index("ix_dept_memberships_user", "user_id"),
+        Index("ix_dept_memberships_dept", "department_id"),
+    )
+
+
+# ─── Inspection Records ──────────────────────────────────────────────
+
+class InspectionRecord(Base):
+    __tablename__ = "inspection_records"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    incident_id = Column(String(36), ForeignKey("incidents_v2.id", ondelete="CASCADE"), nullable=False)
+    officer_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    inspection_date = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+    findings = Column(Text, nullable=False)
+    confirmed_defect_type = Column(String(50), nullable=False)
+    condition_rating = Column(String(20), nullable=False, default="moderate")
+    evidence_asset_id = Column(String(36), ForeignKey("evidence_assets_v2.id", ondelete="SET NULL"), nullable=True)
+    next_action = Column(String(50), nullable=False, default="schedule_repair")
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    # Relationships
+    incident = relationship("Incident", back_populates="inspections")
+    officer = relationship("User", foreign_keys=[officer_id])
+    evidence_asset = relationship("EvidenceAsset", foreign_keys=[evidence_asset_id])
+
+    __table_args__ = (
+        CheckConstraint(
+            "condition_rating IN ('minor','moderate','severe','critical')",
+            name="ck_condition_rating"
+        ),
+        Index("ix_inspection_incident", "incident_id"),
+    )
+
+
+# ─── Work Progress Updates ───────────────────────────────────────────
+
+class WorkProgressUpdate(Base):
+    __tablename__ = "work_progress_updates"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    incident_id = Column(String(36), ForeignKey("incidents_v2.id", ondelete="CASCADE"), nullable=False)
+    officer_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    stage = Column(String(50), nullable=False)
+    notes = Column(Text, nullable=True)
+    hold_reason = Column(Text, nullable=True)
+    estimated_completion = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    # Relationships
+    incident = relationship("Incident", back_populates="work_progress")
+    officer = relationship("User", foreign_keys=[officer_id])
+
+    __table_args__ = (
+        Index("ix_work_progress_incident", "incident_id"),
+    )
+
+
+# ─── Resolution Records ──────────────────────────────────────────────
+
+class ResolutionRecord(Base):
+    __tablename__ = "resolution_records"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    incident_id = Column(String(36), ForeignKey("incidents_v2.id", ondelete="CASCADE"), nullable=False, unique=True)
+    resolved_by = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    resolution_notes = Column(Text, nullable=False)
+    before_evidence_id = Column(String(36), ForeignKey("evidence_assets_v2.id", ondelete="SET NULL"), nullable=True)
+    after_evidence_id = Column(String(36), ForeignKey("evidence_assets_v2.id", ondelete="SET NULL"), nullable=True)
+    resolved_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+    approved_by = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    approved_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    # Relationships
+    incident = relationship("Incident", back_populates="resolution")
+    resolver = relationship("User", foreign_keys=[resolved_by])
+    approver = relationship("User", foreign_keys=[approved_by])
+    before_evidence = relationship("EvidenceAsset", foreign_keys=[before_evidence_id])
+    after_evidence = relationship("EvidenceAsset", foreign_keys=[after_evidence_id])
+
+    __table_args__ = (
+        Index("ix_resolution_incident", "incident_id"),
+    )
+
+
+# ─── Municipal Internal Notes ─────────────────────────────────────────
+
+class MunicipalInternalNote(Base):
+    __tablename__ = "municipal_internal_notes"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    incident_id = Column(String(36), ForeignKey("incidents_v2.id", ondelete="CASCADE"), nullable=False)
+    author_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    content = Column(Text, nullable=False)
+    audience = Column(String(30), nullable=False, default="internal_officers")
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    # Relationships
+    incident = relationship("Incident", back_populates="internal_notes")
+    author = relationship("User", foreign_keys=[author_id])
+
+    __table_args__ = (
+        CheckConstraint(
+            "audience IN ('internal_officers','dept_admin_only','municipal_all')",
+            name="ck_note_audience"
+        ),
+        Index("ix_internal_notes_incident", "incident_id"),
+    )
+
+
+# ─── Citizen Visible Updates ──────────────────────────────────────────
+
+class CitizenVisibleUpdate(Base):
+    __tablename__ = "citizen_visible_updates"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    incident_id = Column(String(36), ForeignKey("incidents_v2.id", ondelete="CASCADE"), nullable=False)
+    published_by = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    public_message = Column(Text, nullable=False)
+    status_label = Column(String(50), nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    # Relationships
+    incident = relationship("Incident", back_populates="citizen_updates")
+    publisher = relationship("User", foreign_keys=[published_by])
+
+    __table_args__ = (
+        Index("ix_citizen_updates_incident", "incident_id"),
+    )
 
 
 # ─── Incident Assignments ────────────────────────────────────────────

@@ -18,9 +18,10 @@
   }
   .controls-row {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     flex-wrap: wrap;
     margin-bottom: var(--cl-space-4);
+    align-items: center;
   }
   .triage-table-container {
     background: var(--cl-bg-surface);
@@ -47,9 +48,24 @@
   table.cl-table td {
     padding: var(--cl-space-3) var(--cl-space-4);
     border-bottom: 1px solid var(--cl-border);
+    vertical-align: middle;
   }
   table.cl-table tr:hover {
     background: var(--cl-bg-subtle);
+  }
+  .sla-breached {
+    background: rgba(220, 38, 38, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    display: inline-block;
+  }
+  .sla-ok {
+    color: var(--cl-text-muted);
+    font-size: 11px;
   }
 
   /* Responsive Table-to-Card transformation on Mobile */
@@ -111,117 +127,98 @@
       <div class="triage-header">
         <div>
           <h1 style="font-family: var(--cl-font-heading); font-size: var(--cl-text-3xl); text-transform: uppercase; margin: 0 0 4px 0;">
-            Municipal Triage Console
+            Municipal Operations &amp; Triage Console
           </h1>
           <p style="color: var(--cl-text-secondary); margin: 0; font-size: var(--cl-text-sm);">
-            Ward 112 (East Central Zone) &bull; Automated Defect Aggregation &amp; Department Routing
+            Verified Canonical Incidents &bull; Department Routing &bull; SLA Compliance
           </p>
         </div>
-        <div style="display: flex; gap: 8px;">
-          <a href="../../dashboard/dashboard.html" class="cl-btn cl-btn-secondary cl-btn-sm">
-            ⚡ Sensor Feed
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <a href="./departments.html" class="cl-btn cl-btn-secondary cl-btn-sm">
+            🏢 Departments &amp; Officers
           </a>
-          <a href="./verification.html" class="cl-btn cl-btn-primary cl-btn-sm">
-            🔍 Verification Queue (3)
+          <a href="./verification.html" class="cl-btn cl-btn-primary cl-btn-sm" id="btn-verification-queue">
+            🔍 Verification Queue (<span id="queue-count-badge">0</span>)
           </a>
         </div>
       </div>
 
-      <!-- Quick Metrics Strip -->
-      <div class="cl-stat-grid">
+      <!-- Quick Metrics Strip (100% Database Backed) -->
+      <div class="cl-stat-grid" id="metrics-strip">
         <div class="cl-stat-card">
-          <div class="cl-stat-label">Active Incidents</div>
-          <div class="cl-stat-val">106</div>
+          <div class="cl-stat-label">Total Registered</div>
+          <div class="cl-stat-val" id="metric-total">-</div>
         </div>
         <div class="cl-stat-card">
-          <div class="cl-stat-label">Severe Hazards</div>
-          <div class="cl-stat-val severe">28</div>
+          <div class="cl-stat-label">Awaiting Verification</div>
+          <div class="cl-stat-val severe" id="metric-verification">-</div>
         </div>
         <div class="cl-stat-card">
-          <div class="cl-stat-label">In Repair</div>
-          <div class="cl-stat-val moderate">14</div>
+          <div class="cl-stat-label">In Progress</div>
+          <div class="cl-stat-val moderate" id="metric-in-progress">-</div>
         </div>
         <div class="cl-stat-card">
-          <div class="cl-stat-label">Repaired Today</div>
-          <div class="cl-stat-val minor">9</div>
+          <div class="cl-stat-label">On Hold</div>
+          <div class="cl-stat-val" id="metric-on-hold" style="color: var(--cl-warning);">-</div>
         </div>
         <div class="cl-stat-card">
-          <div class="cl-stat-label">Citizen Reports</div>
-          <div class="cl-stat-val">247</div>
+          <div class="cl-stat-label">Resolved / Closed</div>
+          <div class="cl-stat-val minor" id="metric-resolved">-</div>
+        </div>
+        <div class="cl-stat-card">
+          <div class="cl-stat-label">Overdue SLA Breaches</div>
+          <div class="cl-stat-val" id="metric-sla" style="color: #ef4444;">-</div>
         </div>
       </div>
 
       <!-- Filters & Search Toolbar -->
       <div class="controls-row">
-        <select class="cl-select" style="max-width: 200px;">
-          <option>All Wards (East Zone)</option>
-          <option selected>Ward 112 — Indiranagar</option>
-          <option>Ward 113 — Domlur</option>
-          <option>Ward 114 — Ulsoor</option>
+        <select class="cl-select" id="filter-department" style="max-width: 220px;">
+          <option value="">All Departments</option>
         </select>
-        <select class="cl-select" style="max-width: 180px;">
-          <option>All Severities</option>
-          <option>Severe Only</option>
-          <option>Moderate &amp; Severe</option>
+        <select class="cl-select" id="filter-status" style="max-width: 180px;">
+          <option value="">All Statuses</option>
+          <option value="new">New</option>
+          <option value="awaiting_verification">Awaiting Verification</option>
+          <option value="verified">Verified</option>
+          <option value="assigned">Assigned</option>
+          <option value="in_progress">In Progress</option>
+          <option value="on_hold">On Hold</option>
+          <option value="resolved">Resolved</option>
+          <option value="closed">Closed</option>
         </select>
-        <input type="text" class="cl-input" placeholder="Search address, landmark or ID..." style="max-width: 280px;">
+        <select class="cl-select" id="filter-priority" style="max-width: 160px;">
+          <option value="">All Priorities</option>
+          <option value="critical">Critical</option>
+          <option value="high">High</option>
+          <option value="normal">Normal</option>
+          <option value="low">Low</option>
+        </select>
+        <input type="text" class="cl-input" id="search-input" placeholder="Search reference, title or defect..." style="max-width: 280px;">
+        <button class="cl-btn cl-btn-secondary cl-btn-sm" id="btn-refresh">🔄 Refresh</button>
       </div>
 
       <!-- Triage Incident Table / Responsive Cards -->
       <div class="triage-table-container">
-        <table class="cl-table">
+        <table class="cl-table" id="incidents-table">
           <thead>
             <tr>
               <th>Incident Ref</th>
               <th>Category</th>
-              <th>Severity</th>
-              <th>Location / Address</th>
-              <th>Reports Merged</th>
-              <th>Assigned Dept</th>
+              <th>Priority</th>
+              <th>Reports</th>
+              <th>Assigned Department</th>
+              <th>Assigned Officer</th>
+              <th>SLA Status</th>
               <th>Status</th>
               <th>Action</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="incidents-tbody">
             <tr>
-              <td data-label="Ref" class="mono">INC-00142</td>
-              <td data-label="Category">Pothole</td>
-              <td data-label="Severity"><span class="cl-badge cl-badge-severe">Severe</span></td>
-              <td data-label="Location">100 Feet Rd near 12th Main Junction</td>
-              <td data-label="Reports">7 citizen reports</td>
-              <td data-label="Dept">Major Roads Wing</td>
-              <td data-label="Status"><span style="color: var(--cl-warning); font-weight: 600;">Scheduled</span></td>
-              <td data-label="Action"><button class="cl-btn cl-btn-secondary cl-btn-sm">Assign</button></td>
-            </tr>
-            <tr>
-              <td data-label="Ref" class="mono">INC-00143</td>
-              <td data-label="Category">Road Cave-in</td>
-              <td data-label="Severity"><span class="cl-badge cl-badge-severe">Severe</span></td>
-              <td data-label="Location">CMH Road opp. Metro Pillar 42</td>
-              <td data-label="Reports">4 citizen reports</td>
-              <td data-label="Dept">BWSSB Pipeline</td>
-              <td data-label="Status"><span style="color: var(--cl-primary-light); font-weight: 600;">In Progress</span></td>
-              <td data-label="Action"><button class="cl-btn cl-btn-secondary cl-btn-sm">Details</button></td>
-            </tr>
-            <tr>
-              <td data-label="Ref" class="mono">INC-00144</td>
-              <td data-label="Category">Pothole</td>
-              <td data-label="Severity"><span class="cl-badge cl-badge-moderate">Moderate</span></td>
-              <td data-label="Location">Double Road, 2nd Stage</td>
-              <td data-label="Reports">2 citizen reports</td>
-              <td data-label="Dept">Ward Maintenance</td>
-              <td data-label="Status"><span>Reported</span></td>
-              <td data-label="Action"><button class="cl-btn cl-btn-secondary cl-btn-sm">Schedule</button></td>
-            </tr>
-            <tr>
-              <td data-label="Ref" class="mono">INC-00145</td>
-              <td data-label="Category">Drainage</td>
-              <td data-label="Severity"><span class="cl-badge cl-badge-minor">Minor</span></td>
-              <td data-label="Location">80 Feet Rd near BSNL Office</td>
-              <td data-label="Reports">1 vehicle sensor</td>
-              <td data-label="Dept">Stormwater Drain</td>
-              <td data-label="Status"><span style="color: var(--cl-minor); font-weight: 600;">Repaired</span></td>
-              <td data-label="Action"><button class="cl-btn cl-btn-secondary cl-btn-sm">Verify</button></td>
+              <td colspan="9" style="text-align: center; padding: 32px; color: var(--cl-text-muted);">
+                Loading municipal incident triage queue...
+              </td>
             </tr>
           </tbody>
         </table>
@@ -231,6 +228,137 @@
 </div>
 
 <script src="../static/js/i18n.js"></script>
+<script src="../static/js/citizen-auth.js"></script>
 <script src="../static/js/nav.js"></script>
+<script>
+  let authHeaders = {};
+  const token = localStorage.getItem('civiclens_token');
+  if (token) {
+    authHeaders['Authorization'] = 'Bearer ' + token;
+  }
+
+  async function loadMetrics() {
+    try {
+      const res = await fetch('/api/v2/municipal/metrics', { credentials: 'include', headers: authHeaders });
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          window.location.href = '../citizen-login.html?redirect=' + encodeURIComponent(window.location.pathname);
+          return;
+        }
+        return;
+      }
+      const data = await res.json();
+      document.getElementById('metric-total').textContent = data.total_registered;
+      document.getElementById('metric-verification').textContent = data.awaiting_verification;
+      document.getElementById('metric-in-progress').textContent = data.in_progress;
+      document.getElementById('metric-on-hold').textContent = data.on_hold;
+      document.getElementById('metric-resolved').textContent = data.resolved;
+      document.getElementById('metric-sla').textContent = data.overdue_sla_count;
+      document.getElementById('queue-count-badge').textContent = data.awaiting_verification;
+    } catch (e) {
+      console.error('Failed to load metrics', e);
+    }
+  }
+
+  async function loadDepartments() {
+    try {
+      const res = await fetch('/api/v2/municipal/departments', { credentials: 'include', headers: authHeaders });
+      if (!res.ok) return;
+      const data = await res.json();
+      const select = document.getElementById('filter-department');
+      (data.departments || []).forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.id;
+        opt.textContent = `${d.name} (${d.code})`;
+        select.appendChild(opt);
+      });
+    } catch (e) {
+      console.error('Failed to load departments', e);
+    }
+  }
+
+  async function loadIncidents() {
+    const dept = document.getElementById('filter-department').value;
+    const status = document.getElementById('filter-status').value;
+    const priority = document.getElementById('filter-priority').value;
+    const q = document.getElementById('search-input').value.trim();
+
+    let url = `/api/v2/municipal/incidents?limit=100`;
+    if (dept) url += `&department_id=${encodeURIComponent(dept)}`;
+    if (status) url += `&status=${encodeURIComponent(status)}`;
+    if (priority) url += `&priority=${encodeURIComponent(priority)}`;
+    if (q) url += `&q=${encodeURIComponent(q)}`;
+
+    try {
+      const res = await fetch(url, { credentials: 'include', headers: authHeaders });
+      if (!res.ok) return;
+      const data = await res.json();
+      const tbody = document.getElementById('incidents-tbody');
+      tbody.innerHTML = '';
+
+      if (!data.incidents || data.incidents.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" style="text-align: center; padding: 32px; color: var(--cl-text-muted);">
+              No incidents found matching current triage filters.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      data.incidents.forEach(inc => {
+        const tr = document.createElement('tr');
+
+        // Priority badge
+        let prioClass = 'cl-badge-minor';
+        if (inc.priority === 'critical') prioClass = 'cl-badge-severe';
+        else if (inc.priority === 'high') prioClass = 'cl-badge-moderate';
+
+        // SLA
+        let slaHtml = inc.is_sla_breached 
+          ? `<span class="sla-breached">⚠️ Breached (${inc.age_hours}h)</span>` 
+          : `<span class="sla-ok">${inc.age_hours}h</span>`;
+
+        tr.innerHTML = `
+          <td data-label="Ref" class="mono"><strong>${inc.reference}</strong></td>
+          <td data-label="Category">${inc.category || 'Pothole'}</td>
+          <td data-label="Priority"><span class="cl-badge ${prioClass}">${(inc.priority || 'normal').toUpperCase()}</span></td>
+          <td data-label="Reports">${inc.reports_count} reports</td>
+          <td data-label="Department">${inc.department_name || '<em style="color: var(--cl-text-muted);">Unassigned</em>'}</td>
+          <td data-label="Officer">${inc.assigned_officer_name || '<em style="color: var(--cl-text-muted);">Unassigned</em>'}</td>
+          <td data-label="SLA">${slaHtml}</td>
+          <td data-label="Status"><strong>${(inc.status || 'new').replace('_', ' ').toUpperCase()}</strong></td>
+          <td data-label="Action">
+            <a href="./incident-console.html?id=${inc.id}" class="cl-btn cl-btn-secondary cl-btn-sm">
+              Console →
+            </a>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (e) {
+      console.error('Failed to load incidents', e);
+    }
+  }
+
+  document.getElementById('filter-department').addEventListener('change', loadIncidents);
+  document.getElementById('filter-status').addEventListener('change', loadIncidents);
+  document.getElementById('filter-priority').addEventListener('change', loadIncidents);
+  document.getElementById('search-input').addEventListener('input', () => {
+    clearTimeout(window._searchTimer);
+    window._searchTimer = setTimeout(loadIncidents, 300);
+  });
+  document.getElementById('btn-refresh').addEventListener('click', () => {
+    loadMetrics();
+    loadIncidents();
+  });
+
+  window.addEventListener('DOMContentLoaded', () => {
+    loadMetrics();
+    loadDepartments();
+    loadIncidents();
+  });
+</script>
 </body>
 </html>

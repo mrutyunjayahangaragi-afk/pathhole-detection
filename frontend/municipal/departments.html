@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>CivicLens — Municipal Departments & Officer Management</title>
+<link rel="stylesheet" href="../static/css/civiclens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  .dept-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--cl-space-6);
+  }
+  @media (max-width: 900px) {
+    .dept-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .dept-card {
+    background: var(--cl-bg-surface);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-md);
+    padding: var(--cl-space-5);
+    margin-bottom: var(--cl-space-4);
+  }
+  .form-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .form-group {
+    flex: 1;
+    min-width: 180px;
+  }
+  .form-label {
+    display: block;
+    font-size: var(--cl-text-xs);
+    font-weight: 600;
+    color: var(--cl-text-secondary);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  table.cl-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--cl-text-sm);
+  }
+  table.cl-table th, table.cl-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--cl-border);
+  }
+  table.cl-table th {
+    background: var(--cl-bg-elevated);
+    text-align: left;
+    font-size: var(--cl-text-xs);
+    color: var(--cl-text-secondary);
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<div class="cl-app-wrapper">
+  <!-- Shared Navigation Sidebar -->
+  <div id="cl-sidebar-container" data-active="departments"></div>
+
+  <!-- Main Content Area -->
+  <div class="cl-main-content">
+    <header class="cl-mobile-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button class="cl-hamburger-btn" id="cl-hamburger-toggle" aria-label="Toggle navigation">☰</button>
+        <span style="font-family: var(--cl-font-heading); font-size: 1.25rem; font-weight: 700; text-transform: uppercase;">CivicLens</span>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--cl-text-muted); font-family: var(--cl-font-mono);">ADMINISTRATION</div>
+    </header>
+
+    <div class="cl-container">
+      <div style="margin-bottom: var(--cl-space-6); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h1 style="font-family: var(--cl-font-heading); font-size: var(--cl-text-3xl); text-transform: uppercase; margin: 0 0 4px 0;">
+            Municipal Departments &amp; Officer Roster
+          </h1>
+          <p style="color: var(--cl-text-secondary); margin: 0; font-size: var(--cl-text-sm);">
+            Unit Routing &bull; Personnel Onboarding &bull; Live Workload Distribution
+          </p>
+        </div>
+        <a href="./dashboard.html" class="cl-btn cl-btn-secondary cl-btn-sm">&larr; Back to Dashboard</a>
+      </div>
+
+      <div class="dept-grid">
+        <!-- Departments Column -->
+        <div>
+          <!-- Create Department Form -->
+          <div class="dept-card" style="border-top: 3px solid var(--cl-primary);">
+            <h3 style="margin: 0 0 12px 0; font-size: var(--cl-text-base); text-transform: uppercase;">
+              ➕ Add Municipal Department
+            </h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Department Name *</label>
+                <input type="text" class="cl-input" id="dept-name" placeholder="e.g. Electrical & Streetlighting">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Unit Code (UPPERCASE) *</label>
+                <input type="text" class="cl-input mono" id="dept-code" placeholder="e.g. STREETLIGHT">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Contact Email</label>
+                <input type="email" class="cl-input" id="dept-email" placeholder="lighting@civiclens.gov.in">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Contact Phone</label>
+                <input type="text" class="cl-input" id="dept-phone" placeholder="+91 80 2266 0000">
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label class="form-label">Scope &amp; Responsibilities</label>
+              <textarea class="cl-input" id="dept-desc" rows="2" placeholder="Defect types and jurisdictions handled by this department..."></textarea>
+            </div>
+            <div style="display: flex; justify-content: flex-end;">
+              <button class="cl-btn cl-btn-primary cl-btn-sm" id="btn-create-dept">Create Department</button>
+            </div>
+          </div>
+
+          <!-- Departments List -->
+          <h3 style="font-size: var(--cl-text-base); text-transform: uppercase; margin: 20px 0 10px 0;">
+            Active Departments (<span id="dept-count">0</span>)
+          </h3>
+          <div id="departments-list"></div>
+        </div>
+
+        <!-- Officers Column -->
+        <div>
+          <!-- Onboard Officer Form -->
+          <div class="dept-card" style="border-top: 3px solid var(--cl-minor);">
+            <h3 style="margin: 0 0 12px 0; font-size: var(--cl-text-base); text-transform: uppercase;">
+              👤 Onboard Municipal Personnel
+            </h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Full Name *</label>
+                <input type="text" class="cl-input" id="officer-name" placeholder="e.g. Inspector Ramesh Kumar">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Gov Email *</label>
+                <input type="email" class="cl-input" id="officer-email" placeholder="ramesh.k@civiclens.gov.in">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Password * (min 8 chars)</label>
+                <input type="password" class="cl-input" id="officer-pwd" placeholder="Temporary password">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Role *</label>
+                <select class="cl-select" id="officer-role">
+                  <option value="municipal_officer">Municipal Officer (Field)</option>
+                  <option value="dept_admin">Department Administrator</option>
+                  <option value="municipal_admin">Municipal Admin (Executive)</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label class="form-label">Assign Primary Department</label>
+              <select class="cl-select" id="officer-dept-select">
+                <option value="">Select Department...</option>
+              </select>
+            </div>
+            <div style="display: flex; justify-content: flex-end;">
+              <button class="cl-btn cl-btn-primary cl-btn-sm" id="btn-onboard-officer">Onboard Officer</button>
+            </div>
+          </div>
+
+          <!-- Officers Table -->
+          <h3 style="font-size: var(--cl-text-base); text-transform: uppercase; margin: 20px 0 10px 0;">
+            Municipal Officers &amp; Workload
+          </h3>
+          <div class="dept-card" style="padding: 0; overflow-x: auto;">
+            <table class="cl-table">
+              <thead>
+                <tr>
+                  <th>Officer Name</th>
+                  <th>Role</th>
+                  <th>Department</th>
+                  <th>Active Tasks</th>
+                  <th>Resolved</th>
+                </tr>
+              </thead>
+              <tbody id="officers-tbody">
+                <tr>
+                  <td colspan="5" style="text-align: center; color: var(--cl-text-muted); padding: 24px;">Loading officers...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../static/js/i18n.js"></script>
+<script src="../static/js/citizen-auth.js"></script>
+<script src="../static/js/nav.js"></script>
+<script>
+  let authHeaders = {};
+  const token = localStorage.getItem('civiclens_token');
+  if (token) {
+    authHeaders['Authorization'] = 'Bearer ' + token;
+  }
+
+  async function loadDepartments() {
+    try {
+      const res = await fetch('/api/v2/municipal/departments', { credentials: 'include', headers: authHeaders });
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          window.location.href = '../citizen-login.html?redirect=' + encodeURIComponent(window.location.pathname);
+          return;
+        }
+        return;
+      }
+      const data = await res.json();
+      const depts = data.departments || [];
+      document.getElementById('dept-count').textContent = depts.length;
+
+      const container = document.getElementById('departments-list');
+      container.innerHTML = '';
+
+      const deptSelect = document.getElementById('officer-dept-select');
+      deptSelect.innerHTML = '<option value="">Select Department...</option>';
+
+      depts.forEach(d => {
+        // Dropdown option
+        const opt = document.createElement('option');
+        opt.value = d.id;
+        opt.textContent = `${d.name} (${d.code})`;
+        deptSelect.appendChild(opt);
+
+        // Card
+        const card = document.createElement('div');
+        card.className = 'dept-card';
+        card.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+            <div>
+              <strong style="font-size: 15px;">${d.name}</strong>
+              <div class="mono" style="font-size: 11px; color: var(--cl-primary);">${d.code}</div>
+            </div>
+            <span class="cl-badge ${d.is_active ? 'cl-badge-minor' : 'cl-badge-severe'}">${d.is_active ? 'Active' : 'Inactive'}</span>
+          </div>
+          <p style="font-size: 13px; color: var(--cl-text-secondary); margin: 6px 0;">${d.description || 'No description provided'}</p>
+          <div style="font-size: 12px; color: var(--cl-text-muted); display: flex; gap: 16px; margin-top: 8px;">
+            <span>📋 Open Incidents: <strong>${d.open_incidents_count}</strong></span>
+            <span>👥 Officers: <strong>${d.officers_count}</strong></span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function loadOfficers() {
+    try {
+      const res = await fetch('/api/v2/municipal/officers', { credentials: 'include', headers: authHeaders });
+      if (!res.ok) return;
+      const data = await res.json();
+      const officers = data.officers || [];
+
+      const tbody = document.getElementById('officers-tbody');
+      tbody.innerHTML = '';
+
+      if (officers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--cl-text-muted); padding: 24px;">No officers registered yet.</td></tr>';
+        return;
+      }
+
+      officers.forEach(o => {
+        const tr = document.createElement('tr');
+        const deptNames = o.departments.map(d => d.name).join(', ') || 'Unassigned';
+        tr.innerHTML = `
+          <td><strong>${o.display_name}</strong><br><span style="font-size: 11px; color: var(--cl-text-muted);">${o.email}</span></td>
+          <td><span class="cl-badge cl-badge-minor">${o.role.replace('_', ' ')}</span></td>
+          <td>${deptNames}</td>
+          <td><strong>${o.active_incidents_count}</strong></td>
+          <td>${o.resolved_incidents_count}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  // Create Department Handler
+  document.getElementById('btn-create-dept').addEventListener('click', async () => {
+    const name = document.getElementById('dept-name').value.trim();
+    const code = document.getElementById('dept-code').value.trim().toUpperCase();
+    const email = document.getElementById('dept-email').value.trim();
+    const phone = document.getElementById('dept-phone').value.trim();
+    const desc = document.getElementById('dept-desc').value.trim();
+
+    if (!name || !code) return alert('Department name and code are required');
+
+    const res = await fetch('/api/v2/municipal/departments', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name, code: code, contact_email: email, contact_phone: phone, description: desc })
+    });
+
+    if (res.ok) {
+      alert('Department created successfully!');
+      document.getElementById('dept-name').value = '';
+      document.getElementById('dept-code').value = '';
+      document.getElementById('dept-email').value = '';
+      document.getElementById('dept-phone').value = '';
+      document.getElementById('dept-desc').value = '';
+      loadDepartments();
+    } else {
+      const err = await res.json();
+      alert('Error: ' + (err.error || 'Failed to create department'));
+    }
+  });
+
+  // Onboard Officer Handler
+  document.getElementById('btn-onboard-officer').addEventListener('click', async () => {
+    const name = document.getElementById('officer-name').value.trim();
+    const email = document.getElementById('officer-email').value.trim();
+    const pwd = document.getElementById('officer-pwd').value;
+    const role = document.getElementById('officer-role').value;
+    const deptId = document.getElementById('officer-dept-select').value;
+
+    if (!name || !email || !pwd) return alert('Name, email, and password are required');
+    if (pwd.length < 8) return alert('Password must be at least 8 characters');
+
+    const res = await fetch('/api/v2/municipal/officers/onboard', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        display_name: name,
+        email: email,
+        password: pwd,
+        role: role,
+        department_id: deptId || null
+      })
+    });
+
+    if (res.ok) {
+      alert('Officer onboarded successfully!');
+      document.getElementById('officer-name').value = '';
+      document.getElementById('officer-email').value = '';
+      document.getElementById('officer-pwd').value = '';
+      loadOfficers();
+      loadDepartments();
+    } else {
+      const err = await res.json();
+      alert('Error: ' + (err.error || 'Failed to onboard officer'));
+    }
+  });
+
+  window.addEventListener('DOMContentLoaded', () => {
+    loadDepartments();
+    loadOfficers();
+  });
+</script>
+</body>
+</html>

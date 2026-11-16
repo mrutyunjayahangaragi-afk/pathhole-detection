@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>CivicLens — Incident Resolution Console</title>
+<link rel="stylesheet" href="../static/css/civiclens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<style>
+  .console-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: var(--cl-space-6);
+  }
+  @media (max-width: 1024px) {
+    .console-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .console-panel {
+    background: var(--cl-bg-surface);
+    border: 1px solid var(--cl-border);
+    border-radius: var(--cl-radius-md);
+    padding: var(--cl-space-5);
+    margin-bottom: var(--cl-space-6);
+  }
+  .panel-title {
+    font-family: var(--cl-font-heading);
+    font-size: var(--cl-text-lg);
+    text-transform: uppercase;
+    margin: 0 0 var(--cl-space-4) 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--cl-border);
+    padding-bottom: 8px;
+  }
+  .form-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .form-group {
+    flex: 1;
+    min-width: 200px;
+  }
+  .form-label {
+    display: block;
+    font-size: var(--cl-text-xs);
+    font-weight: 600;
+    color: var(--cl-text-secondary);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .report-evidence-thumb {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid var(--cl-border);
+  }
+  .timeline-entry {
+    border-left: 2px solid var(--cl-primary);
+    padding-left: 12px;
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .timeline-entry::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--cl-primary);
+  }
+  .tab-buttons {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--cl-border);
+    margin-bottom: 16px;
+  }
+  .tab-btn {
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--cl-text-secondary);
+  }
+  .tab-btn.active {
+    color: var(--cl-primary);
+    border-bottom-color: var(--cl-primary);
+  }
+  .evidence-pairing-box {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    background: var(--cl-bg-subtle);
+    border: 1px dashed var(--cl-border);
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 600px) {
+    .evidence-pairing-box {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="cl-app-wrapper">
+  <!-- Shared Navigation Sidebar -->
+  <div id="cl-sidebar-container" data-active="municipal"></div>
+
+  <!-- Main Content Area -->
+  <div class="cl-main-content">
+    <header class="cl-mobile-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button class="cl-hamburger-btn" id="cl-hamburger-toggle" aria-label="Toggle navigation">☰</button>
+        <span style="font-family: var(--cl-font-heading); font-size: 1.25rem; font-weight: 700; text-transform: uppercase;">CivicLens</span>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--cl-text-muted); font-family: var(--cl-font-mono);">INCIDENT CONSOLE</div>
+    </header>
+
+    <div class="cl-container">
+      <!-- Breadcrumb and Top Nav -->
+      <div style="margin-bottom: var(--cl-space-4); display: flex; justify-content: space-between; align-items: center;">
+        <a href="./dashboard.html" style="color: var(--cl-text-secondary); font-size: var(--cl-text-sm); text-decoration: none;">
+          &larr; Back to Triage Queue
+        </a>
+        <div id="header-badges" style="display: flex; gap: 8px;"></div>
+      </div>
+
+      <!-- Incident Header -->
+      <div style="margin-bottom: var(--cl-space-6);">
+        <h1 id="incident-title" style="font-family: var(--cl-font-heading); font-size: var(--cl-text-3xl); text-transform: uppercase; margin: 0 0 6px 0;">
+          Incident Loading...
+        </h1>
+        <p id="incident-subtitle" style="color: var(--cl-text-secondary); margin: 0; font-size: var(--cl-text-sm);">
+          Reference: <span id="incident-ref" class="mono font-bold">-</span> &bull; Reported: <span id="incident-date">-</span>
+        </p>
+      </div>
+
+      <!-- Main Layout Grid -->
+      <div class="console-grid">
+        <!-- Left Main Area: Actions & Lifecycle Workflow -->
+        <div>
+          <!-- 1. Department & Officer Assignment -->
+          <div class="console-panel">
+            <h2 class="panel-title">
+              <span>1. Department &amp; Officer Routing</span>
+              <span id="current-routing-badge" class="cl-badge cl-badge-minor">Unassigned</span>
+            </h2>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Assign Department</label>
+                <select class="cl-select" id="assign-dept-select">
+                  <option value="">Select Department...</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Priority Level</label>
+                <select class="cl-select" id="assign-priority-select">
+                  <option value="normal">Normal (7d SLA)</option>
+                  <option value="high">High (48h SLA)</option>
+                  <option value="critical">Critical (24h SLA)</option>
+                  <option value="low">Low (14d SLA)</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group" style="flex: 2;">
+                <label class="form-label">Department Routing Reason</label>
+                <input type="text" class="cl-input" id="assign-dept-reason" placeholder="e.g. Primary asphalt defect under jurisdiction of Road Maintenance">
+              </div>
+              <div style="display: flex; align-items: flex-end;">
+                <button class="cl-btn cl-btn-secondary" id="btn-save-department">Assign Dept</button>
+              </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--cl-border); margin: 16px 0;">
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Assign Field Officer</label>
+                <select class="cl-select" id="assign-officer-select">
+                  <option value="">Select Officer...</option>
+                </select>
+              </div>
+              <div class="form-group" style="flex: 2;">
+                <label class="form-label">Officer Assignment / Reassignment Reason (Mandatory if reassigned)</label>
+                <input type="text" class="cl-input" id="assign-officer-reason" placeholder="e.g. Officer on duty in Indiranagar East sector">
+              </div>
+              <div style="display: flex; align-items: flex-end;">
+                <button class="cl-btn cl-btn-primary" id="btn-save-officer">Assign Officer</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. On-Site Physical Inspection -->
+          <div class="console-panel">
+            <h2 class="panel-title">2. Record Field Inspection</h2>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Confirmed Defect Type</label>
+                <input type="text" class="cl-input" id="insp-defect" placeholder="e.g. pothole">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Condition Rating</label>
+                <select class="cl-select" id="insp-rating">
+                  <option value="minor">Minor</option>
+                  <option value="moderate" selected>Moderate</option>
+                  <option value="severe">Severe</option>
+                  <option value="critical">Critical (Immediate Hazard)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Next Action</label>
+                <select class="cl-select" id="insp-action">
+                  <option value="schedule_repair">Schedule Repair</option>
+                  <option value="emergency_patch">Emergency Patch</option>
+                  <option value="refer_utility">Refer to Utility (BWSSB/BESCOM)</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label class="form-label">Inspection Findings</label>
+              <textarea class="cl-input" id="insp-findings" rows="2" placeholder="Field measurements, depth, asphalt breakdown, safety risks..."></textarea>
+            </div>
+            <div class="form-row" style="align-items: center; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <label class="cl-btn cl-btn-secondary cl-btn-sm" style="cursor: pointer;">
+                  📷 Attach Field Photo
+                  <input type="file" id="insp-photo-file" accept="image/*" style="display: none;">
+                </label>
+                <span id="insp-photo-name" style="font-size: 12px; color: var(--cl-text-muted);">No file attached</span>
+              </div>
+              <button class="cl-btn cl-btn-primary cl-btn-sm" id="btn-submit-inspection">Submit Inspection</button>
+            </div>
+          </div>
+
+          <!-- 3. Work Progress & Hold Milestones -->
+          <div class="console-panel">
+            <h2 class="panel-title">3. Work Progress &amp; Hold Milestones</h2>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Progress Stage</label>
+                <input type="text" class="cl-input" id="prog-stage" placeholder="e.g. Materials delivered, cutting pavement, or On Hold">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Hold Reason (Mandatory if putting on hold)</label>
+                <input type="text" class="cl-input" id="prog-hold-reason" placeholder="e.g. Continuous heavy rain prevents hot-mix asphalt laying">
+              </div>
+            </div>
+            <div class="form-row" style="justify-content: space-between; align-items: center;">
+              <div class="form-group" style="max-width: 400px;">
+                <label class="form-label">Progress Notes</label>
+                <input type="text" class="cl-input" id="prog-notes" placeholder="Contractor team ID, machinery deployed...">
+              </div>
+              <button class="cl-btn cl-btn-secondary cl-btn-sm" id="btn-submit-progress">Record Progress</button>
+            </div>
+          </div>
+
+          <!-- 4. Mandatory Photographic Resolution -->
+          <div class="console-panel" style="border-left: 4px solid var(--cl-minor);">
+            <h2 class="panel-title">4. Repair Resolution &amp; Before/After Proof</h2>
+            <p style="font-size: var(--cl-text-sm); color: var(--cl-text-secondary); margin-top: 0;">
+              Marking an incident resolved synchronizes all linked citizen reports and notifies citizens.
+              Mandatory photographic evidence of the repaired site is strictly required.
+            </p>
+
+            <div class="evidence-pairing-box">
+              <div>
+                <h4 style="margin: 0 0 8px 0; font-size: 13px; text-transform: uppercase;">Before (Reported Defect)</h4>
+                <div id="before-evidence-container">
+                  <span style="font-size: 12px; color: var(--cl-text-muted);">Loading before photo...</span>
+                </div>
+              </div>
+              <div>
+                <h4 style="margin: 0 0 8px 0; font-size: 13px; text-transform: uppercase;">After (Repaired Proof) *</h4>
+                <label class="cl-btn cl-btn-secondary cl-btn-sm" style="cursor: pointer; margin-bottom: 8px; display: inline-block;">
+                  📤 Upload After Repair Photo
+                  <input type="file" id="res-photo-file" accept="image/*" style="display: none;">
+                </label>
+                <div id="res-photo-preview" style="font-size: 12px; color: var(--cl-text-muted);">
+                  No repair proof photo selected yet.
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label class="form-label">Resolution Notes &amp; Repair Details *</label>
+              <textarea class="cl-input" id="res-notes" rows="2" placeholder="Describe patch dimensions, materials used (e.g. 50mm cold mix asphalt compaction), compaction verified..."></textarea>
+            </div>
+            <div style="display: flex; justify-content: flex-end;">
+              <button class="cl-btn cl-btn-primary" id="btn-submit-resolution">
+                ✅ Complete &amp; Verify Resolution
+              </button>
+            </div>
+          </div>
+
+          <!-- 5. Communication: Internal Notes vs Citizen Updates -->
+          <div class="console-panel">
+            <div class="tab-buttons">
+              <button class="tab-btn active" id="tab-btn-notes">🔒 Internal Municipal Notes</button>
+              <button class="tab-btn" id="tab-btn-updates">📢 Citizen-Visible Updates</button>
+            </div>
+
+            <!-- Notes Tab -->
+            <div id="tab-content-notes">
+              <div id="notes-list" style="margin-bottom: 16px;"></div>
+              <div class="form-row">
+                <div class="form-group" style="flex: 3;">
+                  <input type="text" class="cl-input" id="note-content" placeholder="Add confidential internal note...">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                  <select class="cl-select" id="note-audience">
+                    <option value="internal_officers">Field Officers</option>
+                    <option value="dept_admin_only">Dept Admin Only</option>
+                    <option value="municipal_all">Municipal All</option>
+                  </select>
+                </div>
+                <button class="cl-btn cl-btn-secondary cl-btn-sm" id="btn-add-note">Post Note</button>
+              </div>
+            </div>
+
+            <!-- Citizen Updates Tab -->
+            <div id="tab-content-updates" style="display: none;">
+              <div id="updates-list" style="margin-bottom: 16px;"></div>
+              <div class="form-row">
+                <div class="form-group" style="flex: 1;">
+                  <input type="text" class="cl-input" id="update-status-label" placeholder="Status Label (e.g. Work In Progress)">
+                </div>
+                <div class="form-group" style="flex: 3;">
+                  <input type="text" class="cl-input" id="update-message" placeholder="Public message published to reporting citizens...">
+                </div>
+                <button class="cl-btn cl-btn-primary cl-btn-sm" id="btn-add-update">Publish Update</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Dossier, AI Detections & Map -->
+        <div>
+          <!-- Mini Map -->
+          <div class="console-panel" style="padding: 0; overflow: hidden;">
+            <div id="mini-map" style="height: 220px; width: 100%;"></div>
+            <div style="padding: 12px; font-size: 12px; color: var(--cl-text-secondary);">
+              📍 Coordinates: <span id="map-coords" class="mono">-</span>
+            </div>
+          </div>
+
+          <!-- Linked Citizen Reports -->
+          <div class="console-panel">
+            <h3 class="panel-title" style="font-size: var(--cl-text-base);">
+              Linked Citizen Reports (<span id="reports-count-num">0</span>)
+            </h3>
+            <div id="reports-container" style="max-height: 400px; overflow-y: auto;"></div>
+          </div>
+
+          <!-- AI Detection Results -->
+          <div class="console-panel">
+            <h3 class="panel-title" style="font-size: var(--cl-text-base);">
+              AI Vision Detections (<span id="detections-count-num">0</span>)
+            </h3>
+            <div id="detections-container"></div>
+          </div>
+
+          <!-- Assignment Audit Trail -->
+          <div class="console-panel">
+            <h3 class="panel-title" style="font-size: var(--cl-text-base);">
+              Assignment History
+            </h3>
+            <div id="assignments-container"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="../static/js/i18n.js"></script>
+<script src="../static/js/citizen-auth.js"></script>
+<script src="../static/js/nav.js"></script>
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const incidentId = urlParams.get('id');
+
+  if (!incidentId) {
+    alert('No incident ID provided.');
+    window.location.href = './dashboard.html';
+  }
+
+  let authHeaders = {};
+  const token = localStorage.getItem('civiclens_token');
+  if (token) {
+    authHeaders['Authorization'] = 'Bearer ' + token;
+  }
+
+  let currentIncidentData = null;
+  let selectedAfterEvidenceId = null;
+  let selectedBeforeEvidenceId = null;
+  let miniMap = null;
+  let mapMarker = null;
+
+  async function loadIncidentDossier() {
+    try {
+      const res = await fetch(`/api/v2/municipal/incidents/${encodeURIComponent(incidentId)}`, {
+        credentials: 'include',
+        headers: authHeaders
+      });
+
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          window.location.href = '../citizen-login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+          return;
+        }
+        alert('Failed to load incident');
+        return;
+      }
+
+      const data = await res.json();
+      currentIncidentData = data;
+      renderIncidentView(data);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function renderIncidentView(data) {
+    const inc = data.incident;
+    document.getElementById('incident-title').textContent = inc.title || (inc.category + ' defect');
+    document.getElementById('incident-ref').textContent = inc.reference;
+    document.getElementById('incident-date').textContent = new Date(inc.created_at).toLocaleString();
+
+    // Badges
+    const badgeBar = document.getElementById('header-badges');
+    badgeBar.innerHTML = `
+      <span class="cl-badge ${inc.priority === 'critical' ? 'cl-badge-severe' : inc.priority === 'high' ? 'cl-badge-moderate' : 'cl-badge-minor'}">
+        ${(inc.priority || 'normal').toUpperCase()}
+      </span>
+      <span class="cl-badge cl-badge-primary">
+        ${(inc.status || 'new').replace('_', ' ').toUpperCase()}
+      </span>
+    `;
+
+    document.getElementById('current-routing-badge').textContent = inc.department_name ? `${inc.department_name} (${inc.department_code})` : 'Unassigned';
+
+    // Map
+    if (inc.latitude && inc.longitude) {
+      document.getElementById('map-coords').textContent = `${inc.latitude.toFixed(5)}, ${inc.longitude.toFixed(5)}`;
+      if (!miniMap) {
+        miniMap = L.map('mini-map').setView([inc.latitude, inc.longitude], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap'
+        }).addTo(miniMap);
+        mapMarker = L.marker([inc.latitude, inc.longitude]).addTo(miniMap);
+      } else {
+        miniMap.setView([inc.latitude, inc.longitude], 15);
+        if (mapMarker) mapMarker.setLatLng([inc.latitude, inc.longitude]);
+      }
+    }
+
+    // Reports Dossier
+    const repContainer = document.getElementById('reports-container');
+    document.getElementById('reports-count-num').textContent = data.citizen_reports.length;
+    repContainer.innerHTML = '';
+    data.citizen_reports.forEach(r => {
+      let photosHtml = '';
+      r.evidence.forEach(ev => {
+        photosHtml += `<img src="${ev.url}" class="report-evidence-thumb" alt="Evidence" onclick="window.open('${ev.url}')">`;
+        if (!selectedBeforeEvidenceId) {
+          selectedBeforeEvidenceId = ev.id;
+        }
+      });
+
+      const card = document.createElement('div');
+      card.style.cssText = 'padding: 10px; border: 1px solid var(--cl-border); border-radius: 6px; margin-bottom: 8px; font-size: 13px;';
+      card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 4px;">
+          <span>${r.reference} &bull; ${r.citizen_name}</span>
+          <span class="cl-badge cl-badge-minor">${r.reported_severity}</span>
+        </div>
+        <div style="color: var(--cl-text-secondary); margin-bottom: 6px;">${r.description || 'No description provided'}</div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">${photosHtml}</div>
+      `;
+      repContainer.appendChild(card);
+    });
+
+    // Before photo in Resolution box
+    const beforeBox = document.getElementById('before-evidence-container');
+    if (selectedBeforeEvidenceId) {
+      beforeBox.innerHTML = `<img src="/api/v1/evidence/${selectedBeforeEvidenceId}" style="width: 100%; height: 140px; object-fit: cover; border-radius: 6px;">`;
+    } else {
+      beforeBox.innerHTML = `<span style="font-size: 12px; color: var(--cl-text-muted);">No before photo available.</span>`;
+    }
+
+    // AI Detections
+    const detContainer = document.getElementById('detections-container');
+    document.getElementById('detections-count-num').textContent = data.ai_detections.length;
+    detContainer.innerHTML = '';
+    if (data.ai_detections.length === 0) {
+      detContainer.innerHTML = '<span style="font-size: 12px; color: var(--cl-text-muted);">No automated detections linked.</span>';
+    } else {
+      data.ai_detections.forEach(d => {
+        const item = document.createElement('div');
+        item.style.cssText = 'padding: 8px; border-bottom: 1px solid var(--cl-border); font-size: 12px;';
+        item.innerHTML = `
+          <strong>${d.defect_type.toUpperCase()}</strong> &bull; Conf: ${(d.confidence * 100).toFixed(1)}% &bull; BBox: [${d.bbox_x}, ${d.bbox_y}, ${d.bbox_width}, ${d.bbox_height}]
+        `;
+        detContainer.appendChild(item);
+      });
+    }
+
+    // Assignments
+    const assignContainer = document.getElementById('assignments-container');
+    assignContainer.innerHTML = '';
+    data.assignments.forEach(a => {
+      const entry = document.createElement('div');
+      entry.className = 'timeline-entry';
+      entry.style.fontSize = '12px';
+      entry.innerHTML = `
+        <div style="color: var(--cl-text-secondary);">${new Date(a.assigned_at).toLocaleString()}</div>
+        <div>Assigned to <strong>${a.assigned_officer_name || a.department_name || 'Unit'}</strong> by ${a.assigned_by_name || 'Admin'}</div>
+        <div style="font-style: italic; color: var(--cl-text-muted);">${a.assignment_reason}</div>
+      `;
+      assignContainer.appendChild(entry);
+    });
+
+    // Notes
+    renderNotes(data.internal_notes);
+
+    // Updates
+    renderUpdates(data.citizen_updates);
+  }
+
+  function renderNotes(notes) {
+    const list = document.getElementById('notes-list');
+    list.innerHTML = '';
+    if (!notes || notes.length === 0) {
+      list.innerHTML = '<div style="font-size: 12px; color: var(--cl-text-muted);">No internal notes yet.</div>';
+      return;
+    }
+    notes.forEach(n => {
+      const el = document.createElement('div');
+      el.style.cssText = 'padding: 8px 12px; background: var(--cl-bg-subtle); border-radius: 6px; margin-bottom: 8px; font-size: 13px;';
+      el.innerHTML = `
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--cl-text-muted); margin-bottom: 2px;">
+          <span><strong>${n.author_name}</strong> (${n.audience})</span>
+          <span>${new Date(n.created_at).toLocaleString()}</span>
+        </div>
+        <div>${n.content}</div>
+      `;
+      list.appendChild(el);
+    });
+  }
+
+  function renderUpdates(updates) {
+    const list = document.getElementById('updates-list');
+    list.innerHTML = '';
+    if (!updates || updates.length === 0) {
+      list.innerHTML = '<div style="font-size: 12px; color: var(--cl-text-muted);">No public citizen updates published yet.</div>';
+      return;
+    }
+    updates.forEach(u => {
+      const el = document.createElement('div');
+      el.style.cssText = 'padding: 8px 12px; border-left: 3px solid var(--cl-primary); background: var(--cl-bg-subtle); border-radius: 4px; margin-bottom: 8px; font-size: 13px;';
+      el.innerHTML = `
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--cl-text-muted); margin-bottom: 2px;">
+          <span><strong>${u.status_label}</strong> &bull; Published by ${u.publisher_name}</span>
+          <span>${new Date(u.created_at).toLocaleString()}</span>
+        </div>
+        <div>${u.public_message}</div>
+      `;
+      list.appendChild(el);
+    });
+  }
+
+  // Load Departments & Officers
+  async function loadDeptsAndOfficers() {
+    try {
+      const dRes = await fetch('/api/v2/municipal/departments', { credentials: 'include', headers: authHeaders });
+      if (dRes.ok) {
+        const dData = await dRes.json();
+        const sel = document.getElementById('assign-dept-select');
+        (dData.departments || []).forEach(d => {
+          const opt = document.createElement('option');
+          opt.value = d.id;
+          opt.textContent = `${d.name} (${d.code})`;
+          sel.appendChild(opt);
+        });
+      }
+
+      const oRes = await fetch('/api/v2/municipal/officers', { credentials: 'include', headers: authHeaders });
+      if (oRes.ok) {
+        const oData = await oRes.json();
+        const sel = document.getElementById('assign-officer-select');
+        (oData.officers || []).forEach(o => {
+          const opt = document.createElement('option');
+          opt.value = o.id;
+          opt.textContent = `${o.display_name} (${o.role}) &bull; ${o.active_incidents_count} tasks`;
+          sel.appendChild(opt);
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  // Assign Department Handler
+  document.getElementById('btn-save-department').addEventListener('click', async () => {
+    const deptId = document.getElementById('assign-dept-select').value;
+    const prio = document.getElementById('assign-priority-select').value;
+    const reason = document.getElementById('assign-dept-reason').value.trim();
+
+    if (!deptId) return alert('Please select a department');
+
+    const res = await fetch(`/api/v2/municipal/incidents/${incidentId}/assign-department`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ department_id: deptId, priority: prio, reason: reason })
+    });
+
+    if (res.ok) {
+      alert('Department assigned successfully!');
+      loadIncidentDossier();
+    } else {
+      const err = await res.json();
+      alert('Error: ' + (err.error || 'Failed to assign department'));
+    }
+  });
+
+  // Assign Officer Handler
+  document.getElementById('btn-save-officer').addEventListener('click', async () => {
+    const offId = document.getElementById('assign-officer-select').value;
+    const reason = document.getElementById('assign-officer-reason').value.trim();
+
+    if (!offId) return alert('Please select an officer');
+
+    const res = await fetch(`/api/v2/municipal/incidents/${incidentId}/assign-officer`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ officer_id: offId, reason: reason })
+    });
+
+    if (res.ok) {
+      alert('Officer assigned successfully!');
+      loadIncidentDossier();
+    } else {
+      const err = await res.json();
+      alert('Error: ' + (err.error || 'Failed to assign officer'));
+    }
+  });
+
+  // Inspection Photo Upload
+  document.getElementById('insp-photo-file').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    document.getElementById('insp-photo-name').textContent = 'Uploading ' + file.name + '...';
+
+    const formData = new FormData();
+    formData.append('evidence', file);
+
+    const res = await fetch('/api/v2/municipal/incidents/evidence/upload', {
+      method: 'POST',
+      credentials: 'include',
+      headers: authHeaders,
+      body: formData
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      window._inspAssetId = data.asset_id;
+      document.getElementById('insp-photo-name').textContent = 'Attached: ' + file.name;
+    } else {
+      alert('Failed to upload photo');
+      document.getElementById('insp-photo-name').textContent = 'Upload failed';
+    }
+  });
+
+  // Submit Inspection
+  document.getElementById('btn-submit-inspection').addEventListener('click', async () => {
+    const findings = document.getElementById('insp-findings').value.trim();
+    const defect = document.getElementById('insp-defect').value.trim() || 'pothole';
+    const rating = document.getElementById('insp-rating').value;
+    const action = document.getElementById('insp-action').value;
+
+    if (!findings || findings.length < 5) return alert('Please enter findings (min 5 chars)');
+
+    const res = await fetch(`/api/v2/municipal/incidents/${incidentId}/inspections`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        findings: findings,
+        confirmed_defect_type: defect,
+        condition_rating: rating,
+        next_action: action,
+        evidence_asset_id: window._inspAssetId || null
+      })
+    });
+
+    if (res.ok) {
+      alert('Inspection recorded successfully!');
+      document.getElementById('insp-findings').value = '';
+      loadIncidentDossier();
+    } else {
+      const err = await res.json();
+      alert('Error: ' + (err.error || 'Failed to record inspection'));
+    }
+  });
+
+  // Submit Progress
+  document.getElementById('btn-submit-progress').addEventListener('click', async () => {
+    const stage = document.getElementById('prog-stage').value.trim();
+    const notes = document.getElementById('prog-notes').value.trim();
+    const hold = document.getElementById('prog-hold-reason').value.trim();
+
+    if (!stage) return alert('Please enter progress stage');
+
+    const res = await fetch(`/api/v2/municipal/incidents/${incidentId}/work-progress`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stage: stage, notes: notes, hold_reason: hold })
+    });
+
+    if (res.ok) {
+      alert('Progress update recorded!');
+      document.getElementById('prog-stage').value = '';
+      document.getElementById('prog-notes').value = '';
+      document.getElementById('prog-hold-reason').value = '';
+      loadIncidentDossier();
+    } else {
+      const err = await res.json();
+      alert('Error: ' + (err.error || 'Failed to record progress'));
+    }
+  });
+
+  // Resolution Photo Upload
+  document.getElementById('res-photo-file').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    document.getElementById('res-photo-preview').textContent = 'Uploading ' + file.name + '...';
+
+    const formData = new FormData();
+    formData.append('evidence', file);
+
+    const res = await fetch('/api/v2/municipal/incidents/evidence/upload', {
+      method: 'POST',
+      credentials: 'include',
+      headers: authHeaders,
+      body: formData
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      selectedAfterEvidenceId = data.asset_id;
+      document.getElementById('res-photo-preview').innerHTML = `
+        <img src="/api/v1/evidence/${data.asset_id}" style="width: 100%; height: 140px; object-fit: cover; border-radius: 6px;">
+        <span style="color: var(--cl-minor); font-weight: bold;">✓ After-repair proof attached</span>
+      `;
+    } else {
+      alert('Failed to upload resolution proof photo');
+      document.getElementById('res-photo-preview').textContent = 'Upload failed';
+    }
+  });
+
+  // Submit Resolution
+  document.getElementById('btn-submit-resolution').addEventListener('click', async () => {
+    const notes = document.getElementById('res-notes').value.trim();
+    if (!notes || notes.length < 10) return alert('Please provide detailed resolution notes (at least 10 chars)');
+    if (!selectedAfterEvidenceId) return alert('Mandatory after-repair photo is required to resolve incident');
+
+    const res = await fetch(`/api/v2/municipal/incidents/${incidentId}/resolve`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        resolution_notes: notes,
+        after_evidence_id: selectedAfterEvidenceId,
+        before_evidence_id: selectedBeforeEvidenceId
+      })
+    });
+
+    if (res.ok) {
+      alert('Incident resolved and citizen reports synchronized!');
+      loadIncidentDossier();
+    } else {
+      const err = await res.json();
+      alert('Error: ' + (err.error || 'Failed to record resolution'));
+    }
+  });
+
+  // Tabs
+  document.getElementById('tab-btn-notes').addEventListener('click', () => {
+    document.getElementById('tab-btn-notes').classList.add('active');
+    document.getElementById('tab-btn-updates').classList.remove('active');
+    document.getElementById('tab-content-notes').style.display = 'block';
+    document.getElementById('tab-content-updates').style.display = 'none';
+  });
+  document.getElementById('tab-btn-updates').addEventListener('click', () => {
+    document.getElementById('tab-btn-updates').classList.add('active');
+    document.getElementById('tab-btn-notes').classList.remove('active');
+    document.getElementById('tab-content-updates').style.display = 'block';
+    document.getElementById('tab-content-notes').style.display = 'none';
+  });
+
+  // Add Internal Note
+  document.getElementById('btn-add-note').addEventListener('click', async () => {
+    const content = document.getElementById('note-content').value.trim();
+    const aud = document.getElementById('note-audience').value;
+    if (!content) return;
+
+    const res = await fetch(`/api/v2/municipal/incidents/${incidentId}/notes`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: content, audience: aud })
+    });
+
+    if (res.ok) {
+      document.getElementById('note-content').value = '';
+      loadIncidentDossier();
+    } else {
+      alert('Failed to post note');
+    }
+  });
+
+  // Publish Citizen Update
+  document.getElementById('btn-add-update').addEventListener('click', async () => {
+    const lbl = document.getElementById('update-status-label').value.trim() || 'Work In Progress';
+    const msg = document.getElementById('update-message').value.trim();
+    if (!msg) return;
+
+    const res = await fetch(`/api/v2/municipal/incidents/${incidentId}/citizen-updates`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status_label: lbl, public_message: msg })
+    });
+
+    if (res.ok) {
+      document.getElementById('update-message').value = '';
+      loadIncidentDossier();
+    } else {
+      alert('Failed to publish citizen update');
+    }
+  });
+
+  window.addEventListener('DOMContentLoaded', () => {
+    loadDeptsAndOfficers();
+    loadIncidentDossier();
+  });
+</script>
+</body>
+</html>

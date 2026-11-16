@@ -27,7 +27,11 @@ class MatchDecisionService:
     """Manages official reviewer verification and state transitions for matching items."""
 
     def __init__(self, session_factory=None):
-        self._session_factory = session_factory or get_session_factory()
+        self._custom_session_factory = session_factory
+
+    @property
+    def _session_factory(self):
+        return self._custom_session_factory or get_session_factory()
 
     def get_review_queue(
         self,

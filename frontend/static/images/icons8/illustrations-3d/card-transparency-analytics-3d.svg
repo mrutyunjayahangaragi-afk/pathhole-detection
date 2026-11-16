@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%" fill="none">
+    <defs>
+      <filter id="c_sh4" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#1e293b" flood-opacity="0.18"/></filter>
+    </defs>
+    <g filter="url(#c_sh4)">
+      <!-- 3D Bar 1 (Short Left) -->
+      <path d="M 28 66 L 42 58 L 42 90 L 28 98 Z" fill="#60a5fa"/>
+      <path d="M 42 58 L 56 66 L 56 98 L 42 90 Z" fill="#2563eb"/>
+      <path d="M 42 50 L 56 58 L 42 66 L 28 58 Z" fill="#93c5fd"/>
+      
+      <!-- 3D Bar 2 (Medium Center) -->
+      <path d="M 52 50 L 66 42 L 66 84 L 52 92 Z" fill="#34d399"/>
+      <path d="M 66 42 L 80 50 L 80 92 L 66 84 Z" fill="#059669"/>
+      <path d="M 66 34 L 80 42 L 66 50 L 52 42 Z" fill="#6ee7b7"/>
+
+      <!-- 3D Bar 3 (Tall Right) -->
+      <path d="M 76 34 L 90 26 L 90 76 L 76 84 Z" fill="#fbbf24"/>
+      <path d="M 90 26 L 104 34 L 104 84 L 90 76 Z" fill="#d97706"/>
+      <path d="M 90 18 L 104 26 L 90 34 L 76 26 Z" fill="#fde68a"/>
+
+      <!-- Upward Trend Line Arrow -->
+      <polyline points="32 54 64 36 96 16" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+      <polygon points="98 12 98 22 88 18" fill="#ffffff"/>
+    </g>
+  </svg>

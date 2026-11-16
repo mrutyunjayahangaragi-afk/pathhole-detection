@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%" fill="none">
+    <defs>
+      <filter id="c_sh1" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#1e293b" flood-opacity="0.18"/></filter>
+      <linearGradient id="c_bg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#1d4ed8"/></linearGradient>
+    </defs>
+    <g filter="url(#c_sh1)">
+      <!-- Isometric Tablet -->
+      <path d="M 60 20 L 100 42 L 60 64 L 20 42 Z" fill="#ffffff"/>
+      <path d="M 20 42 L 60 64 L 60 96 L 20 74 Z" fill="#e2e8f0"/>
+      <path d="M 100 42 L 60 64 L 60 96 L 100 74 Z" fill="#cbd5e1"/>
+      <!-- Screen Top Surface -->
+      <path d="M 60 24 L 94 43 L 60 61 L 26 43 Z" fill="url(#c_bg1)"/>
+      <!-- User Avatar Circle -->
+      <ellipse cx="60" cy="38" rx="10" ry="6" fill="#ffffff" opacity="0.95"/>
+      <circle cx="60" cy="36" r="3" fill="#1d4ed8"/>
+      <!-- Mini Dashboard Progress Bars -->
+      <path d="M 42 48 L 78 48" stroke="#93c5fd" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M 46 54 L 74 54" stroke="#60a5fa" stroke-width="2" stroke-linecap="round"/>
+    </g>
+  </svg>

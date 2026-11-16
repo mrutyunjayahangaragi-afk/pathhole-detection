@@ -25,8 +25,8 @@
       // Navigation
       "nav.home": "Home Portal",
       "nav.citizen_dashboard": "Citizen Dashboard",
-      "nav.report": "Report Defect",
-      "nav.my_reports": "My Submissions",
+      "nav.report": "Report an Issue",
+      "nav.my_reports": "My Reports",
       "nav.map": "Public Map",
       "nav.dashboard": "Live Monitor",
       "nav.municipal": "Municipal Triage",
@@ -108,8 +108,8 @@
       // Navigation
       "nav.home": "ಮುಖಪುಟ",
       "nav.citizen_dashboard": "ನಾಗರಿಕರ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್",
-      "nav.report": "ದೋಷ ವರದಿ ಮಾಡಿ",
-      "nav.my_reports": "ನನ್ನ ಸಲ್ಲಿಕೆಗಳು",
+      "nav.report": "ಸಮಸ್ಯೆ ವರದಿ ಮಾಡಿ",
+      "nav.my_reports": "ನನ್ನ ವರದಿಗಳು",
       "nav.map": "ಸಾರ್ವಜನಿಕ ನಕ್ಷೆ",
       "nav.dashboard": "ಲೈವ್ ಮಾನಿಟರ್",
       "nav.municipal": "ಪಾಲಿಕೆ ತಪಾಸಣೆ",

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%" fill="none">
+    <defs>
+      <filter id="s_sh2" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#1e293b" flood-opacity="0.18"/></filter>
+      <linearGradient id="s_brain" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#6d28d9"/></linearGradient>
+    </defs>
+    <g filter="url(#s_sh2)">
+      <!-- 3D Neural Brain Node Cluster -->
+      <circle cx="50" cy="50" r="28" fill="url(#s_brain)"/>
+      <!-- Synaptic Connection Rays -->
+      <line x1="50" y1="32" x2="36" y2="46" stroke="#c4b5fd" stroke-width="2.5"/>
+      <line x1="50" y1="32" x2="64" y2="46" stroke="#c4b5fd" stroke-width="2.5"/>
+      <line x1="36" y1="46" x2="50" y2="64" stroke="#c4b5fd" stroke-width="2.5"/>
+      <line x1="64" y1="46" x2="50" y2="64" stroke="#c4b5fd" stroke-width="2.5"/>
+      <!-- Synapse Nodes -->
+      <circle cx="50" cy="32" r="5" fill="#ffffff"/>
+      <circle cx="36" cy="46" r="5" fill="#ffffff"/>
+      <circle cx="64" cy="46" r="5" fill="#ffffff"/>
+      <circle cx="50" cy="64" r="5" fill="#ffffff"/>
+      <!-- Multilingual Chip (ಕ) -->
+      <rect x="64" y="60" width="22" height="18" rx="4" fill="#f59e0b"/>
+      <text x="75" y="73" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle" font-family="sans-serif">ಕ</text>
+    </g>
+  </svg>

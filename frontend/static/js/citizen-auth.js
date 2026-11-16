@@ -84,29 +84,37 @@ const CivicAuth = (function () {
   function updateNavUserPill() {
     const user = getUser();
     const userContainers = document.querySelectorAll(".cl-nav-user-slot");
+    const prefix = window.location.pathname.includes('/municipal/') || window.location.pathname.includes('/dashboard/') ? '../' : './';
 
     userContainers.forEach((slot) => {
       if (user) {
+        const initial = (user.display_name || user.email || 'U').charAt(0).toUpperCase();
         slot.innerHTML = `
-          <div style="padding: 12px 14px; border-top: 1px solid var(--cl-border); display: flex; align-items: center; justify-content: space-between;">
-            <div style="overflow: hidden;">
-              <div style="font-weight: 600; font-size: 13px; color: var(--cl-text-primary); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
-                ${user.display_name}
+          <div style="padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden;">
+              <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--cl-primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0;">
+                ${initial}
               </div>
-              <div style="font-size: 11px; color: var(--cl-text-muted); text-transform: capitalize;">
-                ${user.role.replace("_", " ")}
+              <div style="min-width: 0; overflow: hidden;">
+                <div style="font-weight: 600; font-size: 12px; color: var(--cl-text-primary); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">
+                  ${user.display_name}
+                </div>
+                <div style="font-size: 10px; color: var(--cl-text-muted); text-transform: capitalize;">
+                  ${(user.role || 'citizen').replace("_", " ")}
+                </div>
               </div>
             </div>
-            <button onclick="CivicAuth.logout()" class="cl-btn cl-btn-secondary cl-btn-sm" style="padding: 2px 8px; font-size: 11px;" title="Log out">
-              Exit
+            <button onclick="CivicAuth.logout()" class="cl-btn cl-btn-secondary cl-btn-sm" style="padding: 3px 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;" title="Log out">
+              <img src="${prefix}static/images/icons8/navigation/logout.svg" alt="" width="12" height="12" aria-hidden="true">
+              <span>Exit</span>
             </button>
           </div>
         `;
       } else {
         const loginUrl = getLoginUrl();
         slot.innerHTML = `
-          <div style="padding: 12px 14px; border-top: 1px solid var(--cl-border);">
-            <a href="${loginUrl}" class="cl-btn cl-btn-primary cl-btn-sm" style="width: 100%;">
+          <div style="padding: 10px 14px;">
+            <a href="${loginUrl}" class="cl-btn cl-btn-primary cl-btn-sm" style="width: 100%; text-align: center; justify-content: center; font-size: 12px;">
               Sign In / Register
             </a>
           </div>

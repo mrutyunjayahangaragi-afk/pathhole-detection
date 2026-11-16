@@ -134,11 +134,13 @@
           </p>
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <a href="./departments.html" class="cl-btn cl-btn-secondary cl-btn-sm">
-            🏢 Departments &amp; Officers
+          <a href="./departments.html" class="cl-btn cl-btn-secondary cl-btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+            <img src="../static/images/icons8/navigation/departments.svg" alt="" width="14" height="14" aria-hidden="true">
+            <span>Departments &amp; Officers</span>
           </a>
-          <a href="./verification.html" class="cl-btn cl-btn-primary cl-btn-sm" id="btn-verification-queue">
-            🔍 Verification Queue (<span id="queue-count-badge">0</span>)
+          <a href="./verification.html" class="cl-btn cl-btn-primary cl-btn-sm" id="btn-verification-queue" style="display: inline-flex; align-items: center; gap: 6px;">
+            <img src="../static/images/icons8/navigation/verification-queue.svg" alt="" width="14" height="14" aria-hidden="true" style="filter: brightness(0) invert(1);">
+            <span>Verification Queue (<span id="queue-count-badge">0</span>)</span>
           </a>
         </div>
       </div>
@@ -195,7 +197,7 @@
           <option value="low">Low</option>
         </select>
         <input type="text" class="cl-input" id="search-input" placeholder="Search reference, title or defect..." style="max-width: 280px;">
-        <button class="cl-btn cl-btn-secondary cl-btn-sm" id="btn-refresh">🔄 Refresh</button>
+        <button class="cl-btn cl-btn-secondary cl-btn-sm" id="btn-refresh">Refresh</button>
       </div>
 
       <!-- Triage Incident Table / Responsive Cards -->

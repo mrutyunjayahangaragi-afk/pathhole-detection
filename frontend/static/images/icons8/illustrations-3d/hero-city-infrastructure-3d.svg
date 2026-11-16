@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 360" width="100%" height="100%" fill="none">
+  <defs>
+    <filter id="shadow3d" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#0f172a" flood-opacity="0.14" />
+    </filter>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    <linearGradient id="roadGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#334155" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+    <linearGradient id="bldgTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+    <linearGradient id="bldgLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1d4ed8" />
+      <stop offset="100%" stop-color="#1e40af" />
+    </linearGradient>
+    <linearGradient id="bldgRight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+    <linearGradient id="pinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+  </defs>
+
+  <!-- Ground Isometric Platform -->
+  <g filter="url(#shadow3d)">
+    <!-- Base Slab -->
+    <path d="M 230 40 L 410 144 L 230 248 L 50 144 Z" fill="url(#roadGrad)" />
+    <!-- Slab depth -->
+    <path d="M 50 144 L 230 248 L 230 264 L 50 160 Z" fill="#0f172a" opacity="0.9" />
+    <path d="M 410 144 L 230 248 L 230 264 L 410 160 Z" fill="#1e293b" opacity="0.95" />
+    
+    <!-- Road Grid & Markings -->
+    <!-- Lane Divider Lines -->
+    <path d="M 120 104 L 230 168 L 340 104" stroke="#ffffff" stroke-width="3" stroke-dasharray="10 8" opacity="0.6" fill="none" />
+    <path d="M 170 74 L 230 109 L 290 74" stroke="#f1f5f9" stroke-width="2" opacity="0.4" fill="none" />
+    <path d="M 140 196 L 230 248 L 320 196" stroke="#f1f5f9" stroke-width="2" opacity="0.4" fill="none" />
+  </g>
+
+  <!-- Pothole Hazard & AI Detection Grid -->
+  <g>
+    <!-- Detection Bounding Box / Mesh on road -->
+    <path d="M 190 178 L 240 150 L 270 166 L 220 194 Z" fill="rgba(245, 158, 11, 0.2)" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 3" />
+    <!-- Pothole Void -->
+    <ellipse cx="230" cy="172" rx="22" ry="12" fill="#090d16" />
+    <ellipse cx="231" cy="173" rx="18" ry="9" fill="#111827" />
+    <!-- AI Scan Laser Ring -->
+    <ellipse cx="230" cy="172" rx="34" ry="18" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5 3" opacity="0.8" />
+  </g>
+
+  <!-- Isometric Municipal Buildings (Background) -->
+  <!-- Building 1 (Tall Left) -->
+  <g filter="url(#shadow3d)">
+    <!-- Left face -->
+    <path d="M 100 80 L 140 104 L 140 170 L 100 146 Z" fill="url(#bldgLeft)" />
+    <!-- Right face -->
+    <path d="M 140 104 L 180 80 L 180 146 L 140 170 Z" fill="url(#bldgRight)" />
+    <!-- Top face -->
+    <path d="M 140 56 L 180 80 L 140 104 L 100 80 Z" fill="url(#bldgTop)" />
+    <!-- Windows -->
+    <line x1="110" y1="92" x2="130" y2="104" stroke="#93c5fd" stroke-width="2" opacity="0.8" />
+    <line x1="110" y1="108" x2="130" y2="120" stroke="#93c5fd" stroke-width="2" opacity="0.8" />
+    <line x1="110" y1="124" x2="130" y2="136" stroke="#93c5fd" stroke-width="2" opacity="0.8" />
+    <line x1="150" y1="104" x2="170" y2="92" stroke="#93c5fd" stroke-width="2" opacity="0.8" />
+    <line x1="150" y1="120" x2="170" y2="108" stroke="#93c5fd" stroke-width="2" opacity="0.8" />
+    <line x1="150" y1="136" x2="170" y2="124" stroke="#93c5fd" stroke-width="2" opacity="0.8" />
+  </g>
+
+  <!-- Building 2 (Civic Center Right) -->
+  <g filter="url(#shadow3d)">
+    <path d="M 280 60 L 320 84 L 320 140 L 280 116 Z" fill="url(#bldgLeft)" />
+    <path d="M 320 84 L 360 60 L 360 116 L 320 140 Z" fill="url(#bldgRight)" />
+    <path d="M 320 36 L 360 60 L 320 84 L 280 60 Z" fill="url(#bldgTop)" />
+    <!-- Windows -->
+    <circle cx="300" cy="88" r="3" fill="#ffffff" opacity="0.7" />
+    <circle cx="340" cy="88" r="3" fill="#ffffff" opacity="0.7" />
+  </g>
+
+  <!-- Glowing 3D GPS Location Pin Floating over Defect -->
+  <g filter="url(#glowBlue)">
+    <!-- Floating Pin Stem & Head -->
+    <path d="M 230 148 C 230 148 206 120 206 98 C 206 84 217 74 230 74 C 243 74 254 84 254 98 C 254 120 230 148 230 148 Z" fill="url(#pinGrad)" />
+    <!-- Pin Inner Core -->
+    <circle cx="230" cy="98" r="10" fill="#ffffff" />
+    <circle cx="230" cy="98" r="5" fill="#d97706" />
+    <!-- Pin Drop Shadow on Road -->
+    <ellipse cx="230" cy="156" rx="8" ry="4" fill="rgba(0,0,0,0.4)" />
+  </g>
+
+  <!-- AI Sensor Radar Wave Waves (Floating Spheres / Rings) -->
+  <g>
+    <!-- IoT Sensor Antenna on Building -->
+    <line x1="140" y1="56" x2="140" y2="34" stroke="#3b82f6" stroke-width="2.5" />
+    <circle cx="140" cy="32" r="5" fill="#60a5fa" filter="url(#glowBlue)" />
+    <!-- Signal Arcs -->
+    <path d="M 126 24 A 18 18 0 0 1 154 24" stroke="#38bdf8" stroke-width="2" fill="none" opacity="0.8" />
+    <path d="M 120 18 A 26 26 0 0 1 160 18" stroke="#38bdf8" stroke-width="2" fill="none" opacity="0.5" />
+    
+    <!-- AI Verified Badge Floating Right -->
+    <g transform="translate(320, 180)" filter="url(#shadow3d)">
+      <circle cx="24" cy="24" r="22" fill="url(#accentGrad)" />
+      <circle cx="24" cy="24" r="18" fill="#ffffff" />
+      <polyline points="16 24 22 30 32 18" stroke="#059669" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+    </g>
+  </g>
+</svg>

@@ -139,60 +139,81 @@ html {
   color: var(--cl-text-primary);
   background-color: var(--cl-bg-canvas);
   -webkit-text-size-adjust: 100%;
+  height: 100%;
 }
 
 body {
   margin: 0;
   padding: 0;
-  min-height: 100vh;
+  height: 100%;
   background-color: var(--cl-bg-canvas);
   color: var(--cl-text-primary);
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
+  overflow: hidden; /* Desktop viewports: sidebar and content manage their own scrolling */
 }
 
 /* App Layout Grid (Sidebar + Main) */
 .cl-app-wrapper {
   display: flex;
-  min-height: 100vh;
+  height: 100dvh;
   width: 100%;
+  overflow: hidden;
+  position: relative;
+  background-color: var(--cl-bg-canvas);
 }
 
 .cl-main-content {
-  flex: 1;
+  margin-left: 276px;
+  width: calc(100% - 276px);
+  height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   min-width: 0;
-  overflow-y: auto;
+  flex: 1 1 auto;
+  background-color: var(--cl-bg-canvas);
 }
 
 /* ─── Navigation System ─────────────────────────────────────────────── */
 
-/* Desktop Sidebar */
+/* Desktop Fixed Left Sidebar (276px permanently anchored) */
 .cl-sidebar {
-  width: var(--cl-sidebar-width);
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 276px;
+  height: 100dvh;
   background: var(--cl-bg-surface);
   border-right: 1px solid var(--cl-border);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  z-index: 1000;
   flex-shrink: 0;
-  z-index: 40;
+  box-shadow: var(--cl-shadow-sm);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* 1. Stationary Brand Header */
 .cl-sidebar-brand {
-  padding: var(--cl-space-4) var(--cl-space-5);
+  flex: 0 0 auto;
+  height: 68px;
+  padding: 0 var(--cl-space-5);
   display: flex;
   align-items: center;
   gap: var(--cl-space-3);
   border-bottom: 1px solid var(--cl-border);
   text-decoration: none;
   color: var(--cl-text-primary);
+  background: var(--cl-bg-surface);
 }
 
 .cl-brand-logo {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   background: var(--cl-primary);
   border-radius: var(--cl-radius-md);
   display: flex;
@@ -202,6 +223,7 @@ body {
   color: white;
   font-family: var(--cl-font-heading);
   letter-spacing: 0.05em;
+  box-shadow: 0 2px 4px rgba(29, 78, 216, 0.3);
 }
 
 .cl-brand-title {
@@ -212,56 +234,130 @@ body {
   margin: 0;
   text-transform: uppercase;
   color: var(--cl-text-primary);
+  line-height: 1.2;
 }
 
 .cl-brand-sub {
   font-size: var(--cl-text-xs);
-  color: var(--cl-text-secondary);
+  color: var(--cl-text-muted);
   letter-spacing: 0.05em;
   text-transform: uppercase;
   display: block;
+  font-weight: 500;
+}
+
+/* 2. Middle Scrollable Navigation List */
+.cl-sidebar-nav {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--cl-space-3) var(--cl-space-2);
+  scrollbar-width: thin;
+  scrollbar-color: var(--cl-border) transparent;
+}
+
+.cl-sidebar-nav::-webkit-scrollbar {
+  width: 4px;
+}
+.cl-sidebar-nav::-webkit-scrollbar-thumb {
+  background: var(--cl-border);
+  border-radius: 4px;
 }
 
 .cl-nav-list {
   list-style: none;
   margin: 0;
-  padding: var(--cl-space-4) var(--cl-space-2);
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: var(--cl-space-1);
-  flex: 1;
 }
 
 .cl-nav-link {
   display: flex;
   align-items: center;
   gap: var(--cl-space-3);
-  padding: var(--cl-space-3) var(--cl-space-3);
+  padding: 9px 12px;
   min-height: var(--cl-min-touch);
   border-radius: var(--cl-radius-md);
   color: var(--cl-text-secondary);
   text-decoration: none;
   font-size: var(--cl-text-sm);
   font-weight: 500;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  border-left: 3px solid transparent;
 }
 
 .cl-nav-link:hover {
-  background: var(--cl-bg-elevated);
+  background: var(--cl-bg-subtle);
   color: var(--cl-text-primary);
 }
 
 .cl-nav-link.active {
-  background: rgba(37, 99, 235, 0.15);
-  color: var(--cl-primary-light);
+  background: var(--cl-info-bg);
+  color: var(--cl-primary);
   font-weight: 600;
-  border-left: 3px solid var(--cl-primary);
+  border-left-color: var(--cl-primary);
 }
 
 .cl-nav-icon {
-  font-size: 1.1rem;
-  width: 22px;
-  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.cl-nav-icon img,
+.cl-nav-icon svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.cl-nav-link.active .cl-nav-icon svg {
+  stroke: var(--cl-primary);
+}
+
+/* 3. Stationary Bottom Control Section */
+.cl-sidebar-footer {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--cl-border);
+  background: var(--cl-bg-surface);
+  display: flex;
+  flex-direction: column;
+}
+
+.cl-nav-user-slot {
+  flex: 0 0 auto;
+}
+
+.cl-lang-tray {
+  padding: 10px 16px;
+  border-top: 1px solid var(--cl-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cl-sidebar-version {
+  padding: 8px 16px;
+  border-top: 1px solid var(--cl-border);
+  font-size: 11px;
+  color: var(--cl-text-muted);
+  line-height: 1.4;
+  background: var(--cl-bg-subtle);
+}
+
+.cl-sidebar-version a {
+  color: var(--cl-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+.cl-sidebar-version a:hover {
+  text-decoration: underline;
 }
 
 /* Mobile Header Bar & Hamburger */
@@ -298,9 +394,9 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(15, 23, 42, 0.65);
   backdrop-filter: blur(2px);
-  z-index: 99;
+  z-index: 1050;
 }
 
 .cl-drawer-overlay.open {
@@ -309,6 +405,20 @@ body {
 
 /* Responsive Navigation Breakpoints */
 @media (max-width: 1023px) {
+  html, body {
+    height: auto;
+    min-height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .cl-app-wrapper {
+    display: block;
+    height: auto;
+    min-height: 100dvh;
+    width: 100%;
+  }
+
   .cl-mobile-header {
     display: flex;
   }
@@ -318,14 +428,24 @@ body {
     top: 0;
     left: 0;
     bottom: 0;
+    width: 276px;
+    height: 100dvh;
     transform: translateX(-100%);
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 100;
+    z-index: 1100;
     box-shadow: var(--cl-shadow-lg);
   }
 
   .cl-sidebar.drawer-open {
     transform: translateX(0);
+  }
+
+  .cl-main-content {
+    margin-left: 0;
+    width: 100%;
+    height: auto;
+    min-height: 100dvh;
+    overflow-y: visible;
   }
 }
 
@@ -619,6 +739,13 @@ body {
 }
 
 /* Metric Cards */
+.cl-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--cl-space-4);
+  width: 100%;
+}
+
 .cl-metric-card {
   background: var(--cl-bg-surface);
   border: 1px solid var(--cl-border);
@@ -651,5 +778,171 @@ body {
   font-size: 11px;
   color: var(--cl-text-secondary);
   font-family: var(--cl-font-mono);
+}
+
+/* ─── Hero Section (Two-Column Responsive with Icons8 3D Visual) ───── */
+.cl-hero-section {
+  padding: var(--cl-space-8) var(--cl-space-6);
+  background: linear-gradient(135deg, var(--cl-bg-surface) 0%, var(--cl-bg-canvas) 100%);
+  border-bottom: 1px solid var(--cl-border);
+}
+
+.cl-hero-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 0.75fr;
+  align-items: center;
+  gap: var(--cl-space-8);
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.cl-hero-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.cl-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: var(--cl-info-bg);
+  border: 1px solid var(--cl-info-border);
+  border-radius: var(--cl-radius-full);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cl-primary);
+  margin-bottom: var(--cl-space-3);
+  width: fit-content;
+}
+
+.cl-hero-title {
+  font-family: var(--cl-font-heading);
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  font-weight: 700;
+  line-height: 1.1;
+  margin: 0 0 var(--cl-space-3) 0;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.cl-hero-title .hero-tag {
+  color: var(--cl-warning);
+}
+
+.cl-hero-lead {
+  font-size: clamp(0.95rem, 2vw, 1.125rem);
+  color: var(--cl-text-secondary);
+  max-width: 680px;
+  margin: 0 0 var(--cl-space-6) 0;
+  line-height: 1.6;
+}
+
+.cl-hero-cta-group {
+  display: flex;
+  gap: var(--cl-space-3);
+  flex-wrap: wrap;
+}
+
+.cl-hero-visual-col {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.cl-hero-visual-col img,
+.cl-hero-visual-col svg {
+  max-width: 100%;
+  height: auto;
+  max-height: 320px;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 24px rgba(15, 23, 42, 0.08));
+}
+
+@media (max-width: 1023px) {
+  .cl-hero-grid {
+    grid-template-columns: 1fr;
+    gap: var(--cl-space-6);
+  }
+  .cl-hero-visual-col {
+    order: -1;
+    max-width: 260px;
+    margin: 0 auto;
+  }
+}
+
+/* ─── Standardized Module Cards ─────────────────────────────────────── */
+.cl-modules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--cl-space-5);
+  margin-top: var(--cl-space-6);
+}
+
+.cl-module-card {
+  background: var(--cl-bg-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: var(--cl-radius-lg);
+  padding: var(--cl-space-5);
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  min-height: 250px;
+}
+
+.cl-module-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--cl-primary);
+  box-shadow: var(--cl-shadow-md);
+}
+
+.cl-module-art {
+  width: 56px;
+  height: 56px;
+  margin-bottom: var(--cl-space-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.cl-module-card:hover .cl-module-art {
+  transform: scale(1.08);
+}
+
+.cl-module-art img,
+.cl-module-art svg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.cl-module-title {
+  font-family: var(--cl-font-heading);
+  font-size: var(--cl-text-xl);
+  font-weight: 600;
+  margin: 0 0 var(--cl-space-2) 0;
+  text-transform: uppercase;
+  color: var(--cl-text-primary);
+}
+
+.cl-module-desc {
+  font-size: var(--cl-text-sm);
+  color: var(--cl-text-secondary);
+  margin: 0 0 var(--cl-space-4) 0;
+  flex: 1;
+  line-height: 1.5;
+}
+
+.cl-module-action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cl-space-2);
+  font-size: var(--cl-text-sm);
+  font-weight: 600;
+  color: var(--cl-primary);
+  margin-top: auto;
 }
 

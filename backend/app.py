@@ -276,6 +276,11 @@ def create_app(config: Optional[Config] = None) -> Flask:
         from flask import send_from_directory
         return send_from_directory(os.path.join(_parent, "dashboard"), filename)
 
+    @app.route("/frontend/dashboard/<path:filename>", methods=["GET"])
+    def serve_frontend_dashboard_files(filename):
+        from flask import send_from_directory
+        return send_from_directory(os.path.join(_parent, "dashboard"), filename)
+
     @app.route("/frontend/<path:filename>", methods=["GET"])
     def serve_frontend_files(filename):
         from flask import send_from_directory

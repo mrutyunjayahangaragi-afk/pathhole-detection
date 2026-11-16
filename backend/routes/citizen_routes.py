@@ -7,11 +7,13 @@ report portfolio querying, and private evidence streaming.
 
 from flask import Blueprint, request, jsonify, g, send_file
 from backend.services.citizen_report_service import CitizenReportService
+from backend.services.multilingual_search_service import MultilingualSearchService
 from backend.auth import login_required
 from backend.errors import ValidationError
 
 citizen_bp = Blueprint("citizen_bp", __name__, url_prefix="/api/v1")
 report_service = CitizenReportService()
+search_service = MultilingualSearchService()
 
 
 @citizen_bp.route("/reports", methods=["POST"])
@@ -104,6 +106,40 @@ def list_reports():
         status=status,
         category=category,
         search=search,
+        page=page,
+        per_page=per_page,
+    )
+
+    return jsonify({
+        "status": "success",
+        **results,
+    }), 200
+
+
+@citizen_bp.route("/reports/search", methods=["GET"])
+@login_required
+def search_reports():
+    """
+    Multilingual search across reports matching Kannada, English, or translated text.
+    Scoped by citizen ownership or municipal officer role.
+    """
+    query = request.args.get("q") or request.args.get("query")
+    category = request.args.get("category")
+    status = request.args.get("status")
+    language = request.args.get("language")
+
+    try:
+        page = int(request.args.get("page", 1))
+        per_page = int(request.args.get("per_page", 20))
+    except ValueError:
+        page, per_page = 1, 20
+
+    results = search_service.search_reports(
+        query=query,
+        category=category,
+        status=status,
+        language=language,
+        requesting_user=g.current_user,
         page=page,
         per_page=per_page,
     )

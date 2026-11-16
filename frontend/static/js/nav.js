@@ -2,7 +2,7 @@
  * CivicLens Navigation Component
  * ==============================
  * Manages responsive sidebar on desktop and slide-in drawer on mobile.
- * Works seamlessly whether served over HTTP or opened directly from filesystem.
+ * Integrates application-wide multilingual language switcher (English / ಕನ್ನಡ).
  */
 
 (function () {
@@ -19,14 +19,14 @@
     const currentPath = window.location.pathname;
 
     const navItems = [
-      { key: 'home', label: 'Home Portal', icon: '🏛️', href: prefix + 'index.html' },
-      { key: 'citizen_dashboard', label: 'Citizen Dashboard', icon: '👤', href: prefix + 'citizen-dashboard.html' },
-      { key: 'report', label: 'Report Defect', icon: '📢', href: prefix + 'citizen-report.html' },
-      { key: 'my_reports', label: 'My Submissions', icon: '📋', href: prefix + 'my-reports.html' },
-      { key: 'map', label: 'Public Map', icon: '🗺️', href: prefix + 'public-map.html' },
-      { key: 'dashboard', label: 'Live Monitor', icon: '⚡', href: prefix + 'dashboard/dashboard.html' },
-      { key: 'municipal', label: 'Municipal Triage', icon: '🛠️', href: prefix + 'municipal/dashboard.html' },
-      { key: 'verification', label: 'Verification Queue', icon: '🔍', href: prefix + 'municipal/verification.html' },
+      { key: 'home', i18nKey: 'nav.home', label: 'Home Portal', icon: '🏛️', href: prefix + 'index.html' },
+      { key: 'citizen_dashboard', i18nKey: 'nav.citizen_dashboard', label: 'Citizen Dashboard', icon: '👤', href: prefix + 'citizen-dashboard.html' },
+      { key: 'report', i18nKey: 'nav.report', label: 'Report Defect', icon: '📢', href: prefix + 'citizen-report.html' },
+      { key: 'my_reports', i18nKey: 'nav.my_reports', label: 'My Submissions', icon: '📋', href: prefix + 'my-reports.html' },
+      { key: 'map', i18nKey: 'nav.map', label: 'Public Map', icon: '🗺️', href: prefix + 'public-map.html' },
+      { key: 'dashboard', i18nKey: 'nav.dashboard', label: 'Live Monitor', icon: '⚡', href: prefix + 'dashboard/dashboard.html' },
+      { key: 'municipal', i18nKey: 'nav.municipal', label: 'Municipal Triage', icon: '🛠️', href: prefix + 'municipal/dashboard.html' },
+      { key: 'verification', i18nKey: 'nav.verification', label: 'Verification Queue', icon: '🔍', href: prefix + 'municipal/verification.html' },
     ];
 
     // Build sidebar markup if container exists
@@ -36,11 +36,12 @@
 
       const navLinksHtml = navItems.map(item => {
         const isActive = activeKey === item.key || currentPath.endsWith(item.href.replace('./', '').replace('../', ''));
+        const labelText = (window.CivicLensI18n && window.CivicLensI18n.t(item.i18nKey)) || item.label;
         return `
           <li>
             <a href="${item.href}" class="cl-nav-link ${isActive ? 'active' : ''}" data-nav-key="${item.key}">
               <span class="cl-nav-icon">${item.icon}</span>
-              <span>${item.label}</span>
+              <span data-i18n="${item.i18nKey}">${labelText}</span>
             </a>
           </li>
         `;
@@ -60,12 +61,61 @@
             ${navLinksHtml}
           </ul>
           <div class="cl-nav-user-slot"></div>
-          <div style="padding: 12px 16px; border-top: 1px solid var(--cl-border); font-size: 11px; color: var(--cl-text-muted);">
+          
+          <!-- Multilingual Language Selector -->
+          <div class="cl-lang-tray" style="padding: 10px 16px; border-top: 1px solid var(--cl-border); display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 11px; color: var(--cl-text-muted);" data-i18n="nav.language">🌐 Language / ಭಾಷೆ</span>
+            <div style="display: flex; gap: 4px;">
+              <button type="button" class="cl-lang-pill" data-lang="en" aria-label="English">EN</button>
+              <button type="button" class="cl-lang-pill" data-lang="kn" aria-label="ಕನ್ನಡ">ಕನ್ನಡ</button>
+            </div>
+          </div>
+
+          <div style="padding: 10px 16px; border-top: 1px solid var(--cl-border); font-size: 11px; color: var(--cl-text-muted);">
             <div>CivicLens v2.0</div>
             <div>BBMP & Smart Cities</div>
           </div>
         </aside>
       `;
+
+      // Wire language pills
+      function refreshPillStates() {
+        const current = (window.CivicLensI18n && window.CivicLensI18n.getLanguage()) || 'en';
+        document.querySelectorAll('.cl-lang-pill').forEach(pill => {
+          const l = pill.getAttribute('data-lang');
+          if (l === current) {
+            pill.style.background = 'var(--cl-primary)';
+            pill.style.color = '#ffffff';
+            pill.style.fontWeight = 'bold';
+            pill.style.borderColor = 'var(--cl-primary)';
+          } else {
+            pill.style.background = 'transparent';
+            pill.style.color = 'var(--cl-text-secondary)';
+            pill.style.fontWeight = 'normal';
+            pill.style.borderColor = 'var(--cl-border)';
+          }
+        });
+      }
+
+      document.querySelectorAll('.cl-lang-pill').forEach(pill => {
+        pill.style.border = '1px solid var(--cl-border)';
+        pill.style.borderRadius = '4px';
+        pill.style.padding = '4px 8px';
+        pill.style.fontSize = '11px';
+        pill.style.cursor = 'pointer';
+        pill.style.transition = 'all 0.15s ease';
+
+        pill.addEventListener('click', function () {
+          const targetLang = this.getAttribute('data-lang');
+          if (window.CivicLensI18n) {
+            window.CivicLensI18n.setLanguage(targetLang);
+            refreshPillStates();
+          }
+        });
+      });
+
+      refreshPillStates();
+      window.addEventListener('civiclens-language-changed', refreshPillStates);
 
       // Hamburger button wiring
       const hamburger = document.getElementById('cl-hamburger-toggle');

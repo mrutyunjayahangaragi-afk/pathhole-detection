@@ -343,7 +343,9 @@
             <label class="cl-label" for="description-input" id="lbl-desc">
               6. Description &amp; Safety Hazards
             </label>
-            <textarea id="description-input" class="cl-textarea" placeholder="Describe the size, depth, danger to two-wheelers, pedestrians, or water accumulation..." rows="3"></textarea>
+            <textarea id="description-input" class="cl-textarea" placeholder="Describe the size, depth, danger to two-wheelers, pedestrians, or water accumulation... (English or ಕನ್ನಡ)" rows="3"></textarea>
+            <div id="lang-detection-badge" style="display: none; margin-top: 6px; font-size: 11px; padding: 4px 8px; border-radius: 4px; background: rgba(59, 130, 246, 0.1); border: 1px solid var(--cl-border); color: var(--cl-primary-light);"></div>
+            <div id="ai-suggestion-badge" style="display: none; margin-top: 6px; font-size: 11px; padding: 4px 8px; border-radius: 4px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; cursor: pointer;"></div>
           </div>
 
           <!-- Submit Button -->
@@ -358,6 +360,7 @@
 
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="./static/js/i18n.js"></script>
 <script src="./static/js/nav.js"></script>
 <script src="./static/js/citizen-auth.js"></script>
 <script>
@@ -410,6 +413,9 @@ function generateUUID() {
 
 function setLanguage(lang) {
   currentLang = lang;
+  if (window.CivicLensI18n) {
+    window.CivicLensI18n.setLanguage(lang);
+  }
   document.getElementById('btn-en').classList.toggle('active', lang === 'en');
   document.getElementById('btn-kn').classList.toggle('active', lang === 'kn');
 
@@ -460,11 +466,32 @@ const inputLon = document.getElementById('input-lon');
 inputLat.value = defaultLat.toFixed(6);
 inputLon.value = defaultLon.toFixed(6);
 
+let reverseGeocodeTimer = null;
 function updateLocation(lat, lon, manual = true) {
   inputLat.value = Number(lat).toFixed(6);
   inputLon.value = Number(lon).toFixed(6);
   isManualLocation = manual;
   pinMarker.setLatLng([lat, lon]);
+
+  clearTimeout(reverseGeocodeTimer);
+  reverseGeocodeTimer = setTimeout(() => {
+    fetch('/api/v1/location/reverse-geocode', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ latitude: lat, longitude: lon, language: currentLang })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.location && data.location.road_name) {
+        const addrInput = document.getElementById('input-address');
+        if (!addrInput.value.trim()) {
+          const loc = data.location;
+          addrInput.value = loc.road_name + (loc.locality ? ', ' + loc.locality : '');
+        }
+      }
+    })
+    .catch(() => {});
+  }, 400);
 }
 
 pinMarker.on('dragend', function (e) {
@@ -594,6 +621,75 @@ function renderPreviews() {
   });
 }
 
+// Live Description Debounce: Language Detection & AI Assistance
+let descTimer = null;
+const descInput = document.getElementById('description-input');
+const langBadge = document.getElementById('lang-detection-badge');
+const aiSuggestBadge = document.getElementById('ai-suggestion-badge');
+
+if (descInput) {
+  descInput.addEventListener('input', () => {
+    clearTimeout(descTimer);
+    const text = descInput.value.trim();
+    if (text.length < 5) {
+      if (langBadge) langBadge.style.display = 'none';
+      if (aiSuggestBadge) aiSuggestBadge.style.display = 'none';
+      return;
+    }
+
+    descTimer = setTimeout(() => {
+      // 1. Language detection
+      fetch('/api/v1/language/detect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data && data.detection && langBadge) {
+          const d = data.detection;
+          langBadge.style.display = 'block';
+          if (d.detected_language === 'kn') {
+            langBadge.innerHTML = '🌐 <strong>Detected Language:</strong> ಕನ್ನಡ (Kannada) • Confidence: ' + Math.round(d.confidence * 100) + '%';
+          } else if (d.detected_language === 'kn-en-mixed') {
+            langBadge.innerHTML = '🌐 <strong>Detected Language:</strong> Mixed (Kannada–English code-switch)';
+          } else {
+            langBadge.innerHTML = '🌐 <strong>Detected Language:</strong> English • Confidence: ' + Math.round(d.confidence * 100) + '%';
+          }
+        }
+      })
+      .catch(() => {});
+
+      // 2. AI Category Suggestion (non-blocking)
+      const token = localStorage.getItem('civiclens_token');
+      if (token) {
+        fetch('/api/v1/language/assist', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ text: text, language: currentLang })
+        })
+        .then(r => r.json())
+        .then(data => {
+          if (data && data.suggested_category && aiSuggestBadge) {
+            aiSuggestBadge.style.display = 'block';
+            const catName = data.suggested_category.replace('_', ' ').toUpperCase();
+            aiSuggestBadge.innerHTML = '💡 <strong>AI Category Suggestion:</strong> ' + catName + ' (Click to apply)';
+            aiSuggestBadge.onclick = () => {
+              const catSelect = document.getElementById('category-select');
+              if (catSelect) catSelect.value = data.suggested_category;
+              aiSuggestBadge.innerHTML = '✅ Applied Category: ' + catName;
+            };
+          }
+        })
+        .catch(() => {});
+      }
+    }, 400);
+  });
+}
+
 // Form Submission with Idempotency and Dual Location
 const reportForm = document.getElementById('citizen-report-form');
 const successBanner = document.getElementById('success-banner');
@@ -646,6 +742,7 @@ reportForm.addEventListener('submit', async function (e) {
     if (address) {
       formData.append('address', address);
     }
+    formData.append('original_language', currentLang);
     formData.append('idempotency_key', idempotencyKey);
 
     // Append selected evidence files

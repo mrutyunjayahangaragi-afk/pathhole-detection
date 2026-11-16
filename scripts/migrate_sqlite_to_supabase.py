@@ -39,7 +39,8 @@ from backend.db.models import (
     ReportEvidence, DetectionRun, Detection, DetectionEmbedding,
     IncidentObservation, MatchEvaluation, MatchCandidate,
     MatchDecision, IncidentConsolidation, IncidentStatusHistory,
-    Department, IncidentAssignment, AuditLog
+    Department, IncidentAssignment, AuditLog,
+    ReportTranslation, AIDescriptionAssistance, LocationRecord
 )
 
 # Ordered model sequence respecting Foreign Key dependencies
@@ -50,6 +51,9 @@ MIGRATION_SEQUENCE = [
     ("evidence_assets_v2", EvidenceAsset),
     ("citizen_reports_v2", CitizenReport),
     ("report_items", ReportItem),
+    ("report_translations", ReportTranslation),
+    ("ai_description_assistance", AIDescriptionAssistance),
+    ("location_records", LocationRecord),
     ("report_evidence", ReportEvidence),
     ("detection_runs", DetectionRun),
     ("detections_v3", Detection),

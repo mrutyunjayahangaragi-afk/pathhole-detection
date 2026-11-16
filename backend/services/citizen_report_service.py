@@ -10,6 +10,7 @@ import os
 import re
 import uuid
 import hashlib
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
@@ -18,8 +19,13 @@ from backend.db.engine import get_session_factory
 from backend.db.session import transactional_session
 from backend.db.models import (
     CitizenReport, ReportItem, EvidenceAsset, ReportEvidence,
-    IncidentObservation, User, DetectionRun, Detection
+    IncidentObservation, User, DetectionRun, Detection,
+    ReportTranslation, AIDescriptionAssistance, LocationRecord
 )
+from backend.services.language_detection_service import LanguageDetectionService
+from backend.services.translation_service import TranslationService
+from backend.services.description_assistance_service import DescriptionAssistanceService
+from backend.services.location_intelligence_service import LocationIntelligenceService
 from backend.errors import ValidationError, NotFoundError, CivicLensError
 
 ALLOWED_CATEGORIES = {
@@ -129,7 +135,13 @@ class CitizenReportService:
                 if existing:
                     return self._serialize_report(existing, db)
 
-            # 3. Create Report Record
+            # 3. Language Identification & Report Record
+            lang_detect = LanguageDetectionService.detect_language(f"{title_clean} {desc_clean}")
+            det_lang = lang_detect.detected_language
+            det_conf = lang_detect.confidence
+            det_status = lang_detect.status
+            det_model = lang_detect.model_name
+
             report_ref = self._generate_report_reference()
             report = CitizenReport(
                 id=str(uuid.uuid4()),
@@ -144,6 +156,10 @@ class CitizenReportService:
                 is_manual_location=bool(is_manual_location),
                 address=address.strip() if address else None,
                 original_language=lang_clean,
+                detected_language=det_lang,
+                language_detection_confidence=det_conf,
+                language_detection_model=det_model,
+                language_detection_status=det_status,
                 submission_channel="web",
                 status="submitted",
                 idempotency_key=idempotency_key if idempotency_key else None,
@@ -256,6 +272,65 @@ class CitizenReportService:
                 except Exception:
                     # Robustness: detection errors must never fail report creation
                     pass
+
+            # 7. Location Intelligence & Structured Address Enrichment
+            try:
+                loc_service = LocationIntelligenceService(session_factory=self._session_factory)
+                loc_source = "manual_pin" if is_manual_location else "device_gps"
+                loc_rec = loc_service.process_and_persist_location(
+                    report_id=report.id,
+                    lat=lat,
+                    lon=lon,
+                    location_accuracy_m=location_accuracy_m,
+                    location_source=loc_source,
+                    language=lang_clean,
+                )
+                if not report.address and loc_rec and loc_rec.normalized_address:
+                    report.address = loc_rec.normalized_address
+                    db.commit()
+            except Exception:
+                pass
+
+            # 8. Multilingual Translation (Non-Destructive)
+            try:
+                trans_service = TranslationService(session_factory=self._session_factory)
+                if det_lang in ("kn", "kn-en-mixed") or lang_clean == "kn":
+                    t_res = trans_service.translate_text(
+                        desc_clean,
+                        source_lang=det_lang if det_lang in ("kn", "kn-en-mixed") else "kn",
+                        target_lang="en",
+                        report_id=report.id,
+                        report_item_id=item.id,
+                        persist=True,
+                    )
+                    if t_res and t_res.translated_text:
+                        report.translated_description = t_res.translated_text
+                        db.commit()
+                elif lang_clean == "en":
+                    trans_service.translate_text(
+                        desc_clean,
+                        source_lang="en",
+                        target_lang="kn",
+                        report_id=report.id,
+                        report_item_id=item.id,
+                        persist=True,
+                    )
+            except Exception:
+                pass
+
+            # 9. AI Description Assistance (Summary & Category Suggestion)
+            try:
+                assist_service = DescriptionAssistanceService(session_factory=self._session_factory)
+                assist_service.process_and_persist_assistance(
+                    report_id=report.id,
+                    text=desc_clean,
+                    language=det_lang if det_lang in ("kn", "en") else "en",
+                    report_item_id=item.id,
+                    has_location=bool(lat and lon),
+                    has_evidence=bool(evidence_files and len(evidence_files) > 0),
+                )
+            except Exception:
+                pass
 
             return self._serialize_report(report, db)
 
@@ -401,6 +476,10 @@ class CitizenReportService:
             "is_manual_location": r.is_manual_location,
             "address": r.address,
             "original_language": r.original_language,
+            "detected_language": r.detected_language,
+            "language_detection_confidence": r.language_detection_confidence,
+            "language_detection_status": r.language_detection_status,
+            "translated_description": r.translated_description,
             "submitted_at": r.submitted_at.isoformat() if r.submitted_at else None,
             "created_at": r.created_at.isoformat() if r.created_at else None,
             "items": [
@@ -413,6 +492,61 @@ class CitizenReportService:
                 for item in items
             ],
         }
+
+        # Query translations
+        translations = db.query(ReportTranslation).filter_by(report_id=r.id).all()
+        data["translations"] = [
+            {
+                "id": t.id,
+                "source_language": t.source_language,
+                "target_language": t.target_language,
+                "translated_text": t.translated_text,
+                "original_text": t.original_text,
+                "provider_name": t.provider_name,
+                "model_name": t.model_name,
+                "translation_status": t.translation_status,
+                "review_status": t.review_status,
+            }
+            for t in translations
+        ]
+
+        # Query description assistance
+        latest_assist = (
+            db.query(AIDescriptionAssistance)
+            .filter_by(report_id=r.id)
+            .order_by(AIDescriptionAssistance.created_at.desc())
+            .first()
+        )
+        if latest_assist:
+            data["description_assistance"] = {
+                "summary": latest_assist.summary,
+                "suggested_category": latest_assist.suggested_category,
+                "missing_info_flags": json.loads(latest_assist.missing_info_flags) if latest_assist.missing_info_flags else [],
+                "output_language": latest_assist.output_language,
+                "provider_name": latest_assist.provider_name,
+            }
+        else:
+            data["description_assistance"] = None
+
+        # Query structured location record
+        loc_record = db.query(LocationRecord).filter_by(report_id=r.id).first()
+        if loc_record:
+            data["location_record"] = {
+                "road_name": loc_record.road_name,
+                "road_type": loc_record.road_type,
+                "locality": loc_record.locality,
+                "suburb": loc_record.suburb,
+                "city": loc_record.city,
+                "district": loc_record.district,
+                "state": loc_record.state,
+                "postal_code": loc_record.postal_code,
+                "country": loc_record.country,
+                "normalized_address": loc_record.normalized_address,
+                "location_source": loc_record.location_source,
+                "geocoding_status": loc_record.geocoding_status,
+            }
+        else:
+            data["location_record"] = None
 
         # Query evidence count & details
         evidence_links = db.query(ReportEvidence).filter_by(report_id=r.id).all()

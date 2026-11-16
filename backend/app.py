@@ -32,6 +32,8 @@ from backend.routes.auth_routes import auth_bp
 from backend.routes.citizen_routes import citizen_bp
 from backend.routes.detection_routes import detection_bp
 from backend.routes.matching_routes import matching_bp
+from backend.routes.language_routes import language_bp
+from backend.routes.location_routes import location_bp
 
 
 def create_app(config: Optional[Config] = None) -> Flask:
@@ -78,6 +80,8 @@ def create_app(config: Optional[Config] = None) -> Flask:
     app.register_blueprint(citizen_bp)
     app.register_blueprint(detection_bp)
     app.register_blueprint(matching_bp)
+    app.register_blueprint(language_bp)
+    app.register_blueprint(location_bp)
 
     # Instantiate services
     location_service = LocationService(cfg)

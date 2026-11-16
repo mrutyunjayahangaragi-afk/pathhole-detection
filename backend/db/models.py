@@ -131,6 +131,10 @@ class CitizenReport(Base):
     address = Column(Text, nullable=True)
     original_language = Column(String(5), nullable=False, default="en")
     translated_description = Column(Text, nullable=True)
+    detected_language = Column(String(10), nullable=True)
+    language_detection_confidence = Column(Float, nullable=True)
+    language_detection_model = Column(String(50), nullable=True)
+    language_detection_status = Column(String(30), nullable=False, default="pending")
     submission_channel = Column(String(30), nullable=False, default="web")
     status = Column(String(20), nullable=False, default="submitted")
 
@@ -142,6 +146,9 @@ class CitizenReport(Base):
     citizen = relationship("User", back_populates="reports")
     items = relationship("ReportItem", back_populates="report", cascade="all, delete-orphan")
     evidence_links = relationship("ReportEvidence", back_populates="report", cascade="all, delete-orphan")
+    translations = relationship("ReportTranslation", back_populates="report", cascade="all, delete-orphan")
+    description_assistance = relationship("AIDescriptionAssistance", back_populates="report", cascade="all, delete-orphan")
+    location_record = relationship("LocationRecord", back_populates="report", uselist=False, cascade="all, delete-orphan")
 
     __table_args__ = (
         CheckConstraint(
@@ -577,6 +584,109 @@ class IncidentAssignment(Base):
         ),
         Index("ix_assignments_incident", "incident_id"),
         Index("ix_assignments_dept", "department_id"),
+    )
+
+
+
+# ─── Multilingual Translations ───────────────────────────────────────
+
+class ReportTranslation(Base):
+    __tablename__ = "report_translations"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    report_id = Column(String(36), ForeignKey("citizen_reports_v2.id", ondelete="CASCADE"), nullable=False)
+    report_item_id = Column(String(36), ForeignKey("report_items.id", ondelete="SET NULL"), nullable=True)
+    source_language = Column(String(10), nullable=False)
+    target_language = Column(String(10), nullable=False)
+    original_text = Column(Text, nullable=False)
+    translated_text = Column(Text, nullable=True)
+    provider_name = Column(String(50), nullable=False, default="civic_rule_dict")
+    model_name = Column(String(100), nullable=True)
+    model_version = Column(String(50), nullable=True)
+    translation_status = Column(String(30), nullable=False, default="COMPLETED")
+    review_status = Column(String(30), nullable=False, default="unreviewed")
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow)
+
+    # Relationships
+    report = relationship("CitizenReport", back_populates="translations")
+
+    __table_args__ = (
+        CheckConstraint(
+            "translation_status IN ('NOT_REQUESTED','PENDING','PROCESSING','COMPLETED','FAILED','NEEDS_REVIEW')",
+            name="ck_trans_status"
+        ),
+        CheckConstraint(
+            "review_status IN ('unreviewed','verified','corrected')",
+            name="ck_trans_review"
+        ),
+        Index("ix_trans_report", "report_id"),
+        Index("ix_trans_status", "translation_status"),
+    )
+
+
+# ─── AI Description Assistance ────────────────────────────────────────
+
+class AIDescriptionAssistance(Base):
+    __tablename__ = "ai_description_assistance"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    report_id = Column(String(36), ForeignKey("citizen_reports_v2.id", ondelete="CASCADE"), nullable=False)
+    report_item_id = Column(String(36), ForeignKey("report_items.id", ondelete="SET NULL"), nullable=True)
+    summary = Column(Text, nullable=True)
+    suggested_category = Column(String(50), nullable=True)
+    missing_info_flags = Column(Text, nullable=True)  # JSON-encoded array
+    output_language = Column(String(10), nullable=False, default="en")
+    provider_name = Column(String(50), nullable=False, default="civic_rule_assist")
+    model_name = Column(String(100), nullable=True)
+    model_version = Column(String(50), nullable=True)
+    processing_status = Column(String(30), nullable=False, default="completed")
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    # Relationships
+    report = relationship("CitizenReport", back_populates="description_assistance")
+
+    __table_args__ = (
+        Index("ix_ai_assist_report", "report_id"),
+    )
+
+
+# ─── Location Records & Provenance ────────────────────────────────────
+
+class LocationRecord(Base):
+    __tablename__ = "location_records"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    report_id = Column(String(36), ForeignKey("citizen_reports_v2.id", ondelete="CASCADE"), nullable=False, unique=True)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    location_accuracy_m = Column(Float, nullable=True)
+    location_source = Column(String(30), nullable=False, default="manual_pin")
+    road_name = Column(String(255), nullable=True)
+    road_type = Column(String(50), nullable=True)
+    locality = Column(String(255), nullable=True)
+    suburb = Column(String(255), nullable=True)
+    city = Column(String(255), nullable=True)
+    district = Column(String(255), nullable=True)
+    state = Column(String(255), nullable=True)
+    postal_code = Column(String(20), nullable=True)
+    country = Column(String(100), nullable=True)
+    normalized_address = Column(Text, nullable=True)
+    raw_geocoding_json = Column(Text, nullable=True)
+    geocoding_provider = Column(String(50), nullable=False, default="nominatim")
+    geocoding_status = Column(String(30), nullable=False, default="pending")
+    geocoded_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    # Relationships
+    report = relationship("CitizenReport", back_populates="location_record")
+
+    __table_args__ = (
+        CheckConstraint(
+            "location_source IN ('device_gps','manual_pin','exif_gps','citizen_text')",
+            name="ck_loc_source"
+        ),
+        Index("ix_loc_records_coords", "latitude", "longitude"),
     )
 
 

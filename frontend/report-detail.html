@@ -458,8 +458,27 @@
                 </span>
               </div>
 
+              <div style="font-size: 11px; font-weight: 600; color: var(--cl-text-muted); margin-bottom: 4px;" id="orig-lang-label">
+                ORIGINAL SUBMISSION
+              </div>
               <div style="font-size: 13px; line-height: 1.6; color: var(--cl-text-primary); white-space: pre-line; background: var(--cl-bg-subtle); padding: 12px; border-radius: 6px; border: 1px solid var(--cl-border); margin-bottom: 12px;" id="detail-desc">
                 No detailed description provided.
+              </div>
+
+              <!-- Verified Translation Box -->
+              <div id="trans-box" style="display: none; background: rgba(37, 99, 235, 0.08); border: 1px solid rgba(37, 99, 235, 0.25); border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+                <div style="font-size: 11px; font-weight: 600; color: var(--cl-primary-light); margin-bottom: 4px;">
+                  🌐 VERIFIED ENGLISH TRANSLATION
+                </div>
+                <div style="font-size: 13px; line-height: 1.6; color: var(--cl-text-primary); white-space: pre-line;" id="trans-text"></div>
+              </div>
+
+              <!-- AI Brief Summary Box -->
+              <div id="summary-box" style="display: none; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 6px; padding: 10px 12px; margin-bottom: 12px;">
+                <div style="font-size: 11px; font-weight: 600; color: #34d399; margin-bottom: 4px;">
+                  💡 AI BRIEF SUMMARY
+                </div>
+                <div style="font-size: 12px; line-height: 1.5; color: var(--cl-text-secondary);" id="summary-text"></div>
               </div>
 
               <div style="font-size: 11px; color: #fbbf24; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; padding: 8px 10px;">
@@ -506,6 +525,17 @@
 
               <!-- Map view -->
               <div id="detail-map" role="region" aria-label="Defect geographic pin map"></div>
+
+              <!-- Structured Location Provenance -->
+              <div id="structured-loc-box" style="display: none; margin-top: 12px; padding: 10px; background: var(--cl-bg-subtle); border-radius: 6px; border: 1px solid var(--cl-border); font-size: 11px;">
+                <div style="font-weight: 600; color: var(--cl-text-muted); margin-bottom: 6px; text-transform: uppercase;">Location Provenance &amp; Context</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                  <div><span style="color: var(--cl-text-muted);">Road:</span> <span id="struct-road" style="color: var(--cl-text-primary); font-weight: 500;">—</span></div>
+                  <div><span style="color: var(--cl-text-muted);">Locality:</span> <span id="struct-locality" style="color: var(--cl-text-primary); font-weight: 500;">—</span></div>
+                  <div><span style="color: var(--cl-text-muted);">City/District:</span> <span id="struct-city" style="color: var(--cl-text-primary); font-weight: 500;">—</span></div>
+                  <div><span style="color: var(--cl-text-muted);">Postal Code:</span> <span id="struct-pincode" style="color: var(--cl-text-primary); font-weight: 500;">—</span></div>
+                </div>
+              </div>
             </section>
 
             <!-- Report Technical Metadata Card -->
@@ -571,6 +601,7 @@
 
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="./static/js/i18n.js"></script>
 <script src="./static/js/nav.js"></script>
 <script src="./static/js/citizen-auth.js"></script>
 <script>
@@ -670,7 +701,26 @@ function renderReportDetails(report) {
   sevBadge.textContent = `${sev.toUpperCase()} SEVERITY`;
   sevBadge.className = `cl-badge cl-badge-${sev === 'severe' || sev === 'critical' ? 'severe' : sev === 'moderate' ? 'moderate' : 'minor'}`;
 
+  // Description & Multilingual Translations
+  const origLang = (report.original_language || report.detected_language || "en").toUpperCase();
+  document.getElementById("orig-lang-label").textContent = `ORIGINAL SUBMISSION (${origLang})`;
   document.getElementById("detail-desc").textContent = report.description || "No additional description provided.";
+
+  const transBox = document.getElementById("trans-box");
+  if (report.translated_description) {
+    transBox.style.display = "block";
+    document.getElementById("trans-text").textContent = report.translated_description;
+  } else {
+    transBox.style.display = "none";
+  }
+
+  const summaryBox = document.getElementById("summary-box");
+  if (report.description_assistance && report.description_assistance.summary) {
+    summaryBox.style.display = "block";
+    document.getElementById("summary-text").textContent = report.description_assistance.summary;
+  } else {
+    summaryBox.style.display = "none";
+  }
 
   // Location
   document.getElementById("location-address").textContent = report.address || "Street location not reverse geocoded";
@@ -683,6 +733,19 @@ function renderReportDetails(report) {
     document.getElementById("location-accuracy-badge").textContent = `Accuracy ±${Math.round(report.location_accuracy_m)}m`;
   } else {
     document.getElementById("location-accuracy-badge").style.display = "none";
+  }
+
+  // Structured Location Provenance
+  const locBox = document.getElementById("structured-loc-box");
+  if (report.location_record) {
+    const lr = report.location_record;
+    locBox.style.display = "block";
+    document.getElementById("struct-road").textContent = lr.road_name || "—";
+    document.getElementById("struct-locality").textContent = lr.locality || lr.suburb || "—";
+    document.getElementById("struct-city").textContent = (lr.city || "") + (lr.district ? ` (${lr.district})` : "");
+    document.getElementById("struct-pincode").textContent = lr.postal_code || "—";
+  } else {
+    locBox.style.display = "none";
   }
 
   // Metadata

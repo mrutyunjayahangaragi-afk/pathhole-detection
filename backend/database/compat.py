@@ -136,22 +136,88 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 """
 
 
+class PostgresCompatCursor:
+    def __init__(self, cur):
+        self._cur = cur
+
+    def execute(self, sql, params=None):
+        pg_sql = sql.replace("?", "%s")
+        return self._cur.execute(pg_sql, params or ())
+
+    def fetchone(self):
+        row = self._cur.fetchone()
+        return dict(row) if row is not None else None
+
+    def fetchall(self):
+        rows = self._cur.fetchall()
+        return [dict(r) for r in rows]
+
+    @property
+    def rowcount(self):
+        return self._cur.rowcount
+
+    @property
+    def description(self):
+        return self._cur.description
+
+
+class PostgresCompatConnection:
+    def __init__(self, raw_conn):
+        self._conn = raw_conn
+
+    def cursor(self):
+        try:
+            import psycopg2.extras
+            return PostgresCompatCursor(self._conn.cursor(cursor_factory=psycopg2.extras.DictCursor))
+        except ImportError:
+            return PostgresCompatCursor(self._conn.cursor())
+
+    def execute(self, sql, params=None):
+        cur = self.cursor()
+        cur.execute(sql, params)
+        return cur
+
+    def commit(self):
+        self._conn.commit()
+
+    def rollback(self):
+        self._conn.rollback()
+
+    def close(self):
+        self._conn.close()
+
+
 @contextmanager
-def get_db(db_path: Optional[str] = None) -> Generator[sqlite3.Connection, None, None]:
-    """Context manager providing a SQLite database connection with row_factory."""
-    path = db_path or get_config().DATABASE_PATH
-    is_uri = path.startswith("file:")
-    conn = sqlite3.connect(path, timeout=10.0, uri=is_uri)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    try:
-        yield conn
-        conn.commit()
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+def get_db(db_path: Optional[str] = None):
+    """Context manager providing a database connection with dict/row access."""
+    cfg = get_config()
+    if db_path is None and getattr(cfg, "DATABASE_PROVIDER", "sqlite") in ("supabase", "postgresql"):
+        from backend.db.engine import get_engine
+        engine = get_engine(cfg.DATABASE_URL)
+        raw_conn = engine.raw_connection()
+        compat_conn = PostgresCompatConnection(raw_conn)
+        try:
+            yield compat_conn
+            compat_conn.commit()
+        except Exception:
+            compat_conn.rollback()
+            raise
+        finally:
+            compat_conn.close()
+    else:
+        path = db_path or cfg.DATABASE_PATH
+        is_uri = path.startswith("file:")
+        conn = sqlite3.connect(path, timeout=10.0, uri=is_uri)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys = ON")
+        try:
+            yield conn
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
 
 
 def init_db(db_path: Optional[str] = None) -> None:

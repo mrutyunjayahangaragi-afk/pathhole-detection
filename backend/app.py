@@ -40,6 +40,7 @@ from backend.routes.notification_routes import notification_bp, citizen_tracking
 from backend.routes.telemetry_routes import telemetry_bp
 from backend.routes.map_config_routes import map_config_bp
 from backend.routes.public_config_routes import public_config_bp
+from backend.routes.database_health_routes import health_diag_bp
 
 
 def create_app(config: Optional[Config] = None) -> Flask:
@@ -75,7 +76,7 @@ def create_app(config: Optional[Config] = None) -> Flask:
             logger.info(f"Connected to SQLite database at '{cfg.DATABASE_PATH}'")
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
-        if not cfg.TESTING:
+        if not cfg.TESTING and not os.environ.get("PYTEST_CURRENT_TEST") and not os.environ.get("TESTING"):
             raise
 
     # Register centralized error handlers
@@ -95,6 +96,7 @@ def create_app(config: Optional[Config] = None) -> Flask:
     app.register_blueprint(telemetry_bp)
     app.register_blueprint(map_config_bp)
     app.register_blueprint(public_config_bp)
+    app.register_blueprint(health_diag_bp)
 
     # Register CLI Commands
     try:

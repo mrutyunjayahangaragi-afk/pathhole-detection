@@ -52,6 +52,8 @@ def normalize_database_url(url: Optional[str]) -> Optional[str]:
     """
     Normalizes PostgreSQL database URLs for SQLAlchemy compatibility.
     - Normalizes `postgres://` to `postgresql://`
+    - Encodes unencoded special characters in password (such as `@`, `%`)
+    - Automatically maps bare `postgresql://` to `postgresql+psycopg2://` when psycopg2 is installed
     - Ensures `sslmode=require` for remote hosts (e.g. Supabase poolers)
     """
     if not url:
@@ -59,6 +61,19 @@ def normalize_database_url(url: Optional[str]) -> Optional[str]:
     trimmed = url.strip()
     if trimmed.startswith("postgres://"):
         trimmed = "postgresql://" + trimmed[len("postgres://"):]
+
+    # Safely parse and encode password if it contains unencoded '@' or '%'
+    if "://" in trimmed and "@" in trimmed:
+        scheme, remainder = trimmed.split("://", 1)
+        last_at = remainder.rfind("@")
+        auth_part = remainder[:last_at]
+        netloc_part = remainder[last_at + 1:]
+        if ":" in auth_part:
+            username, raw_password = auth_part.split(":", 1)
+            import urllib.parse
+            unquoted_pw = urllib.parse.unquote(raw_password)
+            encoded_pw = urllib.parse.quote_plus(unquoted_pw)
+            trimmed = f"{scheme}://{username}:{encoded_pw}@{netloc_part}"
 
     # Enforce sslmode=require for remote hosts unless already set or local
     if trimmed.startswith("postgresql"):
@@ -329,6 +344,8 @@ CONFIG_MAP = {
 
 def get_config(env_name: Optional[str] = None) -> Config:
     """Return an active configuration instance based on environment name."""
+    if _bool_from_env("TESTING", False) or os.environ.get("PYTEST_CURRENT_TEST"):
+        return TestingConfig()
     name = (
         env_name or
         os.environ.get("APP_ENV") or

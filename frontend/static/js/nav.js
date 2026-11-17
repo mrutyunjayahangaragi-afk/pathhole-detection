@@ -78,13 +78,16 @@
       sidebarContainer.innerHTML = `
         <div class="cl-drawer-overlay" id="cl-drawer-backdrop" aria-hidden="true"></div>
         <aside class="cl-sidebar" id="cl-sidebar" role="navigation" aria-label="Main Navigation">
-          <!-- 1. Stationary Brand Header -->
-          <a href="${prefix}index.html" class="cl-sidebar-brand" aria-label="CivicLens Home">
-            <div class="cl-brand-logo">CL</div>
-            <div>
-              <h1 class="cl-brand-title">CivicLens</h1>
-              <span class="cl-brand-sub">BBMP AI Portal</span>
-            </div>
+          <!-- 1. Stationary Brand Header with Official CivicLens Identity -->
+          <a href="${prefix}index.html" class="cl-sidebar-brand" aria-label="CivicLens — AI-Powered Civic Grievance & Infrastructure Triage">
+            <picture class="cl-sidebar-brand-picture">
+              <source srcset="${prefix}static/images/branding/civiclens-logo.webp" type="image/webp">
+              <img src="${prefix}static/images/branding/civiclens-logo.png" 
+                   alt="CivicLens — Smart Civic Reporting. Transparent City Improvements." 
+                   class="cl-sidebar-brand-img"
+                   width="235" height="78"
+                   loading="eager" decoding="async">
+            </picture>
           </a>
 
           <!-- 2. Middle Scrollable Navigation List -->
@@ -114,7 +117,7 @@
             <!-- Version Information & Icons8 Mandatory Attribution -->
             <div class="cl-sidebar-version">
               <div style="font-weight: 600; color: var(--cl-text-primary);">CivicLens v2.0</div>
-              <div style="color: var(--cl-text-muted);">BBMP &amp; Smart Cities</div>
+              <div style="color: var(--cl-text-muted);">Civic Grievance &amp; Triage</div>
               <div style="margin-top: 4px; font-size: 10px; color: var(--cl-text-muted);">
                 Icons by <a href="https://icons8.com" target="_blank" rel="noopener">Icons8</a>
               </div>

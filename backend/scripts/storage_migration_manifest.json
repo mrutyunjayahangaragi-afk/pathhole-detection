@@ -1,0 +1,370 @@
+{
+  "timestamp": "2026-11-16 19:19:42 UTC",
+  "total_records": 35,
+  "matched_and_migrated": 3,
+  "local_missing": 32,
+  "entries": [
+    {
+      "asset_id": "23585846-9c72-4ccf-b77d-ee7a176b429d",
+      "original_filename": "damage_photo.jpg",
+      "expected_sha256": "98ddf45d819427ea2b3d14b41a5d6f9060c772866c7ae4257a4973dab31c18c6",
+      "source_path": "/Users/mrutyunjayaashokhangaragi/Desktop/civiclens/automated-poth_hole-detection-and-reporting-system/uploads/evidence/98ddf45d819427ea_0d8baefb.jpg",
+      "file_size_bytes": 125,
+      "mime_type": "image/jpeg",
+      "status": "MIGRATED",
+      "timestamp": 1794856780.963073,
+      "actual_sha256": "98ddf45d819427ea2b3d14b41a5d6f9060c772866c7ae4257a4973dab31c18c6",
+      "hash_match": true,
+      "storage_provider": "local",
+      "target_key": "/Users/mrutyunjayaashokhangaragi/Desktop/civiclens/automated-poth_hole-detection-and-reporting-system/uploads/citizen-evidence/damage_photo.jpg"
+    },
+    {
+      "asset_id": "cd91012c-88af-4a66-b909-13250497e911",
+      "original_filename": "private.jpg",
+      "expected_sha256": "ff1f8846eb340efe051069574aeaa6c423f600c038ba3296645b9b2fd8d7d49f",
+      "source_path": "/Users/mrutyunjayaashokhangaragi/Desktop/civiclens/automated-poth_hole-detection-and-reporting-system/uploads/evidence/ff1f8846eb340efe_16dea104.jpg",
+      "file_size_bytes": 75,
+      "mime_type": "image/jpeg",
+      "status": "MIGRATED",
+      "timestamp": 1794856781.4834251,
+      "actual_sha256": "ff1f8846eb340efe051069574aeaa6c423f600c038ba3296645b9b2fd8d7d49f",
+      "hash_match": true,
+      "storage_provider": "local",
+      "target_key": "/Users/mrutyunjayaashokhangaragi/Desktop/civiclens/automated-poth_hole-detection-and-reporting-system/uploads/citizen-evidence/private.jpg"
+    },
+    {
+      "asset_id": "53a508b9-267c-42fe-a3c1-d9720e6c1122",
+      "original_filename": "road.jpg",
+      "expected_sha256": "0608b8b82ec0fe02b94e8c594c50f18d23c8735374ed8626b884680f35708bed",
+      "source_path": "/Users/mrutyunjayaashokhangaragi/Desktop/civiclens/automated-poth_hole-detection-and-reporting-system/uploads/evidence/0608b8b82ec0fe02_0a96088d.jpg",
+      "file_size_bytes": 75,
+      "mime_type": "image/jpeg",
+      "status": "MIGRATED",
+      "timestamp": 1794856781.845772,
+      "actual_sha256": "0608b8b82ec0fe02b94e8c594c50f18d23c8735374ed8626b884680f35708bed",
+      "hash_match": true,
+      "storage_provider": "local",
+      "target_key": "/Users/mrutyunjayaashokhangaragi/Desktop/civiclens/automated-poth_hole-detection-and-reporting-system/uploads/citizen-evidence/road.jpg"
+    },
+    {
+      "asset_id": "1550ac27-f018-4aff-8256-12957941c1c2",
+      "original_filename": "before_repair.jpg",
+      "expected_sha256": "27d9f42bf10141fca25ea154124d1c82",
+      "source_path": null,
+      "file_size_bytes": 45000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.238841
+    },
+    {
+      "asset_id": "0ec49ca2-0cc3-401b-8bae-7c90348f6294",
+      "original_filename": "after_repair.jpg",
+      "expected_sha256": "cdbdb8fd0cf946dfa8cb1e65e12dfb8c",
+      "source_path": null,
+      "file_size_bytes": 42000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.238991
+    },
+    {
+      "asset_id": "6dd9cdaf-8050-4c7b-ac48-890e512265ea",
+      "original_filename": "before_repair.jpg",
+      "expected_sha256": "5b5558ca18c4445987abcc17cff8e34d",
+      "source_path": null,
+      "file_size_bytes": 45000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.23909
+    },
+    {
+      "asset_id": "9b4ef0bd-53b2-46c9-848d-f785d650afb4",
+      "original_filename": "after_repair.jpg",
+      "expected_sha256": "0bb4283ad5e34e23b62d51149b2e8554",
+      "source_path": null,
+      "file_size_bytes": 42000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.239179
+    },
+    {
+      "asset_id": "26dc5a41-29b7-41e4-9577-5304013f6ad4",
+      "original_filename": "before_repair.jpg",
+      "expected_sha256": "e3aca987edb549e99d945cc2e8d073cb",
+      "source_path": null,
+      "file_size_bytes": 45000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.239264
+    },
+    {
+      "asset_id": "90b7eaeb-e13b-4a5f-977c-df9fea84f5aa",
+      "original_filename": "after_repair.jpg",
+      "expected_sha256": "46ce198a35944380b59decd0a8822f20",
+      "source_path": null,
+      "file_size_bytes": 42000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.2393532
+    },
+    {
+      "asset_id": "ba0c2f2d-ce2e-4e53-aba7-feb31284bac8",
+      "original_filename": "before_repair.jpg",
+      "expected_sha256": "8a2b442b035249adbdd557065f1bc029",
+      "source_path": null,
+      "file_size_bytes": 45000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.239444
+    },
+    {
+      "asset_id": "40c8eca3-7a4c-44e9-812c-d0ea4efe53ad",
+      "original_filename": "after_repair.jpg",
+      "expected_sha256": "8b6ee62ea61e4447bdf5bab1bb3e9ae8",
+      "source_path": null,
+      "file_size_bytes": 42000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.239528
+    },
+    {
+      "asset_id": "1ad39ebc-f07c-4c05-a7cf-5b4018192226",
+      "original_filename": "before_repair.jpg",
+      "expected_sha256": "e2ae07ba05d34e5cbbf439f03ad5b112",
+      "source_path": null,
+      "file_size_bytes": 45000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.2396128
+    },
+    {
+      "asset_id": "9e7f79d4-3782-4482-ab61-af98cbf8a7e4",
+      "original_filename": "after_repair.jpg",
+      "expected_sha256": "c61e73f891cb46bead27e52eb0eaec43",
+      "source_path": null,
+      "file_size_bytes": 42000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.2397
+    },
+    {
+      "asset_id": "943f7111-c125-4075-924c-4c898432dc4e",
+      "original_filename": "before_repair.jpg",
+      "expected_sha256": "683092f559064215bd8c6273af74ce28",
+      "source_path": null,
+      "file_size_bytes": 45000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.2397802
+    },
+    {
+      "asset_id": "d5e80b77-f8d6-4b70-b700-bd440c5676b3",
+      "original_filename": "after_repair.jpg",
+      "expected_sha256": "0823e825342e43b4aa30205ab6874844",
+      "source_path": null,
+      "file_size_bytes": 42000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.23986
+    },
+    {
+      "asset_id": "5f280da2-13b0-495a-8881-b64084a43518",
+      "original_filename": "before_repair.jpg",
+      "expected_sha256": "c00c95bc7d5a4760aa6590f84729f133",
+      "source_path": null,
+      "file_size_bytes": 45000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.240107
+    },
+    {
+      "asset_id": "edc89972-efd5-4777-a4ec-858bc447a447",
+      "original_filename": "after_repair.jpg",
+      "expected_sha256": "5270fb81e74f42de8739ce45b8160b74",
+      "source_path": null,
+      "file_size_bytes": 42000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.240267
+    },
+    {
+      "asset_id": "79c27e0d-8b67-445f-9a03-d87c85a99e68",
+      "original_filename": "before_repair.jpg",
+      "expected_sha256": "1a4d22ba938543a78459785abfa36490",
+      "source_path": null,
+      "file_size_bytes": 45000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.2403681
+    },
+    {
+      "asset_id": "daaf1ec5-02fd-470a-8648-5648d54929bf",
+      "original_filename": "after_repair.jpg",
+      "expected_sha256": "1c6cde12ca6d437cbb8c709cba41531b",
+      "source_path": null,
+      "file_size_bytes": 42000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.2404559
+    },
+    {
+      "asset_id": "084b0fd4-f84d-433d-b7fc-179ab1c01046",
+      "original_filename": "before_repair.jpg",
+      "expected_sha256": "3f5a861839054b49bf84be215b4ef715",
+      "source_path": null,
+      "file_size_bytes": 45000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.2405381
+    },
+    {
+      "asset_id": "f04ac5bc-990d-481d-95c9-f859a2b1f1a6",
+      "original_filename": "after_repair.jpg",
+      "expected_sha256": "70518513d5864b6299044fb1ad7edce4",
+      "source_path": null,
+      "file_size_bytes": 42000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.2406201
+    },
+    {
+      "asset_id": "99ec3430-8929-4e0f-819c-ed32451e36c2",
+      "original_filename": "before_repair.jpg",
+      "expected_sha256": "893ab91381d54e82a8bd351b5df66d3e",
+      "source_path": null,
+      "file_size_bytes": 45000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.240701
+    },
+    {
+      "asset_id": "64c1b11f-fa16-4fc0-b8e7-016fe6b36c2c",
+      "original_filename": "after_repair.jpg",
+      "expected_sha256": "245d25cc748e447d8f1df956199b40b3",
+      "source_path": null,
+      "file_size_bytes": 42000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.24078
+    },
+    {
+      "asset_id": "09fda6dd-ea0c-4fe0-9d10-b39215fed309",
+      "original_filename": "before_repair.jpg",
+      "expected_sha256": "47378b7f059a400e8c673d7e2454b08e",
+      "source_path": null,
+      "file_size_bytes": 45000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.24086
+    },
+    {
+      "asset_id": "9d9839a9-04f4-43c9-a46d-e48f17ed5ba5",
+      "original_filename": "after_repair.jpg",
+      "expected_sha256": "63cba0a352d94fb89936017f8c76784e",
+      "source_path": null,
+      "file_size_bytes": 42000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.240939
+    },
+    {
+      "asset_id": "590c0403-10da-47c7-904c-a73fd9021a5d",
+      "original_filename": "before_repair.jpg",
+      "expected_sha256": "fc3f371f4f5a47bfa7a52fbf00c343f7",
+      "source_path": null,
+      "file_size_bytes": 45000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.241096
+    },
+    {
+      "asset_id": "69cc9f13-2287-44c9-a730-5d669342de7a",
+      "original_filename": "after_repair.jpg",
+      "expected_sha256": "9648b0437dfe47a787c22df203f32d85",
+      "source_path": null,
+      "file_size_bytes": 42000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.241395
+    },
+    {
+      "asset_id": "84fe5689-bbc0-4c2d-8029-cea6a98614d8",
+      "original_filename": "before_repair.jpg",
+      "expected_sha256": "e1ecdaebc54343eb95418f7428f21726",
+      "source_path": null,
+      "file_size_bytes": 45000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.24149
+    },
+    {
+      "asset_id": "2398ae53-e6b4-4e31-bbba-fc00ec0e43bf",
+      "original_filename": "after_repair.jpg",
+      "expected_sha256": "f753cbc78776426497af9e018c89ff32",
+      "source_path": null,
+      "file_size_bytes": 42000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.24161
+    },
+    {
+      "asset_id": "3e29efe5-15f1-4236-aa00-f089ddde3b2b",
+      "original_filename": "before_repair.jpg",
+      "expected_sha256": "0bb6db22bfd74916b551513309d99d83",
+      "source_path": null,
+      "file_size_bytes": 45000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.2416809
+    },
+    {
+      "asset_id": "89b3a9a4-d0bc-42c7-9d44-62cc605d50b2",
+      "original_filename": "after_repair.jpg",
+      "expected_sha256": "2259dd0d16b040649cae028700edf01d",
+      "source_path": null,
+      "file_size_bytes": 42000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.241751
+    },
+    {
+      "asset_id": "d5fdd827-2510-4ad8-9213-649d145630fc",
+      "original_filename": "before_repair.jpg",
+      "expected_sha256": "603d29ee2c5f46b499139dd5c10a671d",
+      "source_path": null,
+      "file_size_bytes": 45000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.241871
+    },
+    {
+      "asset_id": "6d3e0a54-718e-4f63-8bac-ced6f6e1ef05",
+      "original_filename": "after_repair.jpg",
+      "expected_sha256": "1fc7a5cf991046488d28398c7cddaa4a",
+      "source_path": null,
+      "file_size_bytes": 42000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.24196
+    },
+    {
+      "asset_id": "bb562b98-c37d-4cf2-a201-8091212c959b",
+      "original_filename": "before_repair.jpg",
+      "expected_sha256": "a6878a3fe3064300b1fc76e6ee2d46f7",
+      "source_path": null,
+      "file_size_bytes": 45000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.242032
+    },
+    {
+      "asset_id": "9052b90b-9669-4d33-b816-7b453293e648",
+      "original_filename": "after_repair.jpg",
+      "expected_sha256": "89ed8dfeb96042a7bade1442b1e14ead",
+      "source_path": null,
+      "file_size_bytes": 42000,
+      "mime_type": "image/jpeg",
+      "status": "LOCAL_FILE_MISSING",
+      "timestamp": 1794856782.242101
+    }
+  ]
+}

@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <title>CivicLens — Citizen Sign In &amp; Registration</title>
+<link rel="icon" type="image/png" sizes="32x32" href="./static/images/branding/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./static/images/branding/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./static/images/branding/apple-touch-icon.png">
 <link rel="stylesheet" href="./static/css/civiclens.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -70,12 +73,17 @@
 <body>
 
 <div class="auth-wrapper">
-  <div style="margin-bottom: var(--cl-space-5); text-align: center;">
-    <a href="./index.html" style="text-decoration: none; color: inherit; display: inline-flex; align-items: center; gap: 8px;">
-      <div class="cl-brand-logo" style="width: 36px; height: 36px; font-size: 16px;">CL</div>
-      <h1 class="cl-brand-title" style="font-size: 24px;">CivicLens</h1>
+  <div style="margin-bottom: var(--cl-space-4); text-align: center;">
+    <a href="./index.html" style="text-decoration: none; display: inline-block;">
+      <picture>
+        <source srcset="./static/images/branding/civiclens-logo.webp" type="image/webp">
+        <img src="./static/images/branding/civiclens-logo.png" 
+             alt="CivicLens — Smart Civic Reporting. Transparent City Improvements." 
+             style="max-width: 280px; width: 100%; height: auto; aspect-ratio: 1024 / 341; display: block; margin: 0 auto;"
+             width="280" height="93">
+      </picture>
     </a>
-    <p style="font-size: 13px; color: var(--cl-text-muted); margin: 4px 0 0 0;">
+    <p style="font-size: 13px; color: var(--cl-text-muted); margin: 8px 0 0 0; font-weight: 500;">
       Citizen Grievance &amp; Infrastructure Portal
     </p>
   </div>

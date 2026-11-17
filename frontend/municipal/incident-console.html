@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <title>CivicLens — Incident Resolution Console</title>
+<link rel="icon" type="image/png" sizes="32x32" href="../static/images/branding/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../static/images/branding/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="../static/images/branding/apple-touch-icon.png">
 <link rel="stylesheet" href="../static/css/civiclens.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -125,7 +128,10 @@
     <header class="cl-mobile-header">
       <div style="display: flex; align-items: center; gap: 10px;">
         <button class="cl-hamburger-btn" id="cl-hamburger-toggle" aria-label="Toggle navigation">☰</button>
-        <span style="font-family: var(--cl-font-heading); font-size: 1.25rem; font-weight: 700; text-transform: uppercase;">CivicLens</span>
+        <a href="../index.html" class="cl-mobile-brand-link">
+          <img src="../static/images/branding/civiclens-emblem-192.png" alt="CivicLens" width="32" height="32" class="cl-mobile-emblem">
+          <span class="cl-mobile-brand-title">CivicLens</span>
+        </a>
       </div>
       <div style="font-size: 0.75rem; color: var(--cl-text-muted); font-family: var(--cl-font-mono);">INCIDENT CONSOLE</div>
     </header>

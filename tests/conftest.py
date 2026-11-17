@@ -12,6 +12,10 @@ import tempfile
 import pytest
 from flask import Flask
 
+# Enforce isolated SQLite testing for unit tests
+os.environ["DATABASE_PROVIDER"] = "sqlite"
+os.environ["TESTING"] = "true"
+
 from backend.config import TestingConfig
 from backend.database import init_db
 from backend.app import create_app
@@ -19,19 +23,23 @@ from backend.app import create_app
 
 @pytest.fixture(scope="session")
 def test_db_path():
-    """Creates a temporary SQLite database file for testing."""
-    fd, path = tempfile.mkstemp(prefix="civiclens_test_", suffix=".db")
+    """Creates a temporary SQLite database file for testing in /tmp."""
+    fd, path = tempfile.mkstemp(prefix="civiclens_test_", suffix=".db", dir="/tmp")
     os.close(fd)
+    os.environ["TEST_DATABASE_PATH"] = path
     yield path
     if os.path.exists(path):
         os.remove(path)
+    os.environ.pop("TEST_DATABASE_PATH", None)
 
 
 @pytest.fixture
 def test_config(test_db_path):
     """Returns a TestingConfig instance bound to the isolated test database."""
+    os.environ["TEST_DATABASE_PATH"] = test_db_path
     config = TestingConfig()
     config.DATABASE_PATH = test_db_path
+    config.DATABASE_URL = f"sqlite:///{test_db_path}"
     config.NOMINATIM_RATE_LIMIT_SECONDS = 0.0
     return config
 

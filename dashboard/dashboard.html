@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <title>CivicLens — Live Sensor & Fleet Telemetry Monitor</title>
+<link rel="icon" type="image/png" sizes="32x32" href="../frontend/static/images/branding/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../frontend/static/images/branding/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="../frontend/static/images/branding/apple-touch-icon.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -765,8 +768,9 @@
 <!-- Mobile Drawer -->
 <nav class="mobile-drawer" id="mobile-drawer" aria-label="Mobile Navigation">
   <div class="drawer-header">
-    <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 700; color: var(--chalk);">
-      CIVIC<span style="color: var(--safety-yellow);">LENS</span>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <img src="../frontend/static/images/branding/civiclens-emblem-192.png" alt="CivicLens" width="28" height="28" style="aspect-ratio: 1/1; object-fit: contain;">
+      <span style="font-family: var(--font-heading); font-size: 19px; font-weight: 700; color: var(--chalk); letter-spacing: 0.04em;">CIVICLENS</span>
     </div>
     <button id="drawer-close" style="background: none; border: none; color: var(--slate); font-size: 24px; cursor: pointer;">&times;</button>
   </div>
@@ -790,17 +794,19 @@
   <header>
     <div class="brand-group">
       <button class="nav-toggle-btn" id="nav-toggle-btn" aria-label="Open Navigation">☰</button>
-      <a href="../frontend/index.html" class="brand">
-        <svg class="brand-mark" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="48" height="48" rx="8" fill="#1e293b"/>
-          <path d="M6 32 Q 18 28, 22 32 Q 26 36, 30 32 Q 34 28, 42 32" stroke="#f8fafc" stroke-width="3" fill="none" stroke-linecap="round"/>
-          <ellipse cx="26" cy="33.5" rx="6.5" ry="3" fill="#f59e0b"/>
-          <circle cx="24" cy="18" r="8" stroke="#2563eb" stroke-width="3" fill="none"/>
-          <circle cx="24" cy="18" r="3" fill="#2563eb"/>
-        </svg>
-        <div>
-          <h1>CivicLens <span class="tag">EDGE</span></h1>
-          <div class="sub">Live Vehicle Sensor &amp; Telemetry Operations Console</div>
+      <a href="../frontend/index.html" class="brand" aria-label="CivicLens Home">
+        <picture>
+          <source srcset="../frontend/static/images/branding/civiclens-logo.webp" type="image/webp">
+          <img src="../frontend/static/images/branding/civiclens-logo.png" 
+               alt="CivicLens" 
+               style="height: 42px; width: auto; aspect-ratio: 1024 / 341; object-fit: contain; display: block;" 
+               height="42" width="126">
+        </picture>
+        <div style="border-left: 1px solid var(--hairline); padding-left: 10px; margin-left: 6px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="tag">EDGE</span>
+            <span class="sub" style="font-size: 11px; color: var(--slate); font-family: var(--font-mono);">Live Vehicle Telemetry</span>
+          </div>
         </div>
       </a>
     </div>

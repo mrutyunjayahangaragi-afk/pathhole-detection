@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Authenticating — CivicLens</title>
-  <link rel="icon" type="image/svg+xml" href="./static/images/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="./static/images/branding/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./static/images/branding/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./static/images/branding/apple-touch-icon.png">
   <link rel="stylesheet" href="./static/css/design-system.css">
   <style>
     body {
@@ -89,6 +91,9 @@
 </head>
 <body>
   <div class="callback-card">
+    <div style="margin-bottom: 20px;">
+      <img src="./static/images/branding/civiclens-emblem-192.png" alt="CivicLens" width="56" height="56" style="display: block; margin: 0 auto; aspect-ratio: 1/1; object-fit: contain;">
+    </div>
     <div class="spinner" id="callback-spinner"></div>
     <h2 id="callback-title">Connecting to Identity Provider</h2>
     <p id="callback-message">Securing your session and exchanging authorization tokens...</p>

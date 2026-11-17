@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <title>CivicLens — Portal Authentication Gateway</title>
+<link rel="icon" type="image/png" sizes="32x32" href="./static/images/branding/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./static/images/branding/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./static/images/branding/apple-touch-icon.png">
 <link rel="stylesheet" href="./static/css/civiclens.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -66,22 +69,19 @@
 <body>
 
 <div class="gateway-wrapper">
-  <!-- Brand Header -->
-  <div style="text-align: center; max-width: 500px;">
-    <a href="./index.html" style="text-decoration: none; color: inherit; display: inline-flex; align-items: center; gap: 10px;">
-      <svg width="44" height="44" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="48" height="48" rx="8" fill="#1e293b"/>
-        <path d="M6 32 Q 18 28, 22 32 Q 26 36, 30 32 Q 34 28, 42 32" stroke="#f8fafc" stroke-width="3" fill="none" stroke-linecap="round"/>
-        <ellipse cx="26" cy="33.5" rx="6.5" ry="3" fill="#f59e0b"/>
-        <circle cx="24" cy="18" r="8" stroke="#2563eb" stroke-width="3" fill="none"/>
-        <circle cx="24" cy="18" r="3" fill="#2563eb"/>
-      </svg>
-      <h1 style="font-family: var(--cl-font-heading); font-size: 26px; font-weight: 700; margin: 0; text-transform: uppercase;">
-        Civic<span style="color: var(--cl-primary-light);">Lens</span>
-      </h1>
+  <!-- Brand Header with Official CivicLens Identity -->
+  <div style="text-align: center; max-width: 420px; margin-bottom: var(--cl-space-3);">
+    <a href="./index.html" style="text-decoration: none; display: inline-block;">
+      <picture>
+        <source srcset="./static/images/branding/civiclens-logo.webp" type="image/webp">
+        <img src="./static/images/branding/civiclens-logo.png" 
+             alt="CivicLens — Smart Civic Reporting. Transparent City Improvements." 
+             style="max-width: 320px; width: 100%; height: auto; aspect-ratio: 1024 / 341; display: block; margin: 0 auto;"
+             width="320" height="106">
+      </picture>
     </a>
-    <p style="font-size: 14px; color: var(--cl-text-muted); margin: 8px 0 0 0;">
-      Smart Civic Reporting. Transparent City Improvements.
+    <p style="font-size: 14px; color: var(--cl-text-secondary); margin: 12px 0 0 0; font-weight: 500;">
+      Portal Authentication Gateway
     </p>
   </div>
 

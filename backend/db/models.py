@@ -1229,3 +1229,66 @@ class TelemetryEvent(Base):
     )
 
 
+# ─── Homepage Showcase Items ─────────────────────────────────────────
+
+class HomepageShowcaseItem(Base):
+    __tablename__ = "homepage_showcase_items"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    evidence_asset_id = Column(String(36), ForeignKey("evidence_assets_v2.id", ondelete="SET NULL"), nullable=True)
+    incident_id = Column(String(36), ForeignKey("incidents_v2.id", ondelete="SET NULL"), nullable=True)
+    uploader_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    uploader_role_snapshot = Column(String(50), nullable=False, default="municipal_officer")
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    category = Column(String(50), nullable=False, default="pothole")
+    media_type = Column(String(20), nullable=False, default="IMAGE")
+    storage_bucket = Column(String(100), nullable=False, default="inspection-evidence")
+    storage_object_path = Column(Text, nullable=False)
+    thumbnail_object_path = Column(Text, nullable=True)
+    public_location_label = Column(String(255), nullable=False)
+    content_hash = Column(String(64), nullable=True)
+    publication_status = Column(String(30), nullable=False, default="DRAFT")
+    moderation_status = Column(String(30), nullable=False, default="PENDING")
+    before_after_type = Column(String(20), nullable=False, default="STANDALONE")
+    sort_order = Column(Integer, nullable=False, default=0)
+    is_featured = Column(Boolean, nullable=False, default=False)
+    starts_at = Column(DateTime(timezone=True), nullable=True)
+    ends_at = Column(DateTime(timezone=True), nullable=True)
+    approved_by = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    approved_at = Column(DateTime(timezone=True), nullable=True)
+    rejection_reason = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow)
+
+    # Relationships
+    evidence_asset = relationship("EvidenceAsset", foreign_keys=[evidence_asset_id])
+    incident = relationship("Incident", foreign_keys=[incident_id])
+    uploader = relationship("User", foreign_keys=[uploader_id])
+    approver = relationship("User", foreign_keys=[approved_by])
+
+    __table_args__ = (
+        CheckConstraint(
+            "publication_status IN ('DRAFT','PENDING_REVIEW','APPROVED','PUBLISHED','UNPUBLISHED','REJECTED','ARCHIVED')",
+            name="ck_showcase_pub_status"
+        ),
+        CheckConstraint(
+            "moderation_status IN ('PENDING','APPROVED','REJECTED')",
+            name="ck_showcase_mod_status"
+        ),
+        CheckConstraint(
+            "media_type IN ('IMAGE','VIDEO')",
+            name="ck_showcase_media_type"
+        ),
+        CheckConstraint(
+            "before_after_type IN ('BEFORE','AFTER','STANDALONE')",
+            name="ck_showcase_before_after"
+        ),
+        Index("ix_showcase_pub_status", "publication_status", "moderation_status"),
+        Index("ix_showcase_sort_order", "sort_order"),
+        Index("ix_showcase_category", "category"),
+        Index("ix_showcase_incident", "incident_id"),
+    )
+
+
+

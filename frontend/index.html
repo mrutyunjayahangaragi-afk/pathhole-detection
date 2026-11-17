@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-<title>CivicLens — AI-Powered Civic Grievance & Infrastructure Triage</title>
+<title>CivicLens — AI-Powered Civic Grievance &amp; Infrastructure Triage</title>
 <link rel="icon" type="image/png" sizes="32x32" href="./static/images/branding/favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="./static/images/branding/favicon-16x16.png">
 <link rel="apple-touch-icon" sizes="180x180" href="./static/images/branding/apple-touch-icon.png">
+<link rel="stylesheet" href="./static/css/bootstrap.min.css">
 <link rel="stylesheet" href="./static/css/civiclens.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -31,10 +32,10 @@
       <div style="font-size: 0.75rem; color: var(--cl-text-muted); font-family: var(--cl-font-mono);">OFFICIAL PORTAL</div>
     </header>
 
-    <!-- Two-Column Balanced Hero Section with Official CivicLens Identity -->
+    <!-- Two-Column Balanced Hero Section with Official CivicLens Identity & Impact Showcase -->
     <section class="cl-hero-section">
       <div class="cl-hero-grid">
-        <!-- Left Column: Official Logo, Purpose & Actions -->
+        <!-- Left Column: Official Logo, Purpose & Actions (~48% width) -->
         <div class="cl-hero-content">
           <div class="cl-hero-logo-wrap">
             <picture>
@@ -68,9 +69,59 @@
           </div>
         </div>
 
-        <!-- Right Column: Transparent 3D Civic Infrastructure Illustration -->
-        <div class="cl-hero-visual-col">
-          <img src="./static/images/icons8/illustrations-3d/hero-city-infrastructure-3d.svg" alt="CivicLens 3D Infrastructure Triage" width="460" height="360" class="cl-hero-img" loading="eager">
+        <!-- Right Column: Automatic CivicLens Impact Showcase Carousel (~52% width) -->
+        <div class="cl-hero-visual-col" style="width: 100%;">
+          <div class="cl-showcase-card">
+            <!-- Bootstrap Carousel Component -->
+            <div id="civiclensImpactCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="6000" data-bs-pause="hover" aria-label="CivicLens Impact Showcase Carousel">
+              <!-- Indicators -->
+              <div class="carousel-indicators" id="carousel-indicators"></div>
+
+              <!-- Slides Container -->
+              <div class="carousel-inner" id="carousel-slides">
+                <!-- Fallback slide while loading or if collection is empty -->
+                <div class="carousel-item active">
+                  <div class="cl-carousel-media-wrap">
+                    <img src="./static/images/icons8/illustrations-3d/hero-city-infrastructure-3d.svg" class="cl-carousel-media" alt="CivicLens Infrastructure Showcase" style="padding: 2rem; background: #0F172A;">
+                    <div class="cl-carousel-top-bar">
+                      <span class="cl-carousel-badge cl-badge-category">CivicLens Impact</span>
+                      <span class="cl-carousel-badge cl-badge-status-resolved">Real Progress</span>
+                    </div>
+                    <div class="cl-carousel-info-overlay">
+                      <h3 class="cl-carousel-title">Real Problems. Verified Improvements.</h3>
+                      <p class="cl-carousel-desc">Direct photographic &amp; video evidence of municipal infrastructure repairs across Bengaluru.</p>
+                      <div class="cl-carousel-meta">
+                        <span>📍 Greater Bengaluru Municipal Corporation</span>
+                        <a href="./public-map.html" style="color: #60A5FA; text-decoration: none; font-weight: 600;">View Map &rarr;</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Controls -->
+              <button class="carousel-control-prev" type="button" data-bs-target="#civiclensImpactCarousel" data-bs-slide="prev" aria-label="Previous slide">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+              </button>
+              <button class="carousel-control-next" type="button" data-bs-target="#civiclensImpactCarousel" data-bs-slide="next" aria-label="Next slide">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+              </button>
+            </div>
+
+            <!-- Carousel Sub-Bar: Autoplay toggle & current category -->
+            <div class="cl-carousel-controls-bar">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button type="button" class="cl-carousel-btn-playpause" id="carousel-playpause-btn" aria-label="Pause Carousel">
+                  ⏸ Pause Autoplay
+                </button>
+                <span style="color: var(--cl-border);">|</span>
+                <span id="carousel-category-indicator" style="font-weight: 600; text-transform: uppercase;">Infrastructure Showcase</span>
+              </div>
+              <div id="carousel-slide-counter" style="font-family: var(--cl-font-mono); font-size: 0.75rem;">
+                1 / 1
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -101,8 +152,47 @@
       </div>
     </section>
 
+    <!-- NEW SECTION: CivicLens Impact Showcase — Real Problems. Real Progress. -->
+    <section class="cl-container" style="padding-top: var(--cl-space-10); padding-bottom: var(--cl-space-8);">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem; margin-bottom: var(--cl-space-4);">
+        <div>
+          <span style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--cl-primary); letter-spacing: 0.05em;">
+            Verified Transparency
+          </span>
+          <h2 style="font-family: var(--cl-font-heading); font-size: var(--cl-text-2xl); text-transform: uppercase; margin: 4px 0 0 0;">
+            Real Problems. Real Progress.
+          </h2>
+          <p style="color: var(--cl-text-secondary); margin: 4px 0 0 0; font-size: var(--cl-text-sm);">
+            Side-by-side photographic comparisons of civic defects before and after verified municipal engineering action.
+          </p>
+        </div>
+        <a href="./public-map.html" class="cl-btn cl-btn-secondary" style="font-size: 0.85rem; padding: 6px 14px;">
+          View All on Public Map &rarr;
+        </a>
+      </div>
+
+      <!-- Filter Pills -->
+      <div class="cl-filter-pills" id="baf-filter-pills">
+        <button class="cl-filter-pill active" data-category="all">All Issues</button>
+        <button class="cl-filter-pill" data-category="pothole">Potholes</button>
+        <button class="cl-filter-pill" data-category="road_damage">Road Damage</button>
+        <button class="cl-filter-pill" data-category="drainage">Drainage</button>
+        <button class="cl-filter-pill" data-category="garbage">Garbage</button>
+        <button class="cl-filter-pill" data-category="water_leakage">Water Leakage</button>
+        <button class="cl-filter-pill" data-category="broken_streetlight">Streetlights</button>
+      </div>
+
+      <!-- Before and After Card Grid -->
+      <div class="row g-4" id="baf-showcase-grid">
+        <!-- Dynamic cards populated by JavaScript -->
+        <div class="col-12 text-center py-4 text-muted">
+          Loading verified improvement records...
+        </div>
+      </div>
+    </section>
+
     <!-- 3-Step Reporting Explanation with Transparent 3D Visuals -->
-    <section class="cl-container" style="padding-top: var(--cl-space-8); padding-bottom: var(--cl-space-4);">
+    <section class="cl-container" style="padding-top: var(--cl-space-6); padding-bottom: var(--cl-space-6);">
       <h2 style="font-family: var(--cl-font-heading); font-size: var(--cl-text-xl); text-transform: uppercase; margin: 0 0 var(--cl-space-4) 0; text-align: center;">
         How CivicLens Works
       </h2>
@@ -231,7 +321,7 @@
           <div class="cl-module-action">Access Triage Console &rarr;</div>
         </a>
 
-        <!-- 8. Human Verification Queue -->
+        <!-- 8. Verification Queue -->
         <a href="./municipal/verification.html" class="cl-module-card">
           <div class="cl-module-art">
             <img src="./static/images/icons8/illustrations-3d/card-verification-queue-3d.svg" alt="" width="56" height="56" loading="lazy">
@@ -243,19 +333,17 @@
           <div class="cl-module-action">Review Candidates &rarr;</div>
         </a>
 
-        <!-- 9. Architecture & PostGIS Data -->
-        <div class="cl-module-card" style="opacity: 0.95;">
+        <!-- 9. Impact Showcase Management (Official Portal) -->
+        <a href="./municipal/media-management.html" class="cl-module-card">
           <div class="cl-module-art">
-            <img src="./static/images/icons8/illustrations-3d/card-architecture-schema-3d.svg" alt="" width="56" height="56" loading="lazy">
+            <img src="./static/images/icons8/navigation/media-showcase.svg" alt="" width="56" height="56" loading="lazy">
           </div>
-          <h3 class="cl-module-title">Architecture &amp; Data</h3>
+          <h3 class="cl-module-title">Impact Showcase Admin</h3>
           <p class="cl-module-desc">
-            PostgreSQL/PostGIS normalized schema with 14 core domain entities (34 ORM models total). Preserves 100% backward compatibility with legacy Roadstate telemetry.
+            Upload inspection photographs, road maintenance videos, and publish before-and-after civic improvements to the homepage.
           </p>
-          <div style="font-size: var(--cl-text-xs); color: var(--cl-text-muted); font-family: var(--cl-font-mono); margin-top: auto;">
-            Status: Production Ready
-          </div>
-        </div>
+          <div class="cl-module-action">Manage Showcase &rarr;</div>
+        </a>
       </div>
 
       <!-- Footer Attribution -->
@@ -266,12 +354,13 @@
   </div>
 </div>
 
+<script src="./static/js/bootstrap.bundle.min.js"></script>
 <script src="./static/js/i18n.js"></script>
 <script src="./static/js/nav.js"></script>
 <script src="./static/js/citizen-auth.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-  // Fetch real-time public statistics
+  // 1. Fetch real-time public statistics
   fetch("/api/v2/public/statistics")
     .then(r => r.json())
     .then(data => {
@@ -285,12 +374,246 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     })
     .catch(() => {
-      // Fallback graceful zero display if endpoint is waking up
       document.getElementById("counter-reports").textContent = "0";
       document.getElementById("counter-incidents").textContent = "0";
       document.getElementById("counter-resolved").textContent = "0";
       document.getElementById("counter-dedup").textContent = "1.00x";
     });
+
+  // 2. Fetch and render CivicLens Impact Showcase Carousel
+  const carouselEl = document.getElementById("civiclensImpactCarousel");
+  const slidesContainer = document.getElementById("carousel-slides");
+  const indicatorsContainer = document.getElementById("carousel-indicators");
+  const playpauseBtn = document.getElementById("carousel-playpause-btn");
+  const catIndicator = document.getElementById("carousel-category-indicator");
+  const counterEl = document.getElementById("carousel-slide-counter");
+
+  let isAutoplayPaused = false;
+  let bsCarousel = null;
+
+  fetch("/api/public/homepage-showcase?limit=12")
+    .then(r => r.json())
+    .then(data => {
+      const items = (data && data.items) || [];
+      if (!items.length) {
+        // Honest fallback: keep the clean architectural card
+        return;
+      }
+
+      // Populate slides and indicators
+      slidesContainer.innerHTML = "";
+      indicatorsContainer.innerHTML = "";
+
+      items.forEach((item, index) => {
+        const isActive = index === 0;
+
+        // Indicator
+        const ind = document.createElement("button");
+        ind.type = "button";
+        ind.dataset.bsTarget = "#civiclensImpactCarousel";
+        ind.dataset.bsSlideTo = index;
+        ind.setAttribute("aria-label", `Slide ${index + 1}: ${item.title}`);
+        if (isActive) {
+          ind.classList.add("active");
+          ind.setAttribute("aria-current", "true");
+        }
+        indicatorsContainer.appendChild(ind);
+
+        // Slide Item
+        const slide = document.createElement("div");
+        slide.className = `carousel-item ${isActive ? "active" : ""}`;
+        slide.dataset.category = item.category;
+        slide.dataset.index = index + 1;
+
+        const isVideo = item.media_type === "VIDEO";
+        const statusBadgeClass = item.status === "resolved" ? "cl-badge-status-resolved" : "cl-badge-status-progress";
+        const statusLabel = item.status === "resolved" ? "Verified Improvement" : "In Progress";
+        const categoryLabel = item.category.replace("_", " ");
+
+        slide.innerHTML = `
+          <div class="cl-carousel-media-wrap">
+            ${isVideo ? `
+              <video class="cl-carousel-media showcase-video" playsinline muted poster="${item.thumbnail_url || ''}" preload="none">
+                <source src="${item.media_url}" type="video/mp4">
+              </video>
+            ` : `
+              <img src="${item.media_url}" class="cl-carousel-media" alt="${item.title}" loading="${index < 2 ? 'eager' : 'lazy'}">
+            `}
+            <div class="cl-carousel-top-bar">
+              <span class="cl-carousel-badge cl-badge-category">${categoryLabel}</span>
+              <span class="cl-carousel-badge ${statusBadgeClass}">${statusLabel}</span>
+            </div>
+            <div class="cl-carousel-info-overlay">
+              <h3 class="cl-carousel-title">${item.title}</h3>
+              <p class="cl-carousel-desc">${item.description || 'Verified municipal infrastructure resolution by assigned engineering department.'}</p>
+              <div class="cl-carousel-meta">
+                <span>📍 ${item.public_location_label}</span>
+                ${item.incident_link ? `<a href="${item.incident_link}" style="color: #60A5FA; text-decoration: none; font-weight: 600;">View Incident Details &rarr;</a>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+        slidesContainer.appendChild(slide);
+      });
+
+      // Initialize Bootstrap Carousel
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      bsCarousel = new bootstrap.Carousel(carouselEl, {
+        interval: prefersReducedMotion ? false : 6000,
+        pause: "hover",
+        ride: prefersReducedMotion ? false : "carousel",
+        wrap: true,
+      });
+
+      // Update indicators and manage video playback on slide transition
+      carouselEl.addEventListener("slide.bs.carousel", function (e) {
+        // Pause any currently playing video
+        const curSlide = carouselEl.querySelector(".carousel-item.active");
+        if (curSlide) {
+          const vid = curSlide.querySelector("video");
+          if (vid) vid.pause();
+        }
+
+        const nextSlide = e.relatedTarget;
+        const cat = nextSlide.dataset.category || "Civic Defect";
+        const idx = nextSlide.dataset.index || 1;
+        catIndicator.textContent = cat.replace("_", " ");
+        counterEl.textContent = `${idx} / ${items.length}`;
+
+        // If next slide has a video, play it muted inline
+        const nextVid = nextSlide.querySelector("video");
+        if (nextVid) {
+          nextVid.currentTime = 0;
+          const playPromise = nextVid.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(() => {
+              // Autoplay blocked by browser policy
+            });
+          }
+
+          // Advance slide when video ends
+          nextVid.onended = function () {
+            if (!isAutoplayPaused) bsCarousel.next();
+          };
+        }
+      });
+
+      // Initial category & counter
+      if (items.length > 0) {
+        catIndicator.textContent = items[0].category.replace("_", " ");
+        counterEl.textContent = `1 / ${items.length}`;
+      }
+    })
+    .catch(() => {
+      // Fallback stays in place
+    });
+
+  // Autoplay pause / resume toggle
+  playpauseBtn.addEventListener("click", function () {
+    if (!bsCarousel) return;
+    if (isAutoplayPaused) {
+      bsCarousel.cycle();
+      isAutoplayPaused = false;
+      playpauseBtn.textContent = "⏸ Pause Autoplay";
+    } else {
+      bsCarousel.pause();
+      isAutoplayPaused = true;
+      playpauseBtn.textContent = "▶ Resume Autoplay";
+    }
+  });
+
+  // Stop video & carousel when tab is hidden
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) {
+      if (bsCarousel) bsCarousel.pause();
+      const activeVideo = carouselEl.querySelector(".carousel-item.active video");
+      if (activeVideo) activeVideo.pause();
+    } else if (!isAutoplayPaused && bsCarousel) {
+      bsCarousel.cycle();
+    }
+  });
+
+  // 3. Load Before & After Showcase Cards ("Real Problems. Real Progress.")
+  const bafGrid = document.getElementById("baf-showcase-grid");
+  const filterPills = document.querySelectorAll(".cl-filter-pill");
+
+  function loadBeforeAfterCards(catFilter = "all") {
+    bafGrid.innerHTML = '<div class="col-12 text-center py-4 text-muted">Loading verified improvement records...</div>';
+
+    let url = "/api/public/homepage-showcase?limit=12";
+    if (catFilter && catFilter !== "all") {
+      url += "&category=" + encodeURIComponent(catFilter);
+    }
+
+    fetch(url)
+      .then(r => r.json())
+      .then(data => {
+        const items = data.items || [];
+        if (!items.length) {
+          bafGrid.innerHTML = `
+            <div class="col-12 text-center py-5">
+              <div style="font-size: 2rem; margin-bottom: 8px;">🔍</div>
+              <h4 style="font-size: 1rem; font-weight: 700;">No verified improvements in this category yet</h4>
+              <p style="color: var(--cl-text-secondary); font-size: 0.85rem;">Check back soon as municipal triage teams complete work orders.</p>
+            </div>
+          `;
+          return;
+        }
+
+        let html = "";
+        items.forEach(it => {
+          const catLabel = it.category.replace("_", " ");
+          const statusBadge = it.status === "resolved" 
+            ? '<span class="cl-status-pill cl-status-published">Resolved</span>' 
+            : '<span class="cl-status-pill cl-status-approved">Verified Work Order</span>';
+
+          html += `
+            <div class="col-12 col-md-6 col-lg-4">
+              <div class="cl-baf-card h-100">
+                <div style="height: 200px; background: #0F172A; position: relative; overflow: hidden;">
+                  ${it.media_type === 'VIDEO' ? `
+                    <video src="${it.media_url}" style="width: 100%; height: 100%; object-fit: cover;" muted playsinline controls></video>
+                    <span style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.65); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700;">VIDEO</span>
+                  ` : `
+                    <img src="${it.media_url}" alt="${it.title}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='./static/images/branding/civiclens-emblem-192.png'">
+                  `}
+                  <span class="cl-baf-tag cl-baf-tag-after">${it.before_after_type}</span>
+                </div>
+                <div class="cl-baf-content">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--cl-primary);">${catLabel}</span>
+                    ${statusBadge}
+                  </div>
+                  <h4 style="font-size: 0.98rem; font-weight: 700; margin: 0 0 6px 0; line-height: 1.3;">${it.title}</h4>
+                  <p style="font-size: 0.82rem; color: var(--cl-text-secondary); margin: 0 0 10px 0; line-height: 1.4; flex: 1;">
+                    ${it.description || 'Verified municipal resolution and site remediation completed by civic engineering crews.'}
+                  </p>
+                  <div style="padding-top: 8px; border-top: 1px solid var(--cl-border); font-size: 0.78rem; color: var(--cl-text-muted); display: flex; justify-content: space-between; align-items: center;">
+                    <span>📍 ${it.public_location_label}</span>
+                    ${it.incident_link ? `<a href="${it.incident_link}" style="color: var(--cl-primary); font-weight: 600; text-decoration: none;">View &rarr;</a>` : ''}
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+
+        bafGrid.innerHTML = html;
+      })
+      .catch(() => {
+        bafGrid.innerHTML = '<div class="col-12 text-center text-muted py-4">Unable to load showcase items.</div>';
+      });
+  }
+
+  filterPills.forEach(pill => {
+    pill.addEventListener("click", function () {
+      filterPills.forEach(p => p.classList.remove("active"));
+      this.classList.add("active");
+      loadBeforeAfterCards(this.dataset.category);
+    });
+  });
+
+  loadBeforeAfterCards("all");
 });
 </script>
 </body>

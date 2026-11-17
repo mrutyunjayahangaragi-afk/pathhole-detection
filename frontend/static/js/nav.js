@@ -41,6 +41,7 @@
       { key: 'transparency', i18nKey: 'nav.transparency', label: 'Civic Transparency', iconFile: 'transparency.svg', href: prefix + 'transparency.html', roles: ['all'] },
       { key: 'notifications', i18nKey: 'nav.notifications', label: 'Notifications', iconFile: 'notifications.svg', href: prefix + 'notifications.html', roles: ['citizen', 'staff'] },
       { key: 'municipal', i18nKey: 'nav.municipal', label: 'Municipal Triage', iconFile: 'municipal-triage.svg', href: prefix + 'municipal/dashboard.html', roles: ['staff'] },
+      { key: 'media_management', i18nKey: 'nav.media_management', label: 'Impact Showcase', iconFile: 'media-showcase.svg', href: prefix + 'municipal/media-management.html', roles: ['staff'] },
       { key: 'verification', i18nKey: 'nav.verification', label: 'Verification Queue', iconFile: 'verification-queue.svg', href: prefix + 'municipal/verification.html', roles: ['staff'] },
       { key: 'departments', i18nKey: 'nav.departments', label: 'Departments & Officers', iconFile: 'departments.svg', href: prefix + 'municipal/departments.html', roles: ['staff'] },
       { key: 'dashboard', i18nKey: 'nav.dashboard', label: 'Live Monitor', iconFile: 'live-monitor.svg', href: '/dashboard/dashboard.html', roles: ['staff', 'public'] },

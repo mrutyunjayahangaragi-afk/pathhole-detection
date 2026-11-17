@@ -17,6 +17,7 @@ from backend.database.repositories.assignment_repository import AssignmentReposi
 from backend.database.repositories.telemetry_repository import TelemetryRepository
 from backend.database.repositories.notification_repository import NotificationRepository
 from backend.database.repositories.audit_repository import AuditRepository
+from backend.database.repositories.showcase_repository import ShowcaseRepository
 
 __all__ = [
     "ProfileRepository",
@@ -32,4 +33,5 @@ __all__ = [
     "TelemetryRepository",
     "NotificationRepository",
     "AuditRepository",
+    "ShowcaseRepository",
 ]

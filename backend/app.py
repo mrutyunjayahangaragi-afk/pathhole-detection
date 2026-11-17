@@ -41,6 +41,8 @@ from backend.routes.telemetry_routes import telemetry_bp
 from backend.routes.map_config_routes import map_config_bp
 from backend.routes.public_config_routes import public_config_bp
 from backend.routes.database_health_routes import health_diag_bp
+from backend.routes.public_showcase_routes import public_showcase_bp
+from backend.routes.municipal_showcase_routes import municipal_showcase_bp
 
 
 def create_app(config: Optional[Config] = None) -> Flask:
@@ -97,6 +99,8 @@ def create_app(config: Optional[Config] = None) -> Flask:
     app.register_blueprint(map_config_bp)
     app.register_blueprint(public_config_bp)
     app.register_blueprint(health_diag_bp)
+    app.register_blueprint(public_showcase_bp)
+    app.register_blueprint(municipal_showcase_bp)
 
     # Register CLI Commands
     try:
@@ -146,9 +150,10 @@ def create_app(config: Optional[Config] = None) -> Flask:
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdnjs.cloudflare.com; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; "
             "font-src 'self' https://fonts.gstatic.com data:; "
             "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://unpkg.com https://cdnjs.cloudflare.com https://*.basemaps.cartocdn.com; "
+            "media-src 'self' data: blob:; "
             "connect-src 'self' https://*.supabase.co; "
             "frame-ancestors 'self';"
         )
@@ -383,6 +388,13 @@ def create_app(config: Optional[Config] = None) -> Flask:
     def serve_match_review():
         from flask import send_from_directory
         return send_from_directory(os.path.join(_parent, "frontend", "municipal"), "match-review.html")
+
+    @app.route("/municipal/media-management.html", methods=["GET"])
+    @app.route("/municipal/media-management", methods=["GET"])
+    @app.route("/media-management.html", methods=["GET"])
+    def serve_media_management():
+        from flask import send_from_directory
+        return send_from_directory(os.path.join(_parent, "frontend", "municipal"), "media-management.html")
 
     return app
 

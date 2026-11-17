@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>Impact Showcase Management — CivicLens Official Portal</title>
+<link rel="icon" type="image/png" sizes="32x32" href="../static/images/branding/favicon-32x32.png">
+<link rel="stylesheet" href="../static/css/bootstrap.min.css">
+<link rel="stylesheet" href="../static/css/civiclens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+.cl-upload-dropzone {
+  border: 2px dashed var(--cl-border);
+  border-radius: var(--cl-radius-lg);
+  padding: var(--cl-space-6);
+  text-align: center;
+  background: var(--cl-bg-surface);
+  cursor: pointer;
+  transition: border-color var(--cl-transition-fast), background var(--cl-transition-fast);
+}
+.cl-upload-dropzone:hover, .cl-upload-dropzone.dragover {
+  border-color: var(--cl-primary);
+  background: #EBF3F8;
+}
+.cl-preview-box {
+  max-width: 100%;
+  max-height: 260px;
+  border-radius: var(--cl-radius-md);
+  object-fit: cover;
+  display: none;
+  margin-top: var(--cl-space-3);
+  border: 1px solid var(--cl-border);
+}
+.cl-status-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  display: inline-block;
+}
+.cl-status-draft { background: #E2E8F0; color: #475569; }
+.cl-status-pending { background: #FEF3C7; color: #92400E; }
+.cl-status-approved { background: #DBEAFE; color: #1E40AF; }
+.cl-status-published { background: #DCFCE7; color: #166534; }
+.cl-status-rejected { background: #FEE2E2; color: #991B1B; }
+.cl-status-unpublished { background: #F1F5F9; color: #64748B; }
+</style>
+</head>
+<body>
+
+<div class="cl-app-wrapper">
+  <!-- Fixed Left Sidebar -->
+  <div id="cl-sidebar-container" data-active="media_management"></div>
+
+  <!-- Main Content Area -->
+  <div class="cl-main-content">
+    <!-- Mobile Header -->
+    <header class="cl-mobile-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button class="cl-hamburger-btn" id="cl-hamburger-toggle" aria-label="Toggle navigation">☰</button>
+        <a href="../index.html" class="cl-mobile-brand-link">
+          <img src="../static/images/branding/civiclens-emblem-192.png" alt="CivicLens" width="32" height="32" class="cl-mobile-emblem">
+          <span class="cl-mobile-brand-title">CivicLens</span>
+        </a>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--cl-text-muted); font-family: var(--cl-font-mono);">MUNICIPAL ADMIN</div>
+    </header>
+
+    <div class="cl-container" style="padding-top: var(--cl-space-6); padding-bottom: var(--cl-space-10);">
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: var(--cl-space-6);">
+        <div>
+          <h1 style="font-family: var(--cl-font-heading); font-size: var(--cl-text-2xl); text-transform: uppercase; margin: 0 0 4px 0;">
+            Impact Showcase Management
+          </h1>
+          <p style="color: var(--cl-text-secondary); margin: 0; font-size: var(--cl-text-sm);">
+            Upload, curate, and publish real municipal infrastructure defect photographs and resolution videos to the public homepage.
+          </p>
+        </div>
+        <div>
+          <button class="cl-btn cl-btn-primary" id="btn-show-upload" style="display: inline-flex; align-items: center; gap: 6px;">
+            <span>+ Add Media Item</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Upload Modal / Collapsible Section -->
+      <div id="upload-panel" class="cl-card" style="display: none; padding: var(--cl-space-6); margin-bottom: var(--cl-space-8); border: 2px solid var(--cl-primary);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--cl-space-4);">
+          <h2 style="font-family: var(--cl-font-heading); font-size: var(--cl-text-lg); text-transform: uppercase; margin: 0;">
+            Upload New Showcase Media
+          </h2>
+          <button class="cl-btn cl-btn-secondary" id="btn-hide-upload" style="padding: 4px 10px;">&times; Close</button>
+        </div>
+
+        <form id="showcase-upload-form">
+          <div class="row g-3">
+            <!-- Dropzone -->
+            <div class="col-12 col-md-6">
+              <label class="form-label" style="font-weight: 600; font-size: 0.85rem;">Media File (Photo or Video) *</label>
+              <div class="cl-upload-dropzone" id="dropzone">
+                <input type="file" id="media-file-input" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" style="display: none;">
+                <div id="dropzone-text">
+                  <div style="font-size: 1.8rem; margin-bottom: 8px;">📷 📹</div>
+                  <div style="font-weight: 600; font-size: 0.9rem;">Click or drag file here to upload</div>
+                  <div style="font-size: 0.75rem; color: var(--cl-text-muted); margin-top: 4px;">
+                    Supports JPEG, PNG, WebP photos &amp; MP4, WebM videos (Max 16 MB)
+                  </div>
+                </div>
+              </div>
+              <img id="img-preview" class="cl-preview-box" alt="Preview">
+              <video id="vid-preview" class="cl-preview-box" controls playsinline muted style="display: none; width: 100%;"></video>
+            </div>
+
+            <!-- Metadata Form -->
+            <div class="col-12 col-md-6">
+              <div class="mb-3">
+                <label for="item-title" class="form-label" style="font-weight: 600; font-size: 0.85rem;">Showcase Title *</label>
+                <input type="text" class="form-control" id="item-title" placeholder="e.g. Main Ring Road Bitumen Resurfacing" required>
+              </div>
+
+              <div class="row g-2 mb-3">
+                <div class="col-6">
+                  <label for="item-category" class="form-label" style="font-weight: 600; font-size: 0.85rem;">Category *</label>
+                  <select class="form-select" id="item-category" required>
+                    <option value="pothole" selected>Pothole</option>
+                    <option value="road_damage">Road Damage</option>
+                    <option value="drainage">Drainage Blockage</option>
+                    <option value="garbage">Garbage / Debris</option>
+                    <option value="water_leakage">Water Leakage</option>
+                    <option value="broken_streetlight">Broken Streetlight</option>
+                    <option value="bridge_damage">Bridge / Structure</option>
+                    <option value="other">Other Civic Defect</option>
+                  </select>
+                </div>
+                <div class="col-6">
+                  <label for="item-classification" class="form-label" style="font-weight: 600; font-size: 0.85rem;">Classification</label>
+                  <select class="form-select" id="item-classification">
+                    <option value="STANDALONE">Standalone Evidence</option>
+                    <option value="BEFORE">Before Repair</option>
+                    <option value="AFTER">After Repair (Verified)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="item-location" class="form-label" style="font-weight: 600; font-size: 0.85rem;">Public Location Label *</label>
+                <input type="text" class="form-control" id="item-location" placeholder="e.g. Jayanagar 4th Block, Bengaluru" required>
+                <div class="form-text" style="font-size: 0.72rem;">Safe locality name displayed on the public homepage. No exact private coordinates.</div>
+              </div>
+
+              <div class="mb-3">
+                <label for="item-incident" class="form-label" style="font-weight: 600; font-size: 0.85rem;">Linked Canonical Incident (Optional)</label>
+                <select class="form-select" id="item-incident">
+                  <option value="">-- None / General Improvement --</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label for="item-description" class="form-label" style="font-weight: 600; font-size: 0.85rem;">Public Safe Description</label>
+                <textarea class="form-control" id="item-description" rows="2" placeholder="Brief public explanation of the civic problem or repair completed..."></textarea>
+              </div>
+
+              <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="item-featured">
+                <label class="form-check-label" for="item-featured" style="font-size: 0.85rem;">
+                  ⭐ Feature prominently in hero carousel
+                </label>
+              </div>
+
+              <div style="display: flex; gap: 8px;">
+                <button type="submit" class="cl-btn cl-btn-primary" id="btn-save-item">Save Showcase Item</button>
+                <span id="upload-status-msg" style="font-size: 0.85rem; align-self: center; font-weight: 600;"></span>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="cl-card" style="padding: var(--cl-space-4); margin-bottom: var(--cl-space-6); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <span style="font-size: 0.85rem; font-weight: 600; color: var(--cl-text-secondary);">Filter by Status:</span>
+          <select id="filter-pub-status" class="form-select form-select-sm" style="width: auto;">
+            <option value="">All Statuses</option>
+            <option value="DRAFT">Draft</option>
+            <option value="PENDING_REVIEW">Pending Review</option>
+            <option value="APPROVED">Approved</option>
+            <option value="PUBLISHED">Published</option>
+            <option value="UNPUBLISHED">Unpublished</option>
+          </select>
+
+          <select id="filter-category" class="form-select form-select-sm" style="width: auto;">
+            <option value="">All Categories</option>
+            <option value="pothole">Pothole</option>
+            <option value="road_damage">Road Damage</option>
+            <option value="drainage">Drainage</option>
+            <option value="garbage">Garbage</option>
+            <option value="water_leakage">Water Leakage</option>
+            <option value="broken_streetlight">Streetlight</option>
+          </select>
+        </div>
+
+        <button class="cl-btn cl-btn-secondary" id="btn-refresh-list" style="padding: 4px 12px; font-size: 0.8rem;">
+          ↻ Refresh List
+        </button>
+      </div>
+
+      <!-- Showcase Items List -->
+      <div id="showcase-items-container">
+        <div style="text-align: center; padding: var(--cl-space-8); color: var(--cl-text-muted);">
+          Loading showcase items...
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../static/js/bootstrap.bundle.min.js"></script>
+<script src="../static/js/i18n.js"></script>
+<script src="../static/js/nav.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // Authentication check
+  let currentUser = null;
+  try {
+    const raw = localStorage.getItem("civiclens_user_data") || localStorage.getItem("civiclens_user");
+    if (raw) currentUser = JSON.parse(raw);
+  } catch (e) {}
+
+  const staffRoles = ["municipal_officer", "dept_admin", "municipal_admin", "system_admin"];
+  if (!currentUser || !staffRoles.includes(currentUser.role)) {
+    window.location.href = "./login.html?redirect=" + encodeURIComponent(window.location.pathname);
+    return;
+  }
+
+  const isAdmin = ["dept_admin", "municipal_admin", "system_admin"].includes(currentUser.role);
+
+  // Load canonical incidents for dropdown
+  fetch("/api/v2/municipal/incidents?limit=50")
+    .then(r => r.json())
+    .then(data => {
+      const incSelect = document.getElementById("item-incident");
+      const list = data.incidents || data.items || [];
+      list.forEach(inc => {
+        const opt = document.createElement("option");
+        opt.value = inc.id;
+        opt.textContent = `${inc.incident_reference || inc.id.slice(0, 8)} — ${inc.category} (${inc.address || 'Bengaluru'})`;
+        incSelect.appendChild(opt);
+      });
+    })
+    .catch(() => {});
+
+  // Dropzone setup
+  const dropzone = document.getElementById("dropzone");
+  const fileInput = document.getElementById("media-file-input");
+  const imgPrev = document.getElementById("img-preview");
+  const vidPrev = document.getElementById("vid-preview");
+  let uploadedAsset = null;
+
+  dropzone.addEventListener("click", () => fileInput.click());
+  dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("dragover"); });
+  dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+  dropzone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropzone.classList.remove("dragover");
+    if (e.dataTransfer.files.length) handleFileSelected(e.dataTransfer.files[0]);
+  });
+
+  fileInput.addEventListener("change", (e) => {
+    if (e.target.files.length) handleFileSelected(e.target.files[0]);
+  });
+
+  function handleFileSelected(file) {
+    const statusMsg = document.getElementById("upload-status-msg");
+    statusMsg.textContent = "Uploading media...";
+    statusMsg.style.color = "var(--cl-primary)";
+
+    const fd = new FormData();
+    fd.append("file", file);
+
+    fetch("/api/municipal/showcase/upload", {
+      method: "POST",
+      body: fd,
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === "success" && data.asset) {
+          uploadedAsset = data.asset;
+          statusMsg.textContent = "✓ Uploaded & verified";
+          statusMsg.style.color = "var(--cl-minor)";
+
+          // Show preview
+          const url = URL.createObjectURL(file);
+          if (uploadedAsset.media_type === "VIDEO") {
+            imgPrev.style.display = "none";
+            vidPrev.src = url;
+            vidPrev.style.display = "block";
+          } else {
+            vidPrev.style.display = "none";
+            imgPrev.src = url;
+            imgPrev.style.display = "block";
+          }
+        } else {
+          statusMsg.textContent = "Upload error: " + (data.message || "Failed");
+          statusMsg.style.color = "var(--cl-critical)";
+        }
+      })
+      .catch(err => {
+        statusMsg.textContent = "Network error during upload";
+        statusMsg.style.color = "var(--cl-critical)";
+      });
+  }
+
+  // Toggle upload panel
+  const uploadPanel = document.getElementById("upload-panel");
+  document.getElementById("btn-show-upload").addEventListener("click", () => {
+    uploadPanel.style.display = "block";
+    uploadPanel.scrollIntoView({ behavior: "smooth" });
+  });
+  document.getElementById("btn-hide-upload").addEventListener("click", () => {
+    uploadPanel.style.display = "none";
+  });
+
+  // Submit showcase form
+  document.getElementById("showcase-upload-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const statusMsg = document.getElementById("upload-status-msg");
+    if (!uploadedAsset) {
+      alert("Please select and upload a photo or video first.");
+      return;
+    }
+
+    const payload = {
+      title: document.getElementById("item-title").value.trim(),
+      category: document.getElementById("item-category").value,
+      before_after_type: document.getElementById("item-classification").value,
+      public_location_label: document.getElementById("item-location").value.trim(),
+      incident_id: document.getElementById("item-incident").value || null,
+      description: document.getElementById("item-description").value.trim(),
+      is_featured: document.getElementById("item-featured").checked,
+      media_type: uploadedAsset.media_type,
+      storage_object_path: uploadedAsset.storage_key,
+      evidence_asset_id: uploadedAsset.asset_id,
+    };
+
+    fetch("/api/municipal/showcase/items", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === "success") {
+          alert("Showcase item created successfully!");
+          uploadPanel.style.display = "none";
+          document.getElementById("showcase-upload-form").reset();
+          imgPrev.style.display = "none";
+          vidPrev.style.display = "none";
+          uploadedAsset = null;
+          statusMsg.textContent = "";
+          loadShowcaseItems();
+        } else {
+          alert("Failed: " + (data.message || "Unknown error"));
+        }
+      })
+      .catch(err => alert("Error saving item: " + err.message));
+  });
+
+  // Load showcase items list
+  function loadShowcaseItems() {
+    const container = document.getElementById("showcase-items-container");
+    container.innerHTML = '<div style="text-align: center; padding: var(--cl-space-6); color: var(--cl-text-muted);">Loading items...</div>';
+
+    const pubFilter = document.getElementById("filter-pub-status").value;
+    const catFilter = document.getElementById("filter-category").value;
+
+    let url = "/api/municipal/showcase/items?";
+    if (pubFilter) url += "publication_status=" + encodeURIComponent(pubFilter) + "&";
+    if (catFilter) url += "category=" + encodeURIComponent(catFilter) + "&";
+
+    fetch(url)
+      .then(r => r.json())
+      .then(data => {
+        const items = data.items || [];
+        if (!items.length) {
+          container.innerHTML = `
+            <div class="cl-card" style="padding: var(--cl-space-8); text-align: center;">
+              <div style="font-size: 2rem; margin-bottom: 8px;">📁</div>
+              <h3 style="font-size: 1.1rem; font-weight: 700; margin: 0 0 6px 0;">No showcase items found</h3>
+              <p style="color: var(--cl-text-secondary); margin: 0;">Click "+ Add Media Item" to create the first verified civic showcase item.</p>
+            </div>
+          `;
+          return;
+        }
+
+        let html = '<div class="row g-4">';
+        items.forEach(it => {
+          const statusClass = `cl-status-${it.publication_status.toLowerCase()}`;
+          const isPublished = it.publication_status === "PUBLISHED";
+          const isPending = it.publication_status === "PENDING_REVIEW";
+          const isApproved = it.moderation_status === "APPROVED";
+          const isDraft = it.publication_status === "DRAFT";
+
+          html += `
+            <div class="col-12 col-md-6 col-lg-4">
+              <div class="cl-card h-100" style="display: flex; flex-direction: column; overflow: hidden;">
+                <div style="height: 180px; background: #0F172A; position: relative;">
+                  ${it.media_type === 'VIDEO' ? `
+                    <video src="${it.media_url}" style="width: 100%; height: 100%; object-fit: cover;" muted playsinline></video>
+                    <span style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.65); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700;">▶ VIDEO</span>
+                  ` : `
+                    <img src="${it.media_url}" alt="${it.title}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='../static/images/branding/civiclens-emblem-192.png'">
+                  `}
+                  <span class="cl-status-pill ${statusClass}" style="position: absolute; bottom: 10px; left: 10px;">
+                    ${it.publication_status}
+                  </span>
+                  ${it.is_featured ? '<span style="position: absolute; top: 10px; left: 10px; background: #FF7A00; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 700;">FEATURED</span>' : ''}
+                </div>
+
+                <div style="padding: var(--cl-space-4); flex: 1; display: flex; flex-direction: column;">
+                  <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--cl-primary); margin-bottom: 4px;">
+                    ${it.category.replace('_', ' ')} &middot; ${it.before_after_type}
+                  </div>
+                  <h4 style="font-size: 0.95rem; font-weight: 700; margin: 0 0 6px 0;">${it.title}</h4>
+                  <p style="font-size: 0.8rem; color: var(--cl-text-secondary); margin: 0 0 8px 0; line-height: 1.4;">
+                    📍 ${it.public_location_label}
+                  </p>
+                  ${it.incident_ref ? `<div style="font-size: 0.75rem; color: var(--cl-text-muted); margin-bottom: 8px;">Incident: ${it.incident_ref}</div>` : ''}
+
+                  <!-- Actions -->
+                  <div style="margin-top: auto; padding-top: var(--cl-space-3); border-top: 1px solid var(--cl-border); display: flex; gap: 6px; flex-wrap: wrap;">
+                    ${isDraft ? `
+                      <button class="cl-btn cl-btn-primary btn-action" data-id="${it.id}" data-action="submit" style="padding: 3px 8px; font-size: 0.75rem;">Submit for Review</button>
+                    ` : ''}
+                    ${(isPending && isAdmin) ? `
+                      <button class="cl-btn btn-action" data-id="${it.id}" data-action="approve" style="background: #166534; color: #fff; padding: 3px 8px; font-size: 0.75rem;">Approve</button>
+                      <button class="cl-btn btn-action" data-id="${it.id}" data-action="reject" style="background: #991B1B; color: #fff; padding: 3px 8px; font-size: 0.75rem;">Reject</button>
+                    ` : ''}
+                    ${(!isPublished && (isApproved || isAdmin)) ? `
+                      <button class="cl-btn btn-action" data-id="${it.id}" data-action="publish" style="background: #0284C7; color: #fff; padding: 3px 8px; font-size: 0.75rem;">Publish to Homepage</button>
+                    ` : ''}
+                    ${isPublished ? `
+                      <button class="cl-btn cl-btn-secondary btn-action" data-id="${it.id}" data-action="unpublish" style="padding: 3px 8px; font-size: 0.75rem;">Unpublish</button>
+                    ` : ''}
+                    ${isAdmin ? `
+                      <button class="cl-btn cl-btn-secondary btn-action" data-id="${it.id}" data-action="archive" style="padding: 3px 8px; font-size: 0.75rem; color: #991B1B;">Archive</button>
+                    ` : ''}
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+
+        // Attach action handlers
+        container.querySelectorAll(".btn-action").forEach(btn => {
+          btn.addEventListener("click", function () {
+            const id = this.dataset.id;
+            const action = this.dataset.action;
+            let body = null;
+            if (action === "reject") {
+              const reason = prompt("Enter reason for rejection:");
+              if (!reason) return;
+              body = JSON.stringify({ reason: reason });
+            }
+
+            fetch(`/api/municipal/showcase/items/${id}/${action}`, {
+              method: action === "archive" ? "DELETE" : "POST",
+              headers: { "Content-Type": "application/json" },
+              body: body,
+            })
+              .then(r => r.json())
+              .then(res => {
+                if (res.status === "success") {
+                  loadShowcaseItems();
+                } else {
+                  alert(res.message || "Action failed");
+                }
+              })
+              .catch(err => alert("Network error: " + err.message));
+          });
+        });
+      })
+      .catch(err => {
+        container.innerHTML = '<div style="color: var(--cl-critical); text-align: center;">Error loading showcase items.</div>';
+      });
+  }
+
+  document.getElementById("btn-refresh-list").addEventListener("click", loadShowcaseItems);
+  document.getElementById("filter-pub-status").addEventListener("change", loadShowcaseItems);
+  document.getElementById("filter-category").addEventListener("change", loadShowcaseItems);
+
+  loadShowcaseItems();
+});
+</script>
+</body>
+</html>

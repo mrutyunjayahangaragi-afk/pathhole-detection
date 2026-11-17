@@ -1,4 +1,3 @@
-
 -- Migration: 20261117003000_storage_buckets_and_rls_policies.sql
 -- Description: Configures CivicLens private storage buckets and secure RLS policies on storage.objects
 
@@ -15,10 +14,12 @@ ON CONFLICT (id) DO UPDATE SET
     file_size_limit = EXCLUDED.file_size_limit,
     allowed_mime_types = EXCLUDED.allowed_mime_types;
 
--- 2. Enable RLS on storage.objects
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+-- 2. Storage RLS Policies
+-- NOTE: In Supabase, Row Level Security is already enabled on storage.objects by default.
+-- Do not run `ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;` because storage.objects
+-- is owned by `supabase_storage_admin` and executing ALTER TABLE triggers ERROR 42501 (must be owner of table objects).
 
--- 3. Policy: Allow citizen and telemetry evidence uploads
+-- Policy 1: Allow citizen and telemetry evidence uploads
 DROP POLICY IF EXISTS "civiclens_insert_citizen_evidence" ON storage.objects;
 CREATE POLICY "civiclens_insert_citizen_evidence"
 ON storage.objects
@@ -26,7 +27,7 @@ FOR INSERT
 TO public
 WITH CHECK (bucket_id IN ('citizen-evidence', 'telemetry-evidence'));
 
--- 4. Policy: Allow authenticated staff to upload inspection and resolution evidence
+-- Policy 2: Allow authenticated staff to upload inspection and resolution evidence
 DROP POLICY IF EXISTS "civiclens_insert_official_evidence" ON storage.objects;
 CREATE POLICY "civiclens_insert_official_evidence"
 ON storage.objects
@@ -34,7 +35,7 @@ FOR INSERT
 TO authenticated
 WITH CHECK (bucket_id IN ('inspection-evidence', 'resolution-evidence', 'profile-avatars'));
 
--- 5. Policy: Allow reading objects (owner, authorized municipal officers, or signed URL access)
+-- Policy 3: Allow reading objects (owner, authorized municipal officers, or public read for defined buckets)
 DROP POLICY IF EXISTS "civiclens_select_evidence_objects" ON storage.objects;
 CREATE POLICY "civiclens_select_evidence_objects"
 ON storage.objects
@@ -44,16 +45,17 @@ USING (
     bucket_id IN ('citizen-evidence', 'inspection-evidence', 'resolution-evidence', 'telemetry-evidence', 'profile-avatars')
 );
 
--- 6. Policy: Allow updates/deletions only by object owner or administrators
+-- Policy 4: Allow updates/deletions only by object owner or administrators
 DROP POLICY IF EXISTS "civiclens_modify_evidence_objects" ON storage.objects;
 CREATE POLICY "civiclens_modify_evidence_objects"
 ON storage.objects
 FOR ALL
 TO authenticated
 USING (
-    owner = auth.uid()::text
+    owner = auth.uid()
+    OR owner_id = (auth.uid())::text
     OR EXISTS (
         SELECT 1 FROM public.users
-        WHERE auth_user_id = auth.uid()::text AND role IN ('super_admin', 'dept_admin')
+        WHERE auth_user_id = (auth.uid())::text AND role IN ('super_admin', 'dept_admin')
     )
 );

@@ -8,11 +8,12 @@ Zero synthetic, fake, or mocked numbers.
 
 import logging
 from typing import Dict, Any, List
+from datetime import datetime, timezone
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from backend.db.engine import get_session_factory
-from backend.db.models import Incident, CitizenReport, IncidentPublication, ReportItem
+from backend.db.models import Incident, CitizenReport, IncidentPublication, ReportItem, IncidentStatusHistory
 
 logger = logging.getLogger("civiclens.transparency")
 
@@ -139,5 +140,132 @@ class PublicTransparencyService:
                 "avg_resolution_hours": avg_resolution_hours,
                 "recent_milestones": milestones,
             }
+        finally:
+            db.close()
+
+    def get_recent_activity(self, limit: int = 15) -> List[Dict[str, Any]]:
+        """
+        Retrieves real-time civic activity events from IncidentStatusHistory and CitizenReports.
+        Excludes private citizen PII or internal engineering notes.
+        """
+        db = self._get_db()
+        try:
+            events = []
+
+            # 1. Recent status transitions (e.g. verified, in_progress, resolved)
+            transitions = (
+                db.query(IncidentStatusHistory, Incident)
+                .join(Incident, IncidentStatusHistory.incident_id == Incident.id)
+                .order_by(IncidentStatusHistory.created_at.desc())
+                .limit(limit)
+                .all()
+            )
+
+            status_title_map = {
+                "verified": "Incident Field-Verified",
+                "in_progress": "Repair Work In Progress",
+                "assigned": "Assigned to Municipal Dept",
+                "resolved": "Hazard Remediation Resolved",
+                "closed": "Incident Closed & Verified",
+                "rejected": "Report Reviewed & Filtered",
+                "on_hold": "Work On Hold (Materials Pending)",
+                "reopened": "Incident Reopened for Inspection"
+            }
+
+            for hist, inc in transitions:
+                loc = inc.address or "Bengaluru Civic Area"
+                events.append({
+                    "id": f"hist-{hist.id}",
+                    "event_type": f"incident_{hist.new_status}",
+                    "title": status_title_map.get(hist.new_status, f"Incident {hist.new_status.replace('_', ' ').capitalize()}"),
+                    "category": inc.category or "infrastructure",
+                    "reference": inc.incident_reference or f"INC-{inc.id[:8].upper()}",
+                    "location_name": loc,
+                    "timestamp": hist.created_at.isoformat() if hist.created_at else None,
+                    "raw_time": hist.created_at,
+                    "description": (hist.reason or inc.description or f"Status transitioned to {hist.new_status}.").strip()[:140],
+                    "link": f"/public-incident.html?ref={inc.incident_reference or inc.id}"
+                })
+
+            # 2. Recent citizen submissions
+            recent_reports = (
+                db.query(CitizenReport)
+                .order_by(CitizenReport.created_at.desc())
+                .limit(limit)
+                .all()
+            )
+
+            for rep in recent_reports:
+                loc = rep.address or "Bengaluru Area"
+                events.append({
+                    "id": f"rep-{rep.id}",
+                    "event_type": "new_report",
+                    "title": "New Citizen Grievance Logged",
+                    "category": "citizen_report",
+                    "reference": rep.report_reference or f"CR-{rep.id[:8].upper()}",
+                    "location_name": loc,
+                    "timestamp": rep.created_at.isoformat() if rep.created_at else None,
+                    "raw_time": rep.created_at,
+                    "description": (rep.title or rep.description or "Citizen submitted an infrastructure issue.").strip()[:140],
+                    "link": "/public-map.html"
+                })
+
+            # Sort combined events chronologically descending
+            min_dt = datetime.min.replace(tzinfo=timezone.utc)
+            events.sort(key=lambda x: x["raw_time"] or min_dt, reverse=True)
+
+            # Strip temporary raw_time field
+            for ev in events:
+                ev.pop("raw_time", None)
+
+            return events[:limit]
+        finally:
+            db.close()
+
+    def search_public_incidents(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        Full-text search for public incidents by reference, category, location, or description.
+        Returns sanitized, public-safe records.
+        """
+        if not query or len(query.strip()) < 2:
+            return []
+
+        q_clean = query.strip()
+        db = self._get_db()
+        try:
+            from sqlalchemy import or_
+            pattern = f"%{q_clean}%"
+            matches = (
+                db.query(Incident)
+                .filter(
+                    or_(
+                        Incident.incident_reference.ilike(pattern),
+                        Incident.category.ilike(pattern),
+                        Incident.address.ilike(pattern),
+                        Incident.description.ilike(pattern),
+                    )
+                )
+                .order_by(Incident.updated_at.desc())
+                .limit(limit)
+                .all()
+            )
+
+            results = []
+            for inc in matches:
+                results.append({
+                    "id": inc.id,
+                    "incident_reference": inc.incident_reference or f"INC-{inc.id[:8].upper()}",
+                    "category": inc.category,
+                    "status": inc.status,
+                    "severity": inc.severity,
+                    "priority": inc.priority,
+                    "address": inc.address or "Bengaluru Area",
+                    "description": (inc.description or "")[:120],
+                    "latitude": inc.latitude,
+                    "longitude": inc.longitude,
+                    "created_at": inc.created_at.isoformat() if inc.created_at else None,
+                    "link": f"/public-incident.html?ref={inc.incident_reference or inc.id}"
+                })
+            return results
         finally:
             db.close()

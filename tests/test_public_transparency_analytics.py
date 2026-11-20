@@ -71,3 +71,36 @@ def test_public_transparency_empty_db_safe():
     assert metrics["status"] == "success"
     assert metrics["deduplication_ratio"] >= 0.0
     assert metrics["resolution_rate_pct"] >= 0.0
+
+
+def test_public_recent_activity_endpoint(client):
+    """Scenario 37: Verifies recent activity timeline endpoint returns real database events."""
+    resp = client.get("/api/v2/public/recent-activity?limit=10")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["status"] == "success"
+    assert "events" in data
+    assert isinstance(data["events"], list)
+    if data["events"]:
+        event = data["events"][0]
+        assert "id" in event
+        assert "event_type" in event
+        assert "title" in event
+        assert "timestamp" in event
+        assert "reference" in event
+
+
+def test_public_search_endpoint(client):
+    """Scenario 38: Verifies global public search endpoint queries incidents without error."""
+    resp = client.get("/api/v2/public/search?q=pothole&limit=5")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["status"] == "success"
+    assert "results" in data
+    assert isinstance(data["results"], list)
+    assert data["query"] == "pothole"
+
+    # Empty search query returns empty array cleanly
+    empty_resp = client.get("/api/v2/public/search?q=")
+    assert empty_resp.status_code == 200
+    assert empty_resp.get_json()["results"] == []

@@ -148,6 +148,48 @@ def get_public_transparency_statistics():
     return jsonify(metrics), 200
 
 
+@public_bp.route("/recent-activity", methods=["GET"])
+def get_recent_activity():
+    """
+    Returns recent chronological civic activity events (verified, in_progress,
+    resolved, new reports) backed by real database records without PII.
+    """
+    try:
+        limit = int(request.args.get("limit", "15"))
+    except ValueError:
+        limit = 15
+    limit = max(1, min(limit, 50))
+
+    events = transparency_service.get_recent_activity(limit=limit)
+    return jsonify({
+        "status": "success",
+        "count": len(events),
+        "events": events
+    }), 200
+
+
+@public_bp.route("/search", methods=["GET"])
+def search_public_records():
+    """
+    Full-text search for public incidents by reference code, defect category,
+    street locality, or description keywords.
+    """
+    q = request.args.get("q", "").strip()
+    try:
+        limit = int(request.args.get("limit", "10"))
+    except ValueError:
+        limit = 10
+    limit = max(1, min(limit, 30))
+
+    results = transparency_service.search_public_incidents(query=q, limit=limit)
+    return jsonify({
+        "status": "success",
+        "query": q,
+        "count": len(results),
+        "results": results
+    }), 200
+
+
 @public_bp.route("/events", methods=["GET"])
 def stream_public_events():
     """

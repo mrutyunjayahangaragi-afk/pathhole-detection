@@ -401,10 +401,13 @@
       loadOfficers();
       loadDepartments();
     } else {
+      const err = await res.json().catch(() => ({}));
       if (res.status === 403) {
-        alert('Permission Denied: Onboarding new personnel requires Municipal Administrator, Department Admin, or System Admin privileges.');
+        alert('Permission Denied: ' + (err.error || 'Onboarding requires Department Admin, Municipal Admin, or System Admin privileges.'));
+      } else if (res.status === 401) {
+        alert('Session expired. Please log in again.');
+        window.location.href = './login.html?redirect=' + encodeURIComponent(window.location.pathname);
       } else {
-        const err = await res.json().catch(() => ({}));
         alert('Error: ' + (err.error || err.message || 'Failed to onboard officer'));
       }
     }

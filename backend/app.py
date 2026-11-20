@@ -295,6 +295,7 @@ def create_app(config: Optional[Config] = None) -> Flask:
 
     @app.route("/dashboard", methods=["GET"])
     @app.route("/dashboard/", methods=["GET"])
+    @app.route("/dashboard.html", methods=["GET"])
     def serve_dashboard():
         from flask import send_from_directory
         return send_from_directory(os.path.join(_parent, "dashboard"), "dashboard.html")

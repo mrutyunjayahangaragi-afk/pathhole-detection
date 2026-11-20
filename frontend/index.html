@@ -1,662 +1,825 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-<title>CivicLens — Smart Civic Reporting &amp; Infrastructure Triage</title>
-<link rel="icon" type="image/png" sizes="32x32" href="./static/images/branding/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="./static/images/branding/favicon-16x16.png">
-<link rel="apple-touch-icon" sizes="180x180" href="./static/images/branding/apple-touch-icon.png">
-<link rel="stylesheet" href="./static/css/bootstrap.min.css">
-<link rel="stylesheet" href="./static/css/civiclens.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>CivicLens — Smart Civic Reporting &amp; Infrastructure Triage</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="./static/images/branding/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./static/images/branding/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./static/images/branding/apple-touch-icon.png">
+  <link rel="stylesheet" href="./static/css/bootstrap.min.css">
+  <link rel="stylesheet" href="./static/css/civiclens.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
 </head>
+
 <body>
 
-<div class="cl-app-wrapper">
-  <!-- Fixed Left Sidebar Container (Auto-populated by nav.js) -->
-  <div id="cl-sidebar-container" data-active="home"></div>
+  <div class="cl-app-wrapper">
+    <!-- Fixed Left Sidebar Container (Auto-populated by nav.js) -->
+    <div id="cl-sidebar-container" data-active="home"></div>
 
-  <!-- Main Content Area with Independent Vertical Scrolling -->
-  <div class="cl-main-content">
-    
-    <!-- Mobile Header (Visible on viewports < 1024px) -->
-    <header class="cl-mobile-header">
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <button class="cl-hamburger-btn" id="cl-hamburger-toggle" aria-label="Toggle navigation drawer">☰</button>
-        <a href="./index.html" class="cl-mobile-brand-link">
-          <img src="./static/images/branding/civiclens-emblem-192.png" alt="CivicLens Emblem" width="32" height="32" class="cl-mobile-emblem">
-          <span class="cl-mobile-brand-title">CivicLens</span>
-        </a>
-      </div>
-      <div style="font-size: 0.75rem; color: var(--cl-text-muted); font-family: var(--cl-font-mono);">OFFICIAL PORTAL</div>
-    </header>
+    <!-- Main Content Area with Independent Vertical Scrolling -->
+    <div class="cl-main-content">
 
-    <!-- Top Blue Header Bar -->
-    <header class="cl-top-header">
-      <div class="cl-header-search-wrap">
-        <svg class="cl-header-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-        <input type="search" id="header-global-search" class="cl-header-search-input" placeholder="Search by incident reference (INC-...), category, or Bengaluru locality..." autocomplete="off" aria-label="Global Public Incident Search">
-        <div id="header-search-dropdown" class="cl-search-dropdown" role="region" aria-live="polite"></div>
-      </div>
-
-      <div class="cl-header-meta-group">
-        <div class="cl-header-muni-badge">
-          <span class="cl-live-pulse-dot" aria-hidden="true"></span>
-          <span>Bruhat Bengaluru Mahanagara Palike (BBMP) Grid</span>
+      <!-- Mobile Header (Visible on viewports < 1024px) -->
+      <header class="cl-mobile-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button class="cl-hamburger-btn" id="cl-hamburger-toggle" aria-label="Toggle navigation drawer">☰</button>
+          <a href="./index.html" class="cl-mobile-brand-link">
+            <img src="./static/images/branding/civiclens-emblem-192.png" alt="CivicLens Emblem" width="32" height="32"
+              class="cl-mobile-emblem">
+            <span class="cl-mobile-brand-title">CivicLens</span>
+          </a>
         </div>
-        <div class="cl-header-clock" id="header-live-clock" title="Bengaluru Standard Time">
-          Loading time...
+        <div style="font-size: 0.75rem; color: var(--cl-text-muted); font-family: var(--cl-font-mono);">OFFICIAL PORTAL
         </div>
-      </div>
-    </header>
+      </header>
 
-    <!-- Premium City Hero Section -->
-    <section class="cl-hero-section">
-      <div class="cl-hero-grid">
-        <!-- Left Column: Branding, Heading & Reporting Actions -->
-        <div class="cl-hero-content">
-          <!-- Innovative Civic Intelligence Identity & Fast Triage Command Center -->
-          <div class="cl-hero-identity-command">
-            <!-- Accessible Master Brand Reference for Automated Scanners & Screen Readers -->
-            <img src="./static/images/branding/civiclens-logo.png" alt="CivicLens Official Logo" class="cl-hero-logo" style="display: none;" aria-hidden="true">
+      <!-- Top Blue Header Bar -->
+      <header class="cl-top-header">
+        <div class="cl-header-search-wrap">
+          <svg class="cl-header-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="search" id="header-global-search" class="cl-header-search-input"
+            placeholder="Search by incident reference (INC-...), category, or Bengaluru locality..." autocomplete="off"
+            aria-label="Global Public Incident Search">
+          <div id="header-search-dropdown" class="cl-search-dropdown" role="region" aria-live="polite"></div>
+        </div>
 
-            <!-- Brand Identity Header with Vector Optical Aperture & Multi-Agency Telemetry -->
-            <div class="cl-hero-identity-header">
-              <div class="cl-identity-iris-visual" aria-hidden="true" title="CivicLens Optical Aperture & GIS Mesh">
-                <svg class="cl-iris-svg" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <!-- Outer Precision Gyroscope & Compass Ring -->
-                  <circle cx="36" cy="36" r="33" stroke="url(#gyro-grad)" stroke-width="1.5" stroke-dasharray="4 3" class="cl-gyro-ring" />
-                  <circle cx="36" cy="36" r="27" stroke="rgba(37, 99, 235, 0.2)" stroke-width="1" />
-                  
-                  <!-- Modern 6-Blade Camera Aperture Mechanism -->
-                  <g class="cl-aperture-group">
-                    <path d="M 36 12 L 48 20 L 39 33 L 26 23 Z" fill="url(#blade-grad-1)" />
-                    <path d="M 57 24 L 57 38 L 44 38 L 45 24 Z" fill="url(#blade-grad-2)" />
-                    <path d="M 57 48 L 45 56 L 36 43 L 49 33 Z" fill="url(#blade-grad-1)" />
-                    <path d="M 36 60 L 24 52 L 33 39 L 46 49 Z" fill="url(#blade-grad-2)" />
-                    <path d="M 15 48 L 15 34 L 28 34 L 27 48 Z" fill="url(#blade-grad-1)" />
-                    <path d="M 15 24 L 27 16 L 36 29 L 23 39 Z" fill="url(#blade-grad-2)" />
-                  </g>
-                  
-                  <!-- Glass Lens Reflection Arc -->
-                  <path d="M 20 20 A 24 24 0 0 1 52 20" stroke="rgba(255, 255, 255, 0.7)" stroke-width="2" stroke-linecap="round" />
-                  
-                  <!-- Center Optical Sensor Core & Crosshairs -->
-                  <circle cx="36" cy="36" r="8" fill="url(#core-grad)" class="cl-core-pulse" />
-                  <circle cx="36" cy="36" r="3" fill="#ffffff" />
-                  <line x1="36" y1="18" x2="36" y2="23" stroke="rgba(255, 255, 255, 0.9)" stroke-width="1.5" stroke-linecap="round" />
-                  <line x1="36" y1="49" x2="36" y2="54" stroke="rgba(255, 255, 255, 0.9)" stroke-width="1.5" stroke-linecap="round" />
-                  <line x1="18" y1="36" x2="23" y2="36" stroke="rgba(255, 255, 255, 0.9)" stroke-width="1.5" stroke-linecap="round" />
-                  <line x1="49" y1="36" x2="54" y2="36" stroke="rgba(255, 255, 255, 0.9)" stroke-width="1.5" stroke-linecap="round" />
-                  
-                  <defs>
-                    <linearGradient id="gyro-grad" x1="0" y1="0" x2="72" y2="72" gradientUnits="userSpaceOnUse">
-                      <stop stop-color="#2563eb" />
-                      <stop offset="0.5" stop-color="#06b6d4" />
-                      <stop offset="1" stop-color="#f59e0b" />
-                    </linearGradient>
-                    <linearGradient id="blade-grad-1" x1="0" y1="0" x2="72" y2="72" gradientUnits="userSpaceOnUse">
-                      <stop stop-color="#1e3a8a" />
-                      <stop offset="1" stop-color="#2563eb" />
-                    </linearGradient>
-                    <linearGradient id="blade-grad-2" x1="72" y1="72" x2="0" y2="0" gradientUnits="userSpaceOnUse">
-                      <stop stop-color="#0369a1" />
-                      <stop offset="1" stop-color="#1d4ed8" />
-                    </linearGradient>
-                    <radialGradient id="core-grad" cx="50%" cy="50%" r="50%">
-                      <stop stop-color="#38bdf8" />
-                      <stop offset="0.7" stop-color="#2563eb" />
-                      <stop offset="1" stop-color="#0f172a" />
-                    </radialGradient>
-                  </defs>
-                </svg>
-                <span class="cl-iris-radar-sweep"></span>
-              </div>
+        <div class="cl-header-meta-group">
+          <div class="cl-header-muni-badge">
+            <span class="cl-live-pulse-dot" aria-hidden="true"></span>
+            <span>Bruhat Bengaluru Mahanagara Palike (BBMP) Grid</span>
+          </div>
+          <div class="cl-header-clock" id="header-live-clock" title="Bengaluru Standard Time">
+            Loading time...
+          </div>
+        </div>
+      </header>
 
-              <div class="cl-identity-title-group">
-                <div class="cl-identity-brand-row">
-                  <div class="cl-identity-wordmark">
-                    <span class="cl-wm-civic">CIVIC</span><span class="cl-wm-lens">LENS</span>
-                    <span class="cl-wm-accent-dot" aria-hidden="true"></span>
+      <!-- Premium City Hero Section -->
+      <section class="cl-hero-section">
+        <div class="cl-hero-grid">
+          <!-- Left Column: Branding, Heading & Reporting Actions -->
+          <div class="cl-hero-content">
+            <!-- Innovative Civic Intelligence Identity & Fast Triage Command Center -->
+            <div class="cl-hero-identity-command">
+              <!-- Accessible Master Brand Reference for Automated Scanners & Screen Readers -->
+              <img src="./static/images/branding/civiclens-logo.png" alt="CivicLens Official Logo" class="cl-hero-logo"
+                style="display: none;" aria-hidden="true">
+
+              <!-- Brand Identity Header with Vector Optical Aperture & Multi-Agency Telemetry -->
+              <div class="cl-hero-identity-header">
+                <div class="cl-identity-iris-visual" aria-hidden="true" title="CivicLens Optical Aperture & GIS Mesh">
+                  <svg class="cl-iris-svg" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Outer Precision Gyroscope & Compass Ring -->
+                    <circle cx="36" cy="36" r="33" stroke="url(#gyro-grad)" stroke-width="1.5" stroke-dasharray="4 3"
+                      class="cl-gyro-ring" />
+                    <circle cx="36" cy="36" r="27" stroke="rgba(37, 99, 235, 0.2)" stroke-width="1" />
+
+                    <!-- Modern 6-Blade Camera Aperture Mechanism -->
+                    <g class="cl-aperture-group">
+                      <path d="M 36 12 L 48 20 L 39 33 L 26 23 Z" fill="url(#blade-grad-1)" />
+                      <path d="M 57 24 L 57 38 L 44 38 L 45 24 Z" fill="url(#blade-grad-2)" />
+                      <path d="M 57 48 L 45 56 L 36 43 L 49 33 Z" fill="url(#blade-grad-1)" />
+                      <path d="M 36 60 L 24 52 L 33 39 L 46 49 Z" fill="url(#blade-grad-2)" />
+                      <path d="M 15 48 L 15 34 L 28 34 L 27 48 Z" fill="url(#blade-grad-1)" />
+                      <path d="M 15 24 L 27 16 L 36 29 L 23 39 Z" fill="url(#blade-grad-2)" />
+                    </g>
+
+                    <!-- Glass Lens Reflection Arc -->
+                    <path d="M 20 20 A 24 24 0 0 1 52 20" stroke="rgba(255, 255, 255, 0.7)" stroke-width="2"
+                      stroke-linecap="round" />
+
+                    <!-- Center Optical Sensor Core & Crosshairs -->
+                    <circle cx="36" cy="36" r="8" fill="url(#core-grad)" class="cl-core-pulse" />
+                    <circle cx="36" cy="36" r="3" fill="#ffffff" />
+                    <line x1="36" y1="18" x2="36" y2="23" stroke="rgba(255, 255, 255, 0.9)" stroke-width="1.5"
+                      stroke-linecap="round" />
+                    <line x1="36" y1="49" x2="36" y2="54" stroke="rgba(255, 255, 255, 0.9)" stroke-width="1.5"
+                      stroke-linecap="round" />
+                    <line x1="18" y1="36" x2="23" y2="36" stroke="rgba(255, 255, 255, 0.9)" stroke-width="1.5"
+                      stroke-linecap="round" />
+                    <line x1="49" y1="36" x2="54" y2="36" stroke="rgba(255, 255, 255, 0.9)" stroke-width="1.5"
+                      stroke-linecap="round" />
+
+                    <defs>
+                      <linearGradient id="gyro-grad" x1="0" y1="0" x2="72" y2="72" gradientUnits="userSpaceOnUse">
+                        <stop stop-color="#2563eb" />
+                        <stop offset="0.5" stop-color="#06b6d4" />
+                        <stop offset="1" stop-color="#f59e0b" />
+                      </linearGradient>
+                      <linearGradient id="blade-grad-1" x1="0" y1="0" x2="72" y2="72" gradientUnits="userSpaceOnUse">
+                        <stop stop-color="#1e3a8a" />
+                        <stop offset="1" stop-color="#2563eb" />
+                      </linearGradient>
+                      <linearGradient id="blade-grad-2" x1="72" y1="72" x2="0" y2="0" gradientUnits="userSpaceOnUse">
+                        <stop stop-color="#0369a1" />
+                        <stop offset="1" stop-color="#1d4ed8" />
+                      </linearGradient>
+                      <radialGradient id="core-grad" cx="50%" cy="50%" r="50%">
+                        <stop stop-color="#38bdf8" />
+                        <stop offset="0.7" stop-color="#2563eb" />
+                        <stop offset="1" stop-color="#0f172a" />
+                      </radialGradient>
+                    </defs>
+                  </svg>
+                  <span class="cl-iris-radar-sweep"></span>
+                </div>
+
+                <div class="cl-identity-title-group">
+                  <div class="cl-identity-brand-row">
+                    <div class="cl-identity-wordmark">
+                      <span class="cl-wm-civic">CIVIC</span><span class="cl-wm-lens">LENS</span>
+                      <span class="cl-wm-accent-dot" aria-hidden="true"></span>
+                    </div>
+                    <div class="cl-identity-chips">
+                      <span class="cl-tech-chip cl-chip-yolo" title="Multi-modal deep learning defect classification">
+                        <span class="cl-chip-icon">⚡</span>
+                        <span>YOLOv8-X AI VISION</span>
+                      </span>
+                      <span class="cl-tech-chip cl-chip-mesh"
+                        title="Bruhat Bengaluru Mahanagara Palike Connected Operations">
+                        <span class="cl-live-pulse-dot" aria-hidden="true"></span>
+                        <span>BBMP MUNICIPAL MESH</span>
+                      </span>
+                      <span class="cl-tech-chip cl-chip-sla" title="Karnataka Sakala Services Act Compliant">
+                        <span>🛡️ SAKALA 100% SLA</span>
+                      </span>
+                    </div>
                   </div>
-                  <div class="cl-identity-chips">
-                    <span class="cl-tech-chip cl-chip-yolo" title="Multi-modal deep learning defect classification">
-                      <span class="cl-chip-icon">⚡</span>
-                      <span>YOLOv8-X AI VISION</span>
-                    </span>
-                    <span class="cl-tech-chip cl-chip-mesh" title="Bruhat Bengaluru Mahanagara Palike Connected Operations">
-                      <span class="cl-live-pulse-dot" aria-hidden="true"></span>
-                      <span>BBMP MUNICIPAL MESH</span>
-                    </span>
-                    <span class="cl-tech-chip cl-chip-sla" title="Karnataka Sakala Services Act Compliant">
-                      <span>🛡️ SAKALA 100% SLA</span>
-                    </span>
+                  <div class="cl-identity-motto-row">
+                    <span class="cl-identity-motto-en">Smart Civic Reporting &bull; Transparent City Improvements</span>
+                  </div>
+                  <div class="cl-identity-kannada-row">
+                    <span class="cl-kannada-pill">ಕರ್ನಾಟಕ</span>
+                    <span class="cl-identity-motto-kn" lang="kn">ಸ್ಮಾರ್ಟ್ ನಾಗರಿಕ ವರದಿ &bull; ಪಾರದರ್ಶಕ ನಗರ ಸುಧಾರಣೆ</span>
                   </div>
                 </div>
-                <div class="cl-identity-motto-row">
-                  <span class="cl-identity-motto-en">Smart Civic Reporting &bull; Transparent City Improvements</span>
+              </div>
+
+              <!-- Interactive Fast-Track Civic Triage Launchpad -->
+              <div class="cl-triage-launchpad">
+                <div class="cl-launchpad-header">
+                  <div class="cl-launchpad-title-wrap">
+                    <span class="cl-launchpad-lead-icon">🎯</span>
+                    <span class="cl-launchpad-title">INSTANT CIVIC DISPATCH MATRIX</span>
+                    <span class="cl-launchpad-sub">&mdash; Direct departmental routing with guaranteed response
+                      SLA:</span>
+                  </div>
+                  <div class="cl-launchpad-meta">
+                    <span class="cl-geo-coords"><span class="cl-pin-pulse" aria-hidden="true">📍</span> 12.9716° N,
+                      77.5946° E</span>
+                  </div>
                 </div>
-                <div class="cl-identity-kannada-row">
-                  <span class="cl-kannada-pill">ಕರ್ನಾಟಕ</span>
-                  <span class="cl-identity-motto-kn" lang="kn">ಸ್ಮಾರ್ಟ್ ನಾಗರಿಕ ವರದಿ &bull; ಪಾರದರ್ಶಕ ನಗರ ಸುಧಾರಣೆ</span>
+
+                <div class="cl-launchpad-cards">
+                  <a href="./citizen-report.html?category=pothole" class="cl-triage-card cl-card-pothole"
+                    title="Report Road Defect or Pothole to BBMP Road Infrastructure Division">
+                    <div class="cl-triage-card-top">
+                      <span class="cl-triage-icon-wrap cl-icon-road">🕳️</span>
+                      <span class="cl-triage-sla-badge">48h SLA</span>
+                    </div>
+                    <div class="cl-triage-card-body">
+                      <span class="cl-triage-name">Potholes &amp; Road Craters</span>
+                      <span class="cl-triage-dept">BBMP Road Infrastructure</span>
+                    </div>
+                    <div class="cl-triage-card-footer">
+                      <span class="cl-triage-action">Report &rarr;</span>
+                    </div>
+                  </a>
+
+                  <a href="./citizen-report.html?category=broken_streetlight" class="cl-triage-card cl-card-streetlight"
+                    title="Report Defective Streetlight to BBMP / BESCOM Electrical Division">
+                    <div class="cl-triage-card-top">
+                      <span class="cl-triage-icon-wrap cl-icon-light">💡</span>
+                      <span class="cl-triage-sla-badge">24h SLA</span>
+                    </div>
+                    <div class="cl-triage-card-body">
+                      <span class="cl-triage-name">Broken Streetlights</span>
+                      <span class="cl-triage-dept">BBMP / BESCOM Electrical</span>
+                    </div>
+                    <div class="cl-triage-card-footer">
+                      <span class="cl-triage-action">Report &rarr;</span>
+                    </div>
+                  </a>
+
+                  <a href="./citizen-report.html?category=drainage" class="cl-triage-card cl-card-drainage"
+                    title="Report Blocked Storm Drain to Stormwater Drainage & Flood Mitigation Cell">
+                    <div class="cl-triage-card-top">
+                      <span class="cl-triage-icon-wrap cl-icon-drain">🌊</span>
+                      <span class="cl-triage-sla-badge">72h SLA</span>
+                    </div>
+                    <div class="cl-triage-card-body">
+                      <span class="cl-triage-name">Drainage &amp; Flash Floods</span>
+                      <span class="cl-triage-dept">Stormwater &amp; SWD Flood Cell</span>
+                    </div>
+                    <div class="cl-triage-card-footer">
+                      <span class="cl-triage-action">Report &rarr;</span>
+                    </div>
+                  </a>
+
+                  <a href="./citizen-report.html?category=garbage" class="cl-triage-card cl-card-garbage"
+                    title="Report Uncollected Solid Waste to BBMP Solid Waste Management Division">
+                    <div class="cl-triage-card-top">
+                      <span class="cl-triage-icon-wrap cl-icon-waste">🗑️</span>
+                      <span class="cl-triage-sla-badge">24h SLA</span>
+                    </div>
+                    <div class="cl-triage-card-body">
+                      <span class="cl-triage-name">Garbage &amp; Sanitation</span>
+                      <span class="cl-triage-dept">BBMP Solid Waste (SWM)</span>
+                    </div>
+                    <div class="cl-triage-card-footer">
+                      <span class="cl-triage-action">Report &rarr;</span>
+                    </div>
+                  </a>
+
+                  <a href="./citizen-report.html?category=water_leakage" class="cl-triage-card cl-card-water"
+                    title="Report Pipe Burst or Sewage Leak to BWSSB Water Supply & Sewerage Board">
+                    <div class="cl-triage-card-top">
+                      <span class="cl-triage-icon-wrap cl-icon-pipe">🚰</span>
+                      <span class="cl-triage-sla-badge">12h SLA</span>
+                    </div>
+                    <div class="cl-triage-card-body">
+                      <span class="cl-triage-name">Water Line / Pipe Burst</span>
+                      <span class="cl-triage-dept">BWSSB Water &amp; Sewerage</span>
+                    </div>
+                    <div class="cl-triage-card-footer">
+                      <span class="cl-triage-action">Report &rarr;</span>
+                    </div>
+                  </a>
                 </div>
               </div>
             </div>
 
-            <!-- Interactive Fast-Track Civic Triage Launchpad -->
-            <div class="cl-triage-launchpad">
-              <div class="cl-launchpad-header">
-                <div class="cl-launchpad-title-wrap">
-                  <span class="cl-launchpad-lead-icon">🎯</span>
-                  <span class="cl-launchpad-title">INSTANT CIVIC DISPATCH MATRIX</span>
-                  <span class="cl-launchpad-sub">&mdash; Direct departmental routing with guaranteed response SLA:</span>
+            <h1 class="cl-hero-subtitle-heading"
+              style="font-size: clamp(1.6rem, 3vw, 2.4rem); line-height: 1.18; margin-bottom: 12px;">
+              Building a Smarter, Cleaner and Safer Bengaluru.
+            </h1>
+
+            <p class="cl-hero-lead" style="margin-bottom: 14px;">
+              Report civic problems, track real repair progress and help communities build safer, cleaner and
+              better-connected cities across Karnataka.
+            </p>
+
+            <div
+              style="font-family: var(--cl-font-mono); font-size: 11px; font-weight: 700; color: var(--cl-text-muted); letter-spacing: 0.06em; margin-bottom: 18px;">
+              REPORT &bull; TRACK &bull; RESOLVE
+            </div>
+
+            <div class="cl-hero-cta-group">
+              <a href="./citizen-report.html" class="cl-btn cl-btn-primary"
+                style="font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
+                <img src="./static/images/icons8/navigation/report-hazard.svg" alt="" width="18" height="18"
+                  aria-hidden="true" style="filter: brightness(0) invert(1);">
+                <span>Report an Issue</span>
+              </a>
+              <a href="./public-map.html" class="cl-btn cl-btn-secondary"
+                style="display: inline-flex; align-items: center; gap: 8px;">
+                <img src="./static/images/icons8/navigation/public-map.svg" alt="" width="18" height="18"
+                  aria-hidden="true">
+                <span>Explore Public Map</span>
+              </a>
+              <a href="/dashboard/dashboard.html" class="cl-btn cl-btn-secondary"
+                style="display: inline-flex; align-items: center; gap: 8px;">
+                <img src="./static/images/icons8/navigation/live-monitor.svg" alt="" width="18" height="18"
+                  aria-hidden="true">
+                <span>Live Sensor Monitor</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Right Column: City Visual with Interactive Floating Badges -->
+          <div class="cl-hero-visual-col" style="width: 100%;">
+            <div class="cl-hero-relative-wrap">
+              <!-- 3 Floating Feature Badges -->
+              <div class="cl-floating-badge cl-floating-badge-1" title="Automated YOLO hazard triage">
+                <span style="font-size: 16px;">⚡</span>
+                <div>
+                  <div style="line-height: 1.2;">Real-Time Monitoring</div>
+                  <div style="font-size: 10px; font-weight: 500; color: var(--cl-text-muted);">Spatial Cluster
+                    Deduplication</div>
                 </div>
-                <div class="cl-launchpad-meta">
-                  <span class="cl-geo-coords"><span class="cl-pin-pulse" aria-hidden="true">📍</span> 12.9716° N, 77.5946° E</span>
+              </div>
+
+              <div class="cl-floating-badge cl-floating-badge-2" title="Publicly verified before and after proof">
+                <span style="font-size: 16px;">🛡️</span>
+                <div>
+                  <div style="line-height: 1.2;">Transparent Governance</div>
+                  <div style="font-size: 10px; font-weight: 500; color: var(--cl-text-muted);">Verified Photographic
+                    Evidence</div>
                 </div>
               </div>
 
-              <div class="cl-launchpad-cards">
-                <a href="./citizen-report.html?category=pothole" class="cl-triage-card cl-card-pothole" title="Report Road Defect or Pothole to BBMP Road Infrastructure Division">
-                  <div class="cl-triage-card-top">
-                    <span class="cl-triage-icon-wrap cl-icon-road">🕳️</span>
-                    <span class="cl-triage-sla-badge">48h SLA</span>
-                  </div>
-                  <div class="cl-triage-card-body">
-                    <span class="cl-triage-name">Potholes &amp; Road Craters</span>
-                    <span class="cl-triage-dept">BBMP Road Infrastructure</span>
-                  </div>
-                  <div class="cl-triage-card-footer">
-                    <span class="cl-triage-action">Report &rarr;</span>
-                  </div>
-                </a>
+              <div class="cl-floating-badge cl-floating-badge-3" title="Accessible in English & Kannada">
+                <span style="font-size: 16px;">👥</span>
+                <div>
+                  <div style="line-height: 1.2;">Citizen First</div>
+                  <div style="font-size: 10px; font-weight: 500; color: var(--cl-text-muted);">ಕನ್ನಡ &amp; English
+                    Multilingual Flow</div>
+                </div>
+              </div>
 
-                <a href="./citizen-report.html?category=broken_streetlight" class="cl-triage-card cl-card-streetlight" title="Report Defective Streetlight to BBMP / BESCOM Electrical Division">
-                  <div class="cl-triage-card-top">
-                    <span class="cl-triage-icon-wrap cl-icon-light">💡</span>
-                    <span class="cl-triage-sla-badge">24h SLA</span>
+              <!-- Automated Municipal Department Showcase Bootstrap Carousel (3s interval) -->
+              <div class="cl-hero-carousel-card">
+                <div id="heroMunicipalCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel"
+                  data-bs-interval="3000">
+                  <!-- Carousel Indicators -->
+                  <div class="carousel-indicators cl-hero-carousel-indicators">
+                    <button type="button" data-bs-target="#heroMunicipalCarousel" data-bs-slide-to="0" class="active"
+                      aria-current="true" aria-label="Smart City Grid"></button>
+                    <button type="button" data-bs-target="#heroMunicipalCarousel" data-bs-slide-to="1"
+                      aria-label="Vidhana Soudha Secretariat"></button>
+                    <button type="button" data-bs-target="#heroMunicipalCarousel" data-bs-slide-to="2"
+                      aria-label="Road Infrastructure Division"></button>
+                    <button type="button" data-bs-target="#heroMunicipalCarousel" data-bs-slide-to="3"
+                      aria-label="Electrical &amp; Lighting Grid"></button>
                   </div>
-                  <div class="cl-triage-card-body">
-                    <span class="cl-triage-name">Broken Streetlights</span>
-                    <span class="cl-triage-dept">BBMP / BESCOM Electrical</span>
-                  </div>
-                  <div class="cl-triage-card-footer">
-                    <span class="cl-triage-action">Report &rarr;</span>
-                  </div>
-                </a>
 
-                <a href="./citizen-report.html?category=drainage" class="cl-triage-card cl-card-drainage" title="Report Blocked Storm Drain to Stormwater Drainage & Flood Mitigation Cell">
-                  <div class="cl-triage-card-top">
-                    <span class="cl-triage-icon-wrap cl-icon-drain">🌊</span>
-                    <span class="cl-triage-sla-badge">72h SLA</span>
-                  </div>
-                  <div class="cl-triage-card-body">
-                    <span class="cl-triage-name">Drainage &amp; Flash Floods</span>
-                    <span class="cl-triage-dept">Stormwater &amp; SWD Flood Cell</span>
-                  </div>
-                  <div class="cl-triage-card-footer">
-                    <span class="cl-triage-action">Report &rarr;</span>
-                  </div>
-                </a>
+                  <!-- Carousel Slides -->
+                  <div class="carousel-inner">
+                    <!-- Slide 1: Smart City Connected Mesh & AI Defect Triage -->
+                    <div class="carousel-item active" data-bs-interval="3000">
+                      <div class="cl-hero-slide-wrapper">
+                        <img src="./static/images/icons8/illustrations-3d/hero-city-infrastructure-3d.svg"
+                          alt="CivicLens Smart City &amp; Connected Infrastructure Platform"
+                          class="cl-hero-carousel-img" loading="eager">
+                        <div class="cl-hero-carousel-caption">
+                          <span class="cl-hero-slide-badge">🌐 BBMP CONNECTED MUNICIPAL MESH</span>
+                          <div class="cl-hero-slide-sub">Automated YOLOv8 Triage &bull; 198 Wards Bengaluru</div>
+                        </div>
+                      </div>
+                    </div>
 
-                <a href="./citizen-report.html?category=garbage" class="cl-triage-card cl-card-garbage" title="Report Uncollected Solid Waste to BBMP Solid Waste Management Division">
-                  <div class="cl-triage-card-top">
-                    <span class="cl-triage-icon-wrap cl-icon-waste">🗑️</span>
-                    <span class="cl-triage-sla-badge">24h SLA</span>
-                  </div>
-                  <div class="cl-triage-card-body">
-                    <span class="cl-triage-name">Garbage &amp; Sanitation</span>
-                    <span class="cl-triage-dept">BBMP Solid Waste (SWM)</span>
-                  </div>
-                  <div class="cl-triage-card-footer">
-                    <span class="cl-triage-action">Report &rarr;</span>
-                  </div>
-                </a>
+                    <!-- Slide 2: Real Vidhana Soudha Municipal Secretariat (User 2nd Photo) -->
+                    <div class="carousel-item" data-bs-interval="3000">
+                      <div class="cl-hero-slide-wrapper">
+                        <img src="./static/images/branding/vidhana-soudha-bengaluru.webp"
+                          alt="Vidhana Soudha — Karnataka Municipal Secretariat, Bengaluru"
+                          class="cl-hero-carousel-img cl-photo-fit" loading="lazy">
+                        <div class="cl-hero-carousel-caption">
+                          <span class="cl-hero-slide-badge">🏛️ VIDHANA SOUDHA &bull; BENGALURU</span>
+                          <div class="cl-hero-slide-sub">Karnataka Municipal Secretariat &bull; State Grievance
+                            Redressal</div>
+                        </div>
+                      </div>
+                    </div>
 
-                <a href="./citizen-report.html?category=water_leakage" class="cl-triage-card cl-card-water" title="Report Pipe Burst or Sewage Leak to BWSSB Water Supply & Sewerage Board">
-                  <div class="cl-triage-card-top">
-                    <span class="cl-triage-icon-wrap cl-icon-pipe">🚰</span>
-                    <span class="cl-triage-sla-badge">12h SLA</span>
+                    <!-- Slide 3: Municipal Road Works & Rapid Pothole Triage -->
+                    <div class="carousel-item" data-bs-interval="3000">
+                      <div class="cl-hero-slide-wrapper">
+                        <img src="./static/images/icons8/illustrations-3d/card-municipal-triage-3d.svg"
+                          alt="BBMP Road Infrastructure &amp; Pothole Triage Division" class="cl-hero-carousel-img"
+                          loading="lazy">
+                        <div class="cl-hero-carousel-caption">
+                          <span class="cl-hero-slide-badge">🕳️ ROAD INFRASTRUCTURE DIVISION</span>
+                          <div class="cl-hero-slide-sub">Rapid Asphalt Restoration &bull; 48-Hour Sakala SLA</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Slide 4: Electrical Grid & Smart Public Lighting -->
+                    <div class="carousel-item" data-bs-interval="3000">
+                      <div class="cl-hero-slide-wrapper">
+                        <img src="./static/images/icons8/illustrations-3d/card-live-sensor-3d.svg"
+                          alt="BESCOM Electrical Grid &amp; Streetlight Monitoring" class="cl-hero-carousel-img"
+                          loading="lazy">
+                        <div class="cl-hero-carousel-caption">
+                          <span class="cl-hero-slide-badge">💡 BESCOM &amp; ELECTRICAL GRID</span>
+                          <div class="cl-hero-slide-sub">Smart Streetlight Automation &bull; 24-Hour Resolution</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div class="cl-triage-card-body">
-                    <span class="cl-triage-name">Water Line / Pipe Burst</span>
-                    <span class="cl-triage-dept">BWSSB Water &amp; Sewerage</span>
-                  </div>
-                  <div class="cl-triage-card-footer">
-                    <span class="cl-triage-action">Report &rarr;</span>
-                  </div>
-                </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5 Real-Time Database Metrics -->
+        <div class="cl-container" style="padding-left: 0; padding-right: 0; margin-top: var(--cl-space-8);">
+          <div class="cl-metrics-row">
+
+            <!-- Metric 1: Total Citizen Reports -->
+            <div class="cl-metric-card" style="--cl-card-accent: var(--cl-primary);">
+              <div class="cl-metric-header">
+                <span class="cl-metric-label">Citizen Reports</span>
+                <div class="cl-metric-icon">
+                  <img src="./static/images/icons8/navigation/report-hazard.svg" alt="" width="18" height="18"
+                    aria-hidden="true">
+                </div>
+              </div>
+              <span class="cl-metric-value" id="counter-reports">--</span>
+              <span class="cl-metric-subtext">Total persisted citizen submissions</span>
+            </div>
+
+            <!-- Metric 2: Canonical Incidents -->
+            <div class="cl-metric-card" style="--cl-card-accent: #2563eb;">
+              <div class="cl-metric-header">
+                <span class="cl-metric-label">Verified Incidents</span>
+                <div class="cl-metric-icon">
+                  <img src="./static/images/icons8/navigation/public-map.svg" alt="" width="18" height="18"
+                    aria-hidden="true">
+                </div>
+              </div>
+              <span class="cl-metric-value" id="counter-incidents">--</span>
+              <span class="cl-metric-subtext">Unique physical hazard sites</span>
+            </div>
+
+            <!-- Metric 3: Resolved Defects -->
+            <div class="cl-metric-card" style="--cl-card-accent: var(--cl-minor);">
+              <div class="cl-metric-header">
+                <span class="cl-metric-label">Resolved Issues</span>
+                <div class="cl-metric-icon">
+                  <img src="./static/images/icons8/navigation/departments.svg" alt="" width="18" height="18"
+                    aria-hidden="true">
+                </div>
+              </div>
+              <span class="cl-metric-value" id="counter-resolved" style="color: var(--cl-minor);">--</span>
+              <span class="cl-metric-subtext">Completed work orders with evidence</span>
+            </div>
+
+            <!-- Metric 4: Pending Verification -->
+            <div class="cl-metric-card" style="--cl-card-accent: var(--cl-warning);">
+              <div class="cl-metric-header">
+                <span class="cl-metric-label">Pending Verification</span>
+                <div class="cl-metric-icon">
+                  <img src="./static/images/icons8/navigation/verification-queue.svg" alt="" width="18" height="18"
+                    aria-hidden="true">
+                </div>
+              </div>
+              <span class="cl-metric-value" id="counter-pending" style="color: var(--cl-warning);">--</span>
+              <span class="cl-metric-subtext">Awaiting municipal engineering review</span>
+            </div>
+
+            <!-- Metric 5: Deduplication Efficiency -->
+            <div class="cl-metric-card" style="--cl-card-accent: #7c3aed;">
+              <div class="cl-metric-header">
+                <span class="cl-metric-label">Dedup Efficiency</span>
+                <div class="cl-metric-icon">
+                  <img src="./static/images/icons8/navigation/transparency.svg" alt="" width="18" height="18"
+                    aria-hidden="true">
+                </div>
+              </div>
+              <span class="cl-metric-value" id="counter-dedup" style="color: #7c3aed;">--</span>
+              <span class="cl-metric-subtext">Cluster consolidation ratio</span>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- LIVE CIVICLENS MONITOR & RECENT ACTIVITY GRID -->
+      <section class="cl-container" style="padding-top: var(--cl-space-6); padding-bottom: var(--cl-space-6);">
+        <div class="cl-ops-grid">
+
+          <!-- Left Column: Live Leaflet Incident Monitor -->
+          <div class="cl-monitor-panel">
+            <div class="cl-panel-header">
+              <div class="cl-panel-title">
+                <span class="cl-live-pulse-dot" aria-hidden="true"></span>
+                <span>Live CivicLens Monitor</span>
+                <span id="map-incident-count-badge" class="cl-activity-badge"
+                  style="margin-left: 6px;">Loading...</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button id="btn-map-center" class="cl-btn cl-btn-secondary cl-btn-sm" title="Center map on Bengaluru">📍
+                  Center</button>
+                <button id="btn-map-refresh" class="cl-btn cl-btn-secondary cl-btn-sm" title="Refresh markers">🔄
+                  Refresh</button>
+                <a href="./public-map.html" class="cl-btn cl-btn-primary cl-btn-sm" style="text-decoration: none;">View
+                  Full Map &rarr;</a>
+              </div>
+            </div>
+            <!-- Integrated Leaflet Container -->
+            <div id="homepage-leaflet-map" role="region" aria-label="Interactive live incident monitor map"></div>
+            <div
+              style="padding: 8px 16px; background: var(--cl-bg-canvas); border-top: 1px solid var(--cl-border); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--cl-text-muted);">
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <span><span
+                    style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:4px;"></span>Verified</span>
+                <span><span
+                    style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3b82f6;margin-right:4px;"></span>In
+                  Progress</span>
+                <span><span
+                    style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#10b981;margin-right:4px;"></span>Resolved</span>
+              </div>
+              <span id="map-provider-badge" class="provider-badge provider-osm">OpenStreetMap</span>
+            </div>
+          </div>
+
+          <!-- Right Column: Recent Civic Activity Feed -->
+          <div class="cl-activity-panel">
+            <div class="cl-panel-header">
+              <div class="cl-panel-title">
+                <img src="./static/images/icons8/navigation/notifications.svg" alt="" width="16" height="16"
+                  aria-hidden="true">
+                <span>Recent Activity</span>
+              </div>
+              <button onclick="window.CivicLensHomepage.loadRecentActivity()" class="cl-btn cl-btn-secondary cl-btn-sm"
+                title="Refresh activity feed">
+                Refresh
+              </button>
+            </div>
+            <!-- Dynamic Scrollable Activity List -->
+            <div class="cl-activity-feed-scroll" id="activity-timeline-feed" role="feed"
+              aria-label="Recent civic incident activity events">
+              <div style="padding: 24px; text-align: center; color: var(--cl-text-muted); font-size: 12px;">
+                Loading recent civic events...
               </div>
             </div>
           </div>
 
-          <h1 class="cl-hero-subtitle-heading" style="font-size: clamp(1.6rem, 3vw, 2.4rem); line-height: 1.18; margin-bottom: 12px;">
-            Building a Smarter, Cleaner and Safer Bengaluru.
-          </h1>
-
-          <p class="cl-hero-lead" style="margin-bottom: 14px;">
-            Report civic problems, track real repair progress and help communities build safer, cleaner and better-connected cities across Karnataka.
-          </p>
-
-          <div style="font-family: var(--cl-font-mono); font-size: 11px; font-weight: 700; color: var(--cl-text-muted); letter-spacing: 0.06em; margin-bottom: 18px;">
-            REPORT &bull; TRACK &bull; RESOLVE
-          </div>
-
-          <div class="cl-hero-cta-group">
-            <a href="./citizen-report.html" class="cl-btn cl-btn-primary" style="font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
-              <img src="./static/images/icons8/navigation/report-hazard.svg" alt="" width="18" height="18" aria-hidden="true" style="filter: brightness(0) invert(1);">
-              <span>Report an Issue</span>
-            </a>
-            <a href="./public-map.html" class="cl-btn cl-btn-secondary" style="display: inline-flex; align-items: center; gap: 8px;">
-              <img src="./static/images/icons8/navigation/public-map.svg" alt="" width="18" height="18" aria-hidden="true">
-              <span>Explore Public Map</span>
-            </a>
-            <a href="/dashboard/dashboard.html" class="cl-btn cl-btn-secondary" style="display: inline-flex; align-items: center; gap: 8px;">
-              <img src="./static/images/icons8/navigation/live-monitor.svg" alt="" width="18" height="18" aria-hidden="true">
-              <span>Live Sensor Monitor</span>
-            </a>
-          </div>
         </div>
+      </section>
 
-        <!-- Right Column: City Visual with Interactive Floating Badges -->
-        <div class="cl-hero-visual-col" style="width: 100%;">
-          <div class="cl-hero-relative-wrap">
-            <!-- 3 Floating Feature Badges -->
-            <div class="cl-floating-badge cl-floating-badge-1" title="Automated YOLO hazard triage">
-              <span style="font-size: 16px;">⚡</span>
-              <div>
-                <div style="line-height: 1.2;">Real-Time Monitoring</div>
-                <div style="font-size: 10px; font-weight: 500; color: var(--cl-text-muted);">Spatial Cluster Deduplication</div>
-              </div>
-            </div>
-
-            <div class="cl-floating-badge cl-floating-badge-2" title="Publicly verified before and after proof">
-              <span style="font-size: 16px;">🛡️</span>
-              <div>
-                <div style="line-height: 1.2;">Transparent Governance</div>
-                <div style="font-size: 10px; font-weight: 500; color: var(--cl-text-muted);">Verified Photographic Evidence</div>
-              </div>
-            </div>
-
-            <div class="cl-floating-badge cl-floating-badge-3" title="Accessible in English & Kannada">
-              <span style="font-size: 16px;">👥</span>
-              <div>
-                <div style="line-height: 1.2;">Citizen First</div>
-                <div style="font-size: 10px; font-weight: 500; color: var(--cl-text-muted);">ಕನ್ನಡ &amp; English Multilingual Flow</div>
-              </div>
-            </div>
-
-            <!-- Central Infrastructure Art Asset -->
-            <img src="./static/images/icons8/illustrations-3d/hero-city-infrastructure-3d.svg" 
-                 alt="CivicLens Smart City &amp; Connected Infrastructure Platform" 
-                 class="cl-hero-art" 
-                 style="max-width: 440px; width: 100%; height: auto; object-fit: contain; padding: 1rem;"
-                 loading="eager">
-          </div>
-        </div>
-      </div>
-
-      <!-- 5 Real-Time Database Metrics -->
-      <div class="cl-container" style="padding-left: 0; padding-right: 0; margin-top: var(--cl-space-8);">
-        <div class="cl-metrics-row">
-          
-          <!-- Metric 1: Total Citizen Reports -->
-          <div class="cl-metric-card" style="--cl-card-accent: var(--cl-primary);">
-            <div class="cl-metric-header">
-              <span class="cl-metric-label">Citizen Reports</span>
-              <div class="cl-metric-icon">
-                <img src="./static/images/icons8/navigation/report-hazard.svg" alt="" width="18" height="18" aria-hidden="true">
-              </div>
-            </div>
-            <span class="cl-metric-value" id="counter-reports">--</span>
-            <span class="cl-metric-subtext">Total persisted citizen submissions</span>
-          </div>
-
-          <!-- Metric 2: Canonical Incidents -->
-          <div class="cl-metric-card" style="--cl-card-accent: #2563eb;">
-            <div class="cl-metric-header">
-              <span class="cl-metric-label">Verified Incidents</span>
-              <div class="cl-metric-icon">
-                <img src="./static/images/icons8/navigation/public-map.svg" alt="" width="18" height="18" aria-hidden="true">
-              </div>
-            </div>
-            <span class="cl-metric-value" id="counter-incidents">--</span>
-            <span class="cl-metric-subtext">Unique physical hazard sites</span>
-          </div>
-
-          <!-- Metric 3: Resolved Defects -->
-          <div class="cl-metric-card" style="--cl-card-accent: var(--cl-minor);">
-            <div class="cl-metric-header">
-              <span class="cl-metric-label">Resolved Issues</span>
-              <div class="cl-metric-icon">
-                <img src="./static/images/icons8/navigation/departments.svg" alt="" width="18" height="18" aria-hidden="true">
-              </div>
-            </div>
-            <span class="cl-metric-value" id="counter-resolved" style="color: var(--cl-minor);">--</span>
-            <span class="cl-metric-subtext">Completed work orders with evidence</span>
-          </div>
-
-          <!-- Metric 4: Pending Verification -->
-          <div class="cl-metric-card" style="--cl-card-accent: var(--cl-warning);">
-            <div class="cl-metric-header">
-              <span class="cl-metric-label">Pending Verification</span>
-              <div class="cl-metric-icon">
-                <img src="./static/images/icons8/navigation/verification-queue.svg" alt="" width="18" height="18" aria-hidden="true">
-              </div>
-            </div>
-            <span class="cl-metric-value" id="counter-pending" style="color: var(--cl-warning);">--</span>
-            <span class="cl-metric-subtext">Awaiting municipal engineering review</span>
-          </div>
-
-          <!-- Metric 5: Deduplication Efficiency -->
-          <div class="cl-metric-card" style="--cl-card-accent: #7c3aed;">
-            <div class="cl-metric-header">
-              <span class="cl-metric-label">Dedup Efficiency</span>
-              <div class="cl-metric-icon">
-                <img src="./static/images/icons8/navigation/transparency.svg" alt="" width="18" height="18" aria-hidden="true">
-              </div>
-            </div>
-            <span class="cl-metric-value" id="counter-dedup" style="color: #7c3aed;">--</span>
-            <span class="cl-metric-subtext">Cluster consolidation ratio</span>
-          </div>
-
-        </div>
-      </div>
-    </section>
-
-    <!-- LIVE CIVICLENS MONITOR & RECENT ACTIVITY GRID -->
-    <section class="cl-container" style="padding-top: var(--cl-space-6); padding-bottom: var(--cl-space-6);">
-      <div class="cl-ops-grid">
-        
-        <!-- Left Column: Live Leaflet Incident Monitor -->
-        <div class="cl-monitor-panel">
-          <div class="cl-panel-header">
-            <div class="cl-panel-title">
-              <span class="cl-live-pulse-dot" aria-hidden="true"></span>
-              <span>Live CivicLens Monitor</span>
-              <span id="map-incident-count-badge" class="cl-activity-badge" style="margin-left: 6px;">Loading...</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <button id="btn-map-center" class="cl-btn cl-btn-secondary cl-btn-sm" title="Center map on Bengaluru">📍 Center</button>
-              <button id="btn-map-refresh" class="cl-btn cl-btn-secondary cl-btn-sm" title="Refresh markers">🔄 Refresh</button>
-              <a href="./public-map.html" class="cl-btn cl-btn-primary cl-btn-sm" style="text-decoration: none;">View Full Map &rarr;</a>
-            </div>
-          </div>
-          <!-- Integrated Leaflet Container -->
-          <div id="homepage-leaflet-map" role="region" aria-label="Interactive live incident monitor map"></div>
-          <div style="padding: 8px 16px; background: var(--cl-bg-canvas); border-top: 1px solid var(--cl-border); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--cl-text-muted);">
-            <div style="display: flex; gap: 12px; align-items: center;">
-              <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:4px;"></span>Verified</span>
-              <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3b82f6;margin-right:4px;"></span>In Progress</span>
-              <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#10b981;margin-right:4px;"></span>Resolved</span>
-            </div>
-            <span id="map-provider-badge" class="provider-badge provider-osm">OpenStreetMap</span>
-          </div>
-        </div>
-
-        <!-- Right Column: Recent Civic Activity Feed -->
-        <div class="cl-activity-panel">
-          <div class="cl-panel-header">
-            <div class="cl-panel-title">
-              <img src="./static/images/icons8/navigation/notifications.svg" alt="" width="16" height="16" aria-hidden="true">
-              <span>Recent Activity</span>
-            </div>
-            <button onclick="window.CivicLensHomepage.loadRecentActivity()" class="cl-btn cl-btn-secondary cl-btn-sm" title="Refresh activity feed">
-              Refresh
-            </button>
-          </div>
-          <!-- Dynamic Scrollable Activity List -->
-          <div class="cl-activity-feed-scroll" id="activity-timeline-feed" role="feed" aria-label="Recent civic incident activity events">
-            <div style="padding: 24px; text-align: center; color: var(--cl-text-muted); font-size: 12px;">
-              Loading recent civic events...
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- CIVICLENS IMPACT SHOWCASE: Real Problems. Real Progress. -->
-    <section class="cl-container" style="padding-top: var(--cl-space-8); padding-bottom: var(--cl-space-8);">
-      <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem; margin-bottom: var(--cl-space-4);">
-        <div>
-          <span style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--cl-primary); letter-spacing: 0.05em;">
-            Verified Transparency
-          </span>
-          <h2 style="font-family: var(--cl-font-heading); font-size: var(--cl-text-2xl); text-transform: uppercase; margin: 4px 0 0 0;">
-            Real Problems. Real Progress.
-          </h2>
-          <p style="color: var(--cl-text-secondary); margin: 4px 0 0 0; font-size: var(--cl-text-sm);">
-            Side-by-side photographic comparisons of civic defects before and after verified municipal engineering action.
-          </p>
-        </div>
-        <a href="./public-map.html" class="cl-btn cl-btn-secondary" style="font-size: 0.85rem; padding: 6px 14px;">
-          View All on Public Map &rarr;
-        </a>
-      </div>
-
-      <!-- Filter Pills -->
-      <div class="cl-filter-pills" id="baf-filter-pills">
-        <button class="cl-filter-pill active" data-category="all">All Issues</button>
-        <button class="cl-filter-pill" data-category="pothole">Potholes</button>
-        <button class="cl-filter-pill" data-category="road_damage">Road Damage</button>
-        <button class="cl-filter-pill" data-category="drainage">Drainage</button>
-        <button class="cl-filter-pill" data-category="garbage">Garbage</button>
-        <button class="cl-filter-pill" data-category="water_leakage">Water Leakage</button>
-        <button class="cl-filter-pill" data-category="broken_streetlight">Streetlights</button>
-      </div>
-
-      <!-- Before and After Card Grid -->
-      <div class="row g-4" id="baf-showcase-grid">
-        <div class="col-12 text-center py-4 text-muted">
-          Loading verified improvement records...
-        </div>
-      </div>
-    </section>
-
-    <!-- 3-STEP REPORTING EXPLANATION WITH ICONS8 3D VISUALS -->
-    <section class="cl-container" style="padding-top: var(--cl-space-6); padding-bottom: var(--cl-space-6);">
-      <h2 style="font-family: var(--cl-font-heading); font-size: var(--cl-text-xl); text-transform: uppercase; margin: 0 0 var(--cl-space-4) 0; text-align: center;">
-        How CivicLens Works
-      </h2>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--cl-space-4);">
-        
-        <div class="cl-card" style="padding: var(--cl-space-5); text-align: center; display: flex; flex-direction: column; align-items: center;">
-          <div style="width: 56px; height: 56px; margin-bottom: 12px;">
-            <img src="./static/images/icons8/workflow-steps/step-1-snap-pin-3d.svg" alt="" width="56" height="56" loading="lazy">
-          </div>
-          <h3 style="font-size: 1rem; font-weight: 700; margin: 0 0 6px 0;">1. Snap &amp; Pin</h3>
-          <p style="font-size: 0.85rem; color: var(--cl-text-secondary); margin: 0; line-height: 1.5;">
-            Citizens capture geotagged photos and drop an exact GPS pin in English or ಕನ್ನಡ (Kannada).
-          </p>
-        </div>
-
-        <div class="cl-card" style="padding: var(--cl-space-5); text-align: center; display: flex; flex-direction: column; align-items: center;">
-          <div style="width: 56px; height: 56px; margin-bottom: 12px;">
-            <img src="./static/images/icons8/workflow-steps/step-2-ai-triage-3d.svg" alt="" width="56" height="56" loading="lazy">
-          </div>
-          <h3 style="font-size: 1rem; font-weight: 700; margin: 0 0 6px 0;">2. AI Multilingual Triage</h3>
-          <p style="font-size: 0.85rem; color: var(--cl-text-secondary); margin: 0; line-height: 1.5;">
-            Computer vision detects defects and spatial clustering groups duplicate reports into one canonical incident.
-          </p>
-        </div>
-
-        <div class="cl-card" style="padding: var(--cl-space-5); text-align: center; display: flex; flex-direction: column; align-items: center;">
-          <div style="width: 56px; height: 56px; margin-bottom: 12px;">
-            <img src="./static/images/icons8/workflow-steps/step-3-track-verify-3d.svg" alt="" width="56" height="56" loading="lazy">
-          </div>
-          <h3 style="font-size: 1rem; font-weight: 700; margin: 0 0 6px 0;">3. Track &amp; Verify</h3>
-          <p style="font-size: 0.85rem; color: var(--cl-text-secondary); margin: 0; line-height: 1.5;">
-            Municipal crews repair the hazard and upload before-and-after photographic evidence with public transparency.
-          </p>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- STANDARDIZED SYSTEM MODULE CARDS -->
-    <section class="cl-container" style="padding-top: var(--cl-space-6); padding-bottom: var(--cl-space-8);">
-      <h2 style="font-family: var(--cl-font-heading); font-size: var(--cl-text-2xl); text-transform: uppercase; margin: 0 0 var(--cl-space-2) 0;">
-        System Modules
-      </h2>
-      <p style="color: var(--cl-text-secondary); margin: 0 0 var(--cl-space-6) 0; font-size: var(--cl-text-sm);">
-        Select an interface based on your role (citizen reporting or municipal administration):
-      </p>
-
-      <div class="cl-modules-grid">
-        <!-- 1. Citizen Dashboard -->
-        <a href="./citizen-dashboard.html" class="cl-module-card">
-          <div class="cl-module-art">
-            <img src="./static/images/icons8/illustrations-3d/card-citizen-dashboard-3d.svg" alt="" width="56" height="56" loading="lazy">
-          </div>
-          <h3 class="cl-module-title">Citizen Dashboard</h3>
-          <p class="cl-module-desc">View your personal submission portfolio, track real-time status progression, view photo evidence, and update preferences.</p>
-          <div class="cl-module-action">Open Dashboard &rarr;</div>
-        </a>
-
-        <!-- 2. Citizen Reporting -->
-        <a href="./citizen-report.html" class="cl-module-card">
-          <div class="cl-module-art">
-            <img src="./static/images/icons8/illustrations-3d/card-report-hazard-3d.svg" alt="" width="56" height="56" loading="lazy">
-          </div>
-          <h3 class="cl-module-title">Report an Issue</h3>
-          <p class="cl-module-desc">Submit a road hazard with guided 5-step wizard, photo upload, interactive pin, and Kannada-English support.</p>
-          <div class="cl-module-action">Open Citizen Form &rarr;</div>
-        </a>
-
-        <!-- 3. Public Map -->
-        <a href="./public-map.html" class="cl-module-card">
-          <div class="cl-module-art">
-            <img src="./static/images/icons8/illustrations-3d/card-public-map-3d.svg" alt="" width="56" height="56" loading="lazy">
-          </div>
-          <h3 class="cl-module-title">Public Incident Map</h3>
-          <p class="cl-module-desc">Explore live city-wide infrastructure defects, repair statuses, and verified municipal work orders in real-time.</p>
-          <div class="cl-module-action">View Public Map &rarr;</div>
-        </a>
-
-        <!-- 4. Civic Transparency Analytics -->
-        <a href="./transparency.html" class="cl-module-card">
-          <div class="cl-module-art">
-            <img src="./static/images/icons8/illustrations-3d/card-transparency-analytics-3d.svg" alt="" width="56" height="56" loading="lazy">
-          </div>
-          <h3 class="cl-module-title">Civic Transparency</h3>
-          <p class="cl-module-desc">Open, 100% database-backed metrics tracking resolution SLAs, canonical defect vs grievance volumes, and turnaround trends.</p>
-          <div class="cl-module-action">View Transparency Metrics &rarr;</div>
-        </a>
-
-        <!-- 5. Notification Center -->
-        <a href="./notifications.html" class="cl-module-card">
-          <div class="cl-module-art">
-            <img src="./static/images/icons8/illustrations-3d/card-notifications-3d.svg" alt="" width="56" height="56" loading="lazy">
-          </div>
-          <h3 class="cl-module-title">Notification Center</h3>
-          <p class="cl-module-desc">Manage alerts for submitted grievances and followed community incidents across In-App, Email, SMS, and WhatsApp channels.</p>
-          <div class="cl-module-action">Open Notifications &rarr;</div>
-        </a>
-
-        <!-- 6. Live Detection Monitor -->
-        <a href="/dashboard/dashboard.html" class="cl-module-card">
-          <div class="cl-module-art">
-            <img src="./static/images/icons8/illustrations-3d/card-live-sensor-3d.svg" alt="" width="56" height="56" loading="lazy">
-          </div>
-          <h3 class="cl-module-title">Live Sensor Monitor</h3>
-          <p class="cl-module-desc">Original Roadstate real-time feed connected to in-vehicle cameras and onboard YOLO detection telemetry.</p>
-          <div class="cl-module-action">Open Live Monitor &rarr;</div>
-        </a>
-
-        <!-- 7. Municipal Triage Console -->
-        <a href="./municipal/dashboard.html" class="cl-module-card">
-          <div class="cl-module-art">
-            <img src="./static/images/icons8/illustrations-3d/card-municipal-triage-3d.svg" alt="" width="56" height="56" loading="lazy">
-          </div>
-          <h3 class="cl-module-title">Municipal Triage Console</h3>
-          <p class="cl-module-desc">Administrative workflow for ward engineers to review canonical incidents, assign departments, and schedule repairs.</p>
-          <div class="cl-module-action">Access Triage Console &rarr;</div>
-        </a>
-
-        <!-- 8. Verification Queue -->
-        <a href="./municipal/verification.html" class="cl-module-card">
-          <div class="cl-module-art">
-            <img src="./static/images/icons8/illustrations-3d/card-verification-queue-3d.svg" alt="" width="56" height="56" loading="lazy">
-          </div>
-          <h3 class="cl-module-title">Verification Queue</h3>
-          <p class="cl-module-desc">Review uncertain AI duplicate-match candidates side-by-side to merge reports into canonical incidents or split them.</p>
-          <div class="cl-module-action">Review Candidates &rarr;</div>
-        </a>
-
-        <!-- 9. Impact Showcase Management -->
-        <a href="./municipal/media-management.html" class="cl-module-card">
-          <div class="cl-module-art">
-            <img src="./static/images/icons8/navigation/media-showcase.svg" alt="" width="56" height="56" loading="lazy">
-          </div>
-          <h3 class="cl-module-title">Impact Showcase Admin</h3>
-          <p class="cl-module-desc">Upload inspection photographs, road maintenance videos, and publish before-and-after civic improvements.</p>
-          <div class="cl-module-action">Manage Showcase &rarr;</div>
-        </a>
-      </div>
-
-      <!-- BOTTOM TRUST SECTION -->
-      <div class="cl-trust-strip">
-        <div class="cl-trust-card">
-          <div class="cl-trust-icon-box">
-            <img src="./static/images/icons8/navigation/report-hazard.svg" alt="" width="24" height="24" aria-hidden="true">
-          </div>
+      <!-- CIVICLENS IMPACT SHOWCASE: Real Problems. Real Progress. -->
+      <section class="cl-container" style="padding-top: var(--cl-space-8); padding-bottom: var(--cl-space-8);">
+        <div
+          style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem; margin-bottom: var(--cl-space-4);">
           <div>
-            <h4 style="font-size: 0.95rem; font-weight: 700; margin: 0 0 4px 0;">Citizen Participation</h4>
-            <p style="font-size: 0.82rem; color: var(--cl-text-secondary); margin: 0; line-height: 1.45;">
-              Every resident has the power to flag hazards directly to local authorities with precise GPS coordinates and photos in seconds.
+            <span
+              style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--cl-primary); letter-spacing: 0.05em;">
+              Verified Transparency
+            </span>
+            <h2
+              style="font-family: var(--cl-font-heading); font-size: var(--cl-text-2xl); text-transform: uppercase; margin: 4px 0 0 0;">
+              Real Problems. Real Progress.
+            </h2>
+            <p style="color: var(--cl-text-secondary); margin: 4px 0 0 0; font-size: var(--cl-text-sm);">
+              Side-by-side photographic comparisons of civic defects before and after verified municipal engineering
+              action.
             </p>
           </div>
+          <a href="./public-map.html" class="cl-btn cl-btn-secondary" style="font-size: 0.85rem; padding: 6px 14px;">
+            View All on Public Map &rarr;
+          </a>
         </div>
 
-        <div class="cl-trust-card">
-          <div class="cl-trust-icon-box">
-            <img src="./static/images/icons8/navigation/transparency.svg" alt="" width="24" height="24" aria-hidden="true">
+        <!-- Filter Pills -->
+        <div class="cl-filter-pills" id="baf-filter-pills">
+          <button class="cl-filter-pill active" data-category="all">All Issues</button>
+          <button class="cl-filter-pill" data-category="pothole">Potholes</button>
+          <button class="cl-filter-pill" data-category="road_damage">Road Damage</button>
+          <button class="cl-filter-pill" data-category="drainage">Drainage</button>
+          <button class="cl-filter-pill" data-category="garbage">Garbage</button>
+          <button class="cl-filter-pill" data-category="water_leakage">Water Leakage</button>
+          <button class="cl-filter-pill" data-category="broken_streetlight">Streetlights</button>
+        </div>
+
+        <!-- Before and After Card Grid -->
+        <div class="row g-4" id="baf-showcase-grid">
+          <div class="col-12 text-center py-4 text-muted">
+            Loading verified improvement records...
           </div>
-          <div>
-            <h4 style="font-size: 0.95rem; font-weight: 700; margin: 0 0 4px 0;">Infrastructure Intelligence</h4>
-            <p style="font-size: 0.82rem; color: var(--cl-text-secondary); margin: 0; line-height: 1.45;">
-              Computer vision defect classification and PostGIS spatial clustering deduplicate redundant calls into unified work orders.
+        </div>
+      </section>
+
+      <!-- 3-STEP REPORTING EXPLANATION WITH ICONS8 3D VISUALS -->
+      <section class="cl-container" style="padding-top: var(--cl-space-6); padding-bottom: var(--cl-space-6);">
+        <h2
+          style="font-family: var(--cl-font-heading); font-size: var(--cl-text-xl); text-transform: uppercase; margin: 0 0 var(--cl-space-4) 0; text-align: center;">
+          How CivicLens Works
+        </h2>
+        <div
+          style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--cl-space-4);">
+
+          <div class="cl-card"
+            style="padding: var(--cl-space-5); text-align: center; display: flex; flex-direction: column; align-items: center;">
+            <div style="width: 56px; height: 56px; margin-bottom: 12px;">
+              <img src="./static/images/icons8/workflow-steps/step-1-snap-pin-3d.svg" alt="" width="56" height="56"
+                loading="lazy">
+            </div>
+            <h3 style="font-size: 1rem; font-weight: 700; margin: 0 0 6px 0;">1. Snap &amp; Pin</h3>
+            <p style="font-size: 0.85rem; color: var(--cl-text-secondary); margin: 0; line-height: 1.5;">
+              Citizens capture geotagged photos and drop an exact GPS pin in English or ಕನ್ನಡ (Kannada).
             </p>
           </div>
-        </div>
 
-        <div class="cl-trust-card">
-          <div class="cl-trust-icon-box">
-            <img src="./static/images/icons8/navigation/departments.svg" alt="" width="24" height="24" aria-hidden="true">
-          </div>
-          <div>
-            <h4 style="font-size: 0.95rem; font-weight: 700; margin: 0 0 4px 0;">Transparent Progress</h4>
-            <p style="font-size: 0.82rem; color: var(--cl-text-secondary); margin: 0; line-height: 1.45;">
-              Public oversight backed by 100% database records, time-stamped status transitions, and before-and-after photographic verification.
+          <div class="cl-card"
+            style="padding: var(--cl-space-5); text-align: center; display: flex; flex-direction: column; align-items: center;">
+            <div style="width: 56px; height: 56px; margin-bottom: 12px;">
+              <img src="./static/images/icons8/workflow-steps/step-2-ai-triage-3d.svg" alt="" width="56" height="56"
+                loading="lazy">
+            </div>
+            <h3 style="font-size: 1rem; font-weight: 700; margin: 0 0 6px 0;">2. AI Multilingual Triage</h3>
+            <p style="font-size: 0.85rem; color: var(--cl-text-secondary); margin: 0; line-height: 1.5;">
+              Computer vision detects defects and spatial clustering groups duplicate reports into one canonical
+              incident.
             </p>
           </div>
+
+          <div class="cl-card"
+            style="padding: var(--cl-space-5); text-align: center; display: flex; flex-direction: column; align-items: center;">
+            <div style="width: 56px; height: 56px; margin-bottom: 12px;">
+              <img src="./static/images/icons8/workflow-steps/step-3-track-verify-3d.svg" alt="" width="56" height="56"
+                loading="lazy">
+            </div>
+            <h3 style="font-size: 1rem; font-weight: 700; margin: 0 0 6px 0;">3. Track &amp; Verify</h3>
+            <p style="font-size: 0.85rem; color: var(--cl-text-secondary); margin: 0; line-height: 1.5;">
+              Municipal crews repair the hazard and upload before-and-after photographic evidence with public
+              transparency.
+            </p>
+          </div>
+
         </div>
-      </div>
+      </section>
 
-      <!-- Footer Attribution -->
-      <footer style="margin-top: var(--cl-space-8); padding-top: var(--cl-space-4); border-top: 1px solid var(--cl-border); text-align: center; font-size: var(--cl-text-xs); color: var(--cl-text-muted);">
-        CivicLens &copy; 2026 &middot; AI-Powered Civic Grievance &amp; Infrastructure Triage &middot; Visuals &amp; Icons by <a href="https://icons8.com" target="_blank" rel="noopener" style="color: var(--cl-primary); text-decoration: none;">Icons8</a>
-      </footer>
-    </section>
+      <!-- STANDARDIZED SYSTEM MODULE CARDS -->
+      <section class="cl-container" style="padding-top: var(--cl-space-6); padding-bottom: var(--cl-space-8);">
+        <h2
+          style="font-family: var(--cl-font-heading); font-size: var(--cl-text-2xl); text-transform: uppercase; margin: 0 0 var(--cl-space-2) 0;">
+          System Modules
+        </h2>
+        <p style="color: var(--cl-text-secondary); margin: 0 0 var(--cl-space-6) 0; font-size: var(--cl-text-sm);">
+          Select an interface based on your role (citizen reporting or municipal administration):
+        </p>
 
+        <div class="cl-modules-grid">
+          <!-- 1. Citizen Dashboard -->
+          <a href="./citizen-dashboard.html" class="cl-module-card">
+            <div class="cl-module-art">
+              <img src="./static/images/icons8/illustrations-3d/card-citizen-dashboard-3d.svg" alt="" width="56"
+                height="56" loading="lazy">
+            </div>
+            <h3 class="cl-module-title">Citizen Dashboard</h3>
+            <p class="cl-module-desc">View your personal submission portfolio, track real-time status progression, view
+              photo evidence, and update preferences.</p>
+            <div class="cl-module-action">Open Dashboard &rarr;</div>
+          </a>
+
+          <!-- 2. Citizen Reporting -->
+          <a href="./citizen-report.html" class="cl-module-card">
+            <div class="cl-module-art">
+              <img src="./static/images/icons8/illustrations-3d/card-report-hazard-3d.svg" alt="" width="56" height="56"
+                loading="lazy">
+            </div>
+            <h3 class="cl-module-title">Report an Issue</h3>
+            <p class="cl-module-desc">Submit a road hazard with guided 5-step wizard, photo upload, interactive pin, and
+              Kannada-English support.</p>
+            <div class="cl-module-action">Open Citizen Form &rarr;</div>
+          </a>
+
+          <!-- 3. Public Map -->
+          <a href="./public-map.html" class="cl-module-card">
+            <div class="cl-module-art">
+              <img src="./static/images/icons8/illustrations-3d/card-public-map-3d.svg" alt="" width="56" height="56"
+                loading="lazy">
+            </div>
+            <h3 class="cl-module-title">Public Incident Map</h3>
+            <p class="cl-module-desc">Explore live city-wide infrastructure defects, repair statuses, and verified
+              municipal work orders in real-time.</p>
+            <div class="cl-module-action">View Public Map &rarr;</div>
+          </a>
+
+          <!-- 4. Civic Transparency Analytics -->
+          <a href="./transparency.html" class="cl-module-card">
+            <div class="cl-module-art">
+              <img src="./static/images/icons8/illustrations-3d/card-transparency-analytics-3d.svg" alt="" width="56"
+                height="56" loading="lazy">
+            </div>
+            <h3 class="cl-module-title">Civic Transparency</h3>
+            <p class="cl-module-desc">Open, 100% database-backed metrics tracking resolution SLAs, canonical defect vs
+              grievance volumes, and turnaround trends.</p>
+            <div class="cl-module-action">View Transparency Metrics &rarr;</div>
+          </a>
+
+          <!-- 5. Notification Center -->
+          <a href="./notifications.html" class="cl-module-card">
+            <div class="cl-module-art">
+              <img src="./static/images/icons8/illustrations-3d/card-notifications-3d.svg" alt="" width="56" height="56"
+                loading="lazy">
+            </div>
+            <h3 class="cl-module-title">Notification Center</h3>
+            <p class="cl-module-desc">Manage alerts for submitted grievances and followed community incidents across
+              In-App, Email, SMS, and WhatsApp channels.</p>
+            <div class="cl-module-action">Open Notifications &rarr;</div>
+          </a>
+
+          <!-- 6. Live Detection Monitor -->
+          <a href="/dashboard/dashboard.html" class="cl-module-card">
+            <div class="cl-module-art">
+              <img src="./static/images/icons8/illustrations-3d/card-live-sensor-3d.svg" alt="" width="56" height="56"
+                loading="lazy">
+            </div>
+            <h3 class="cl-module-title">Live Sensor Monitor</h3>
+            <p class="cl-module-desc">Original Roadstate real-time feed connected to in-vehicle cameras and onboard YOLO
+              detection telemetry.</p>
+            <div class="cl-module-action">Open Live Monitor &rarr;</div>
+          </a>
+
+          <!-- 7. Municipal Triage Console -->
+          <a href="./municipal/dashboard.html" class="cl-module-card">
+            <div class="cl-module-art">
+              <img src="./static/images/icons8/illustrations-3d/card-municipal-triage-3d.svg" alt="" width="56"
+                height="56" loading="lazy">
+            </div>
+            <h3 class="cl-module-title">Municipal Triage Console</h3>
+            <p class="cl-module-desc">Administrative workflow for ward engineers to review canonical incidents, assign
+              departments, and schedule repairs.</p>
+            <div class="cl-module-action">Access Triage Console &rarr;</div>
+          </a>
+
+          <!-- 8. Verification Queue -->
+          <a href="./municipal/verification.html" class="cl-module-card">
+            <div class="cl-module-art">
+              <img src="./static/images/icons8/illustrations-3d/card-verification-queue-3d.svg" alt="" width="56"
+                height="56" loading="lazy">
+            </div>
+            <h3 class="cl-module-title">Verification Queue</h3>
+            <p class="cl-module-desc">Review uncertain AI duplicate-match candidates side-by-side to merge reports into
+              canonical incidents or split them.</p>
+            <div class="cl-module-action">Review Candidates &rarr;</div>
+          </a>
+
+          <!-- 9. Impact Showcase Management -->
+          <a href="./municipal/media-management.html" class="cl-module-card">
+            <div class="cl-module-art">
+              <img src="./static/images/icons8/navigation/media-showcase.svg" alt="" width="56" height="56"
+                loading="lazy">
+            </div>
+            <h3 class="cl-module-title">Impact Showcase Admin</h3>
+            <p class="cl-module-desc">Upload inspection photographs, road maintenance videos, and publish
+              before-and-after civic improvements.</p>
+            <div class="cl-module-action">Manage Showcase &rarr;</div>
+          </a>
+        </div>
+
+        <!-- BOTTOM TRUST SECTION -->
+        <div class="cl-trust-strip">
+          <div class="cl-trust-card">
+            <div class="cl-trust-icon-box">
+              <img src="./static/images/icons8/navigation/report-hazard.svg" alt="" width="24" height="24"
+                aria-hidden="true">
+            </div>
+            <div>
+              <h4 style="font-size: 0.95rem; font-weight: 700; margin: 0 0 4px 0;">Citizen Participation</h4>
+              <p style="font-size: 0.82rem; color: var(--cl-text-secondary); margin: 0; line-height: 1.45;">
+                Every resident has the power to flag hazards directly to local authorities with precise GPS coordinates
+                and photos in seconds.
+              </p>
+            </div>
+          </div>
+
+          <div class="cl-trust-card">
+            <div class="cl-trust-icon-box">
+              <img src="./static/images/icons8/navigation/transparency.svg" alt="" width="24" height="24"
+                aria-hidden="true">
+            </div>
+            <div>
+              <h4 style="font-size: 0.95rem; font-weight: 700; margin: 0 0 4px 0;">Infrastructure Intelligence</h4>
+              <p style="font-size: 0.82rem; color: var(--cl-text-secondary); margin: 0; line-height: 1.45;">
+                Computer vision defect classification and PostGIS spatial clustering deduplicate redundant calls into
+                unified work orders.
+              </p>
+            </div>
+          </div>
+
+          <div class="cl-trust-card">
+            <div class="cl-trust-icon-box">
+              <img src="./static/images/icons8/navigation/departments.svg" alt="" width="24" height="24"
+                aria-hidden="true">
+            </div>
+            <div>
+              <h4 style="font-size: 0.95rem; font-weight: 700; margin: 0 0 4px 0;">Transparent Progress</h4>
+              <p style="font-size: 0.82rem; color: var(--cl-text-secondary); margin: 0; line-height: 1.45;">
+                Public oversight backed by 100% database records, time-stamped status transitions, and before-and-after
+                photographic verification.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Attribution -->
+        <footer
+          style="margin-top: var(--cl-space-8); padding-top: var(--cl-space-4); border-top: 1px solid var(--cl-border); text-align: center; font-size: var(--cl-text-xs); color: var(--cl-text-muted);">
+          CivicLens &copy; 2026 &middot; AI-Powered Civic Grievance &amp; Infrastructure Triage &middot; Visuals &amp;
+          Icons by <a href="https://icons8.com" target="_blank" rel="noopener"
+            style="color: var(--cl-primary); text-decoration: none;">Icons8</a>
+        </footer>
+      </section>
+
+    </div>
   </div>
-</div>
 
-<!-- Scripts -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="./static/js/maps/map-config.js"></script>
-<script src="./static/js/maps/map-provider.js"></script>
-<script src="./static/js/bootstrap.bundle.min.js"></script>
-<script src="./static/js/i18n.js"></script>
-<script src="./static/js/citizen-auth.js"></script>
-<script src="./static/js/nav.js"></script>
-<script src="./static/js/homepage.js"></script>
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="./static/js/maps/map-config.js"></script>
+  <script src="./static/js/maps/map-provider.js"></script>
+  <script src="./static/js/bootstrap.bundle.min.js"></script>
+  <script src="./static/js/i18n.js"></script>
+  <script src="./static/js/citizen-auth.js"></script>
+  <script src="./static/js/nav.js"></script>
+  <script src="./static/js/homepage.js"></script>
 </body>
+
 </html>

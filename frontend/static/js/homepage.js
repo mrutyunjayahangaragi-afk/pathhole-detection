@@ -453,6 +453,26 @@
   }
 
   // ─────────────────────────────────────────────────────────────
+  // 6. Hero Municipal Showcase Carousel (3s Auto-Slide)
+  // ─────────────────────────────────────────────────────────────
+  function initHeroCarousel() {
+    const carouselEl = document.getElementById('heroMunicipalCarousel');
+    if (!carouselEl || typeof bootstrap === 'undefined' || !bootstrap.Carousel) return;
+
+    try {
+      const carousel = bootstrap.Carousel.getOrCreateInstance(carouselEl, {
+        interval: 3000,
+        ride: 'carousel',
+        pause: 'hover',
+        wrap: true
+      });
+      carousel.cycle();
+    } catch (e) {
+      console.warn('Hero carousel initialization notice:', e);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
   // DOM Ready Bootstrap
   // ─────────────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', function () {
@@ -462,6 +482,7 @@
     initMonitorMap();
     loadRecentActivity();
     initImpactShowcase();
+    initHeroCarousel();
   });
 
   // Expose global methods for manual refresh

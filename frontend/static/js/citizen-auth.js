@@ -10,24 +10,32 @@ const CivicAuth = (function () {
   const USER_KEY = "civiclens_user_data";
 
   function getToken() {
-    return localStorage.getItem(TOKEN_KEY) || "";
+    return localStorage.getItem(TOKEN_KEY) || localStorage.getItem("civiclens_token") || "";
   }
 
   function setSession(token, user) {
-    if (token) localStorage.setItem(TOKEN_KEY, token);
-    if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
+    if (token) {
+      localStorage.setItem(TOKEN_KEY, token);
+      localStorage.setItem("civiclens_token", token);
+    }
+    if (user) {
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+      localStorage.setItem("civiclens_user", JSON.stringify(user));
+    }
     updateNavUserPill();
   }
 
   function clearSession() {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem("civiclens_token");
     localStorage.removeItem(USER_KEY);
+    localStorage.removeItem("civiclens_user");
     updateNavUserPill();
   }
 
   function getUser() {
     try {
-      const data = localStorage.getItem(USER_KEY);
+      const data = localStorage.getItem(USER_KEY) || localStorage.getItem("civiclens_user");
       return data ? JSON.parse(data) : null;
     } catch (e) {
       return null;

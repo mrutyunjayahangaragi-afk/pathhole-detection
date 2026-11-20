@@ -10,6 +10,7 @@ from backend.services.auth_service import AuthService
 from backend.services.official_auth_service import OfficialAuthService
 from backend.auth import login_required, role_required
 from backend.errors import ValidationError
+from backend.security.rate_limiter import limiter
 
 auth_bp = Blueprint("auth_bp", __name__, url_prefix="/api/v1/auth")
 auth_service = AuthService()
@@ -56,6 +57,7 @@ def register():
 
 
 @auth_bp.route("/login", methods=["POST"])
+@limiter.limit("10 per minute; 50 per hour")
 def login():
     """Authenticates citizen credentials with rate limiting."""
     data = request.get_json(silent=True) or {}
@@ -140,6 +142,7 @@ def update_profile():
 # ============================================================================
 
 @auth_bp.route("/official-login", methods=["POST"])
+@limiter.limit("5 per minute; 20 per hour")
 def official_login():
     """Authenticates municipal official, department administrator, or executive."""
     data = request.get_json(silent=True) or {}

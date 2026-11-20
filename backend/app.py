@@ -43,6 +43,7 @@ from backend.routes.public_config_routes import public_config_bp
 from backend.routes.database_health_routes import health_diag_bp
 from backend.routes.public_showcase_routes import public_showcase_bp
 from backend.routes.municipal_showcase_routes import municipal_showcase_bp
+from backend.security.rate_limiter import limiter
 
 
 def create_app(config: Optional[Config] = None) -> Flask:
@@ -59,6 +60,9 @@ def create_app(config: Optional[Config] = None) -> Flask:
     logger = setup_logging(cfg.LOG_LEVEL, app_name="civiclens")
     app.logger = logger
     app.config["MAX_CONTENT_LENGTH"] = cfg.MAX_CONTENT_LENGTH
+
+    # Initialize rate limiter
+    limiter.init_app(app)
 
     # Ensure database schema is present
     try:
@@ -101,6 +105,10 @@ def create_app(config: Optional[Config] = None) -> Flask:
     app.register_blueprint(health_diag_bp)
     app.register_blueprint(public_showcase_bp)
     app.register_blueprint(municipal_showcase_bp)
+
+    # CSRF Token Endpoint
+    from backend.security.csrf import get_csrf_token_endpoint
+    app.add_url_rule("/api/v1/auth/csrf-token", "csrf_token_endpoint", get_csrf_token_endpoint, methods=["GET"])
 
     # Register CLI Commands
     try:
@@ -301,6 +309,19 @@ def create_app(config: Optional[Config] = None) -> Flask:
         from flask import send_from_directory
         return send_from_directory(os.path.join(_parent, "dashboard"), filename)
 
+    @app.route("/frontend/dashboard.html", methods=["GET"])
+    @app.route("/frontend/dashboard", methods=["GET"])
+    def serve_frontend_dashboard_html():
+        from flask import redirect
+        return redirect("/frontend/municipal/dashboard.html", code=302)
+
+    @app.route("/live-monitor", methods=["GET"])
+    @app.route("/live-monitor.html", methods=["GET"])
+    @app.route("/frontend/live-monitor.html", methods=["GET"])
+    def serve_live_monitor_redirect():
+        from flask import redirect
+        return redirect("/dashboard/dashboard.html", code=302)
+
     @app.route("/frontend/<path:filename>", methods=["GET"])
     def serve_frontend_files(filename):
         from flask import send_from_directory
@@ -329,6 +350,9 @@ def create_app(config: Optional[Config] = None) -> Flask:
         from flask import send_from_directory
         return send_from_directory(os.path.join(_parent, "frontend"), "login.html")
 
+    @app.route("/frontend/municipal-login.html", methods=["GET"])
+    @app.route("/municipal-login.html", methods=["GET"])
+    @app.route("/municipal-login", methods=["GET"])
     @app.route("/municipal/login.html", methods=["GET"])
     @app.route("/municipal/login", methods=["GET"])
     def serve_municipal_login():

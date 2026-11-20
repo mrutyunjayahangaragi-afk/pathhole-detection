@@ -1041,18 +1041,19 @@ body {
   margin-top: auto;
 }
 
-/* ─── CivicLens Impact Showcase & Carousel ──────────────────────────── */
+/* ─── CivicLens Impact Showcase & Carousel (Seamless Hero Integration) ── */
 .cl-showcase-card {
   position: relative;
-  background: #0F172A;
-  border-radius: var(--cl-radius-xl);
+  background: transparent;
+  border-radius: var(--cl-radius-lg);
   overflow: hidden;
-  box-shadow: 0 16px 36px -6px rgba(15, 56, 84, 0.18), 0 0 0 1px rgba(15, 56, 84, 0.08);
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.16);
+  border: none;
   width: 100%;
 }
 
 #civiclensImpactCarousel .carousel-inner {
-  border-radius: var(--cl-radius-xl);
+  border-radius: var(--cl-radius-lg);
   height: 380px;
 }
 

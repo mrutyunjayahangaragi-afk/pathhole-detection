@@ -1111,6 +1111,12 @@ async function fetchStats() {
     }
   } catch (e) {
     console.warn("Error fetching telemetry stats:", e);
+    document.getElementById('metric-total-events').textContent = "Unavailable";
+    document.getElementById('metric-connected-devices').textContent = "Offline";
+    document.getElementById('metric-total-devices').textContent = "Fleet roster unavailable";
+    document.getElementById('metric-events-today').textContent = "Unavailable";
+    document.getElementById('metric-severe-defects').textContent = "Unavailable";
+    document.getElementById('metric-active-cameras').textContent = "0 (Offline)";
   }
 }
 
@@ -1126,6 +1132,8 @@ async function fetchDevices() {
     }
   } catch (e) {
     console.warn("Error fetching devices:", e);
+    document.getElementById('device-fleet-list').innerHTML = `<div class="empty-state">Fleet device service offline or unavailable.</div>`;
+    document.getElementById('fleet-tab-badge').textContent = "—";
   }
 }
 
@@ -1142,6 +1150,8 @@ async function fetchRecentEvents() {
     }
   } catch (e) {
     console.warn("Error fetching recent telemetry events:", e);
+    document.getElementById('telemetry-feed-list').innerHTML = `<div class="empty-state">Telemetry feed service offline or unavailable.</div>`;
+    document.getElementById('feed-tab-badge').textContent = "—";
   }
 }
 

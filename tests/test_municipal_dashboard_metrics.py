@@ -10,7 +10,7 @@ import pytest
 from datetime import datetime, timezone, timedelta
 
 from backend.db.engine import get_session_factory
-from backend.db.models import Incident, Department, User
+from backend.db.models import Incident, Department, User, ReportItem
 from backend.services.municipal_dashboard_service import MunicipalDashboardService
 from backend.services.department_management_service import DepartmentManagementService
 
@@ -29,7 +29,8 @@ def test_dashboard_metrics_accurate_aggregation(app, dashboard_service):
     """Verifies that all metric counts match real database records with zero hardcoding."""
     db = get_session_factory()()
 
-    # Clear any previous test incidents
+    # Clear any previous test incidents and report items
+    db.query(ReportItem).delete()
     db.query(Incident).delete()
     db.commit()
 

@@ -407,7 +407,10 @@
   }
 
   let authHeaders = {};
-  const token = localStorage.getItem('civiclens_token');
+  const token = (typeof CivicAuth !== 'undefined' && CivicAuth.getToken ? CivicAuth.getToken() : null) ||
+                localStorage.getItem('civiclens_auth_token') ||
+                localStorage.getItem('civiclens_token') ||
+                '';
   if (token) {
     authHeaders['Authorization'] = 'Bearer ' + token;
   }

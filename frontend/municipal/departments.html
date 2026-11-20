@@ -96,6 +96,10 @@
         <a href="./dashboard.html" class="cl-btn cl-btn-secondary cl-btn-sm">&larr; Back to Dashboard</a>
       </div>
 
+      <div id="role-notice-banner" style="display: none; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 13px; color: #93c5fd;">
+        ℹ️ <strong>Field Officer View:</strong> You are viewing department workload metrics. Creating new departments and onboarding personnel requires <strong>Municipal Admin</strong> (<code>municipal_admin</code>) or <strong>System Admin</strong> permissions.
+      </div>
+
       <div class="dept-grid">
         <!-- Departments Column -->
         <div>
@@ -215,18 +219,31 @@
 <script src="../static/js/citizen-auth.js"></script>
 <script src="../static/js/nav.js"></script>
 <script>
-  let authHeaders = {};
-  const token = localStorage.getItem('civiclens_token');
-  if (token) {
-    authHeaders['Authorization'] = 'Bearer ' + token;
+  function getAuthToken() {
+    return (typeof CivicAuth !== 'undefined' && CivicAuth.getToken ? CivicAuth.getToken() : null) ||
+           localStorage.getItem('civiclens_auth_token') ||
+           localStorage.getItem('civiclens_token') ||
+           '';
+  }
+
+  function getAuthHeaders() {
+    const headers = {};
+    const t = getAuthToken();
+    if (t) {
+      headers['Authorization'] = 'Bearer ' + t;
+    }
+    return headers;
   }
 
   async function loadDepartments() {
     try {
-      const res = await fetch('/api/v2/municipal/departments', { credentials: 'include', headers: authHeaders });
+      const res = await fetch('/api/v2/municipal/departments', {
+        credentials: 'include',
+        headers: getAuthHeaders()
+      });
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
-          window.location.href = '../citizen-login.html?redirect=' + encodeURIComponent(window.location.pathname);
+          window.location.href = './login.html?redirect=' + encodeURIComponent(window.location.pathname);
           return;
         }
         return;
@@ -274,8 +291,21 @@
 
   async function loadOfficers() {
     try {
-      const res = await fetch('/api/v2/municipal/officers', { credentials: 'include', headers: authHeaders });
-      if (!res.ok) return;
+      const res = await fetch('/api/v2/municipal/officers', {
+        credentials: 'include',
+        headers: getAuthHeaders()
+      });
+      if (!res.ok) {
+        const tbody = document.getElementById('officers-tbody');
+        if (tbody) {
+          if (res.status === 403) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--cl-text-muted); padding: 24px;">Officer roster visible to municipal administrators.</td></tr>';
+          } else {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--cl-text-muted); padding: 24px;">No officers currently listed.</td></tr>';
+          }
+        }
+        return;
+      }
       const data = await res.json();
       const officers = data.officers || [];
 
@@ -317,7 +347,7 @@
     const res = await fetch('/api/v2/municipal/departments', {
       method: 'POST',
       credentials: 'include',
-      headers: { ...authHeaders, 'Content-Type': 'application/json' },
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: name, code: code, contact_email: email, contact_phone: phone, description: desc })
     });
 
@@ -330,8 +360,12 @@
       document.getElementById('dept-desc').value = '';
       loadDepartments();
     } else {
-      const err = await res.json();
-      alert('Error: ' + (err.error || 'Failed to create department'));
+      if (res.status === 403) {
+        alert('Permission Denied: Creating departments requires Municipal Administrator or System Admin privileges.');
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert('Error: ' + (err.error || err.message || 'Failed to create department'));
+      }
     }
   });
 
@@ -349,7 +383,7 @@
     const res = await fetch('/api/v2/municipal/officers/onboard', {
       method: 'POST',
       credentials: 'include',
-      headers: { ...authHeaders, 'Content-Type': 'application/json' },
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({
         display_name: name,
         email: email,
@@ -367,12 +401,23 @@
       loadOfficers();
       loadDepartments();
     } else {
-      const err = await res.json();
-      alert('Error: ' + (err.error || 'Failed to onboard officer'));
+      if (res.status === 403) {
+        alert('Permission Denied: Onboarding new personnel requires Municipal Administrator, Department Admin, or System Admin privileges.');
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert('Error: ' + (err.error || err.message || 'Failed to onboard officer'));
+      }
     }
   });
 
   window.addEventListener('DOMContentLoaded', () => {
+    try {
+      const user = CivicAuth.getUser ? CivicAuth.getUser() : null;
+      if (user && user.role === 'municipal_officer') {
+        const banner = document.getElementById('role-notice-banner');
+        if (banner) banner.style.display = 'block';
+      }
+    } catch (e) {}
     loadDepartments();
     loadOfficers();
   });

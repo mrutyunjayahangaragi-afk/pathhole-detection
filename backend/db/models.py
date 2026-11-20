@@ -46,6 +46,7 @@ class User(Base):
     password_hash = Column(String(255), nullable=True)
     last_login_at = Column(DateTime(timezone=True), nullable=True)
     is_active = Column(Boolean, nullable=False, default=True)
+    provenance = Column(String(32), default="REAL_USER_DATA", nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow)
 
@@ -90,6 +91,7 @@ class Incident(Base):
 
     report_count = Column(Integer, nullable=False, default=1)
     est_depth_cm = Column(Float, nullable=True, default=0.0)
+    provenance = Column(String(32), default="REAL_USER_DATA", nullable=True)
 
     created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow)
@@ -163,6 +165,7 @@ class CitizenReport(Base):
     language_detection_status = Column(String(30), nullable=False, default="pending")
     submission_channel = Column(String(30), nullable=False, default="web")
     status = Column(String(20), nullable=False, default="submitted")
+    provenance = Column(String(32), default="REAL_USER_DATA", nullable=True)
 
     submitted_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
     created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
@@ -597,6 +600,7 @@ class Department(Base):
     contact_email = Column(String(320), nullable=True)
     contact_phone = Column(String(20), nullable=True)
     is_active = Column(Boolean, nullable=False, default=True)
+    provenance = Column(String(32), default="APPROVED_SEED_DATA", nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow)
 
@@ -1289,6 +1293,38 @@ class HomepageShowcaseItem(Base):
         Index("ix_showcase_category", "category"),
         Index("ix_showcase_incident", "incident_id"),
     )
+
+
+class ApplicationErrorEvent(Base):
+    """Logs unhandled and critical application exceptions for monitoring and diagnosis."""
+    __tablename__ = "application_error_events"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    timestamp = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+    endpoint = Column(String(255), nullable=True)
+    method = Column(String(16), nullable=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    error_code = Column(String(64), nullable=True)
+    error_type = Column(String(128), nullable=False)
+    error_message = Column(Text, nullable=False)
+    traceback = Column(Text, nullable=True)
+    sanitized_request_params = Column(JSON, nullable=True)
+    client_ip = Column(String(64), nullable=True)
+    resolved = Column(Boolean, nullable=False, default=False)
+    resolved_at = Column(DateTime(timezone=True), nullable=True)
+    resolved_by = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id])
+    resolver = relationship("User", foreign_keys=[resolved_by])
+
+    __table_args__ = (
+        Index("ix_error_events_timestamp", "timestamp"),
+        Index("ix_error_events_error_code", "error_code"),
+        Index("ix_error_events_user_id", "user_id"),
+    )
+
 
 
 

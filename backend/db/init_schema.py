@@ -28,6 +28,13 @@ def create_all_tables(database_url=None):
             except Exception:
                 pass
 
+            # Ensure provenance exists on core tables
+            for tbl in ["users", "incidents_v2", "citizen_reports_v2", "departments"]:
+                try:
+                    conn.execute(text(f"ALTER TABLE {tbl} ADD COLUMN provenance VARCHAR(32) DEFAULT 'REAL_USER_DATA';"))
+                except Exception:
+                    pass
+
             conn.execute(text("CREATE INDEX IF NOT EXISTS ix_incidents_status_cat ON incidents_v2(status, category);"))
             conn.execute(text("CREATE INDEX IF NOT EXISTS ix_incidents_sev_pri ON incidents_v2(severity, priority);"))
             conn.execute(text("CREATE INDEX IF NOT EXISTS ix_reports_cit_created ON citizen_reports_v2(citizen_id, created_at);"))

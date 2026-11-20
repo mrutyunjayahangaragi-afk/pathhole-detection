@@ -29,10 +29,13 @@ class IncidentStatus:
     RESOLVED = "resolved"
     CLOSED = "closed"
     REJECTED = "rejected"
+    NEEDS_MORE_INFORMATION = "needs_more_information"
+    REOPENED = "reopened"
 
     ALL: Set[str] = {
         NEW, AWAITING_VERIFICATION, VERIFIED, ASSIGNED,
-        IN_PROGRESS, ON_HOLD, RESOLVED, CLOSED, REJECTED
+        IN_PROGRESS, ON_HOLD, RESOLVED, CLOSED, REJECTED,
+        NEEDS_MORE_INFORMATION, REOPENED
     }
 
 
@@ -48,7 +51,13 @@ class IncidentStateMachineService:
         IncidentStatus.AWAITING_VERIFICATION: {
             IncidentStatus.VERIFIED,
             IncidentStatus.REJECTED,
-            IncidentStatus.ON_HOLD
+            IncidentStatus.ON_HOLD,
+            IncidentStatus.NEEDS_MORE_INFORMATION
+        },
+        IncidentStatus.NEEDS_MORE_INFORMATION: {
+            IncidentStatus.AWAITING_VERIFICATION,
+            IncidentStatus.VERIFIED,
+            IncidentStatus.REJECTED
         },
         IncidentStatus.VERIFIED: {
             IncidentStatus.ASSIGNED,
@@ -74,10 +83,17 @@ class IncidentStateMachineService:
         },
         IncidentStatus.RESOLVED: {
             IncidentStatus.CLOSED,
-            IncidentStatus.IN_PROGRESS  # Reopen if rejected during verification
+            IncidentStatus.IN_PROGRESS,  # Reopen if rejected during verification
+            IncidentStatus.REOPENED
+        },
+        IncidentStatus.REOPENED: {
+            IncidentStatus.AWAITING_VERIFICATION,
+            IncidentStatus.IN_PROGRESS,
+            IncidentStatus.ASSIGNED
         },
         IncidentStatus.CLOSED: {
-            IncidentStatus.IN_PROGRESS  # Exceptional reopen by municipal_admin
+            IncidentStatus.IN_PROGRESS,  # Exceptional reopen by municipal_admin
+            IncidentStatus.REOPENED
         },
         IncidentStatus.REJECTED: {
             IncidentStatus.AWAITING_VERIFICATION  # Appeal or re-evaluation
@@ -105,6 +121,9 @@ class IncidentStateMachineService:
         """
         if new_status not in IncidentStatus.ALL:
             return False, f"Invalid destination status: '{new_status}'"
+
+        if user_role == "citizen":
+            return False, "Citizens cannot modify incident status directly."
 
         # Check graph transition
         allowed = self.VALID_TRANSITIONS.get(current_status, set())
@@ -245,6 +264,28 @@ class IncidentStateMachineService:
                     published_by=actor_id,
                     public_message="Work is currently underway by the municipal engineering department.",
                     status_label="In Progress",
+                    created_at=datetime.now(timezone.utc)
+                )
+                db.add(cit_update)
+
+            elif new_status == IncidentStatus.NEEDS_MORE_INFORMATION:
+                cit_update = CitizenVisibleUpdate(
+                    id=str(uuid.uuid4()),
+                    incident_id=incident.id,
+                    published_by=actor_id,
+                    public_message=f"Municipal team requires additional information to process this incident: {reason.strip()}",
+                    status_label="Needs More Info",
+                    created_at=datetime.now(timezone.utc)
+                )
+                db.add(cit_update)
+
+            elif new_status == IncidentStatus.REOPENED:
+                cit_update = CitizenVisibleUpdate(
+                    id=str(uuid.uuid4()),
+                    incident_id=incident.id,
+                    published_by=actor_id,
+                    public_message=f"This incident has been reopened for further investigation: {reason.strip()}",
+                    status_label="Reopened",
                     created_at=datetime.now(timezone.utc)
                 )
                 db.add(cit_update)

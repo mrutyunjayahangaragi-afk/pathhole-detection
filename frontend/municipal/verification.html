@@ -186,13 +186,17 @@
               <textarea class="cl-input" id="verify-reason" rows="3" placeholder="Confirm street defect or explain rejection reason..."></textarea>
             </div>
 
-            <div class="action-bar">
+            <div class="action-bar" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
               <button class="cl-btn cl-btn-primary" id="btn-verify">
                 ✅ Verify Defect (Route to Dept)
               </button>
               <button class="cl-btn cl-btn-secondary" style="color: var(--cl-severe);" id="btn-reject">
                 ❌ Reject Submission
               </button>
+              <div style="margin-left: auto; display: flex; gap: 6px;">
+                <button class="cl-btn cl-btn-secondary cl-btn-sm" id="btn-prev-item">&larr; Prev</button>
+                <button class="cl-btn cl-btn-secondary cl-btn-sm" id="btn-next-item">Next &rarr;</button>
+              </div>
             </div>
           </div>
         </div>
@@ -203,7 +207,7 @@
         <div style="margin-bottom: 12px;">
           <img src="../static/images/icons8/illustrations-3d/card-verification-queue-3d.svg" alt="" width="64" height="64">
         </div>
-        <h2 style="font-family: var(--cl-font-heading); text-transform: uppercase; margin-bottom: 8px;">Verification Queue Clear!</h2>
+        <h2 style="font-family: var(--cl-font-heading); text-transform: uppercase; margin-bottom: 8px;">No reports are awaiting verification.</h2>
         <p style="color: var(--cl-text-secondary); max-width: 480px; margin: 0 auto 20px auto;">
           All incoming citizen reports and unverified incidents have been triaged. New submissions requiring officer review will appear here automatically.
         </p>
@@ -219,33 +223,46 @@
 <script>
   let queueItems = [];
   let currentIndex = 0;
-  let authHeaders = {};
-  const token = localStorage.getItem('civiclens_token');
-  if (token) {
-    authHeaders['Authorization'] = 'Bearer ' + token;
+
+  function getAuthToken() {
+    return (typeof CivicAuth !== 'undefined' && CivicAuth.getToken ? CivicAuth.getToken() : null) ||
+           localStorage.getItem('civiclens_auth_token') ||
+           localStorage.getItem('civiclens_token') ||
+           '';
+  }
+
+  function getAuthHeaders() {
+    const headers = {};
+    const t = getAuthToken();
+    if (t) {
+      headers['Authorization'] = 'Bearer ' + t;
+    }
+    return headers;
   }
 
   async function loadVerificationQueue() {
     try {
-      const res = await fetch('/api/v2/municipal/incidents?status=awaiting_verification&limit=50', {
+      const res = await fetch('/api/v2/municipal/verification/queue?limit=50', {
         credentials: 'include',
-        headers: authHeaders
+        headers: getAuthHeaders()
       });
 
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
-          window.location.href = '../citizen-login.html?redirect=' + encodeURIComponent(window.location.pathname);
+          window.location.href = './login.html?redirect=' + encodeURIComponent(window.location.pathname);
           return;
         }
+        document.getElementById('queue-status-text').textContent = 'Error loading queue';
         return;
       }
 
       const data = await res.json();
-      queueItems = data.incidents || [];
+      queueItems = data.items || data.incidents || [];
       currentIndex = 0;
       renderCurrentItem();
     } catch (e) {
       console.error(e);
+      document.getElementById('queue-status-text').textContent = 'Connection error';
     }
   }
 
@@ -267,36 +284,40 @@
 
     const inc = queueItems[currentIndex];
     document.getElementById('cur-title').textContent = inc.title || `${inc.category} defect`;
-    document.getElementById('cur-ref').textContent = inc.reference;
-    document.getElementById('cur-priority').textContent = (inc.priority || 'normal').toUpperCase();
-    document.getElementById('cur-category').textContent = inc.category || 'Pothole';
+    document.getElementById('cur-ref').textContent = inc.reference || '-';
+    document.getElementById('cur-priority').textContent = (inc.priority || inc.severity || 'normal').toUpperCase();
+    document.getElementById('cur-category').textContent = (inc.category || 'Pothole').toUpperCase();
     document.getElementById('cur-reports').textContent = inc.reports_count || 1;
     document.getElementById('cur-coords').textContent = inc.latitude ? `${inc.latitude.toFixed(5)}, ${inc.longitude.toFixed(5)}` : 'No GPS';
+    document.getElementById('cur-address').textContent = inc.address || 'Bengaluru Municipal Area';
+    
+    let descText = inc.description || 'No description provided';
+    if (inc.translated_description && inc.original_language && inc.original_language !== 'en') {
+      descText = `${inc.translated_description} [Orig (${inc.original_language}): ${inc.description}]`;
+    }
+    document.getElementById('cur-desc').textContent = descText;
     document.getElementById('verify-category').value = inc.category || 'pothole';
 
-    // Fetch detailed dossier for photo and description
-    try {
-      const dRes = await fetch(`/api/v2/municipal/incidents/${inc.id}`, { credentials: 'include', headers: authHeaders });
-      if (dRes.ok) {
-        const full = await dRes.json();
-        const imgBox = document.getElementById('cur-img-box');
-        let photoFound = false;
-
-        (full.citizen_reports || []).forEach(r => {
-          if (r.address) document.getElementById('cur-address').textContent = r.address;
-          if (r.description) document.getElementById('cur-desc').textContent = r.description;
-          if (r.evidence && r.evidence.length > 0 && !photoFound) {
-            imgBox.innerHTML = `<img src="${r.evidence[0].url}" alt="Reported defect photo">`;
-            photoFound = true;
+    // Image rendering
+    const imgBox = document.getElementById('cur-img-box');
+    if (inc.evidence_url) {
+      imgBox.innerHTML = `<img src="${inc.evidence_url}" alt="Reported defect photo">`;
+    } else {
+      imgBox.innerHTML = '<span>No photographic evidence attached</span>';
+      // If canonical incident, fetch full dossier as fallback
+      if (inc.item_type === 'canonical_incident' || !inc.item_type) {
+        try {
+          const dRes = await fetch(`/api/v2/municipal/incidents/${inc.id}`, { credentials: 'include', headers: authHeaders });
+          if (dRes.ok) {
+            const full = await dRes.json();
+            (full.citizen_reports || []).forEach(r => {
+              if (r.evidence && r.evidence.length > 0) {
+                imgBox.innerHTML = `<img src="${r.evidence[0].url}" alt="Reported defect photo">`;
+              }
+            });
           }
-        });
-
-        if (!photoFound) {
-          imgBox.innerHTML = '<span>No photographic evidence attached</span>';
-        }
+        } catch (e) {}
       }
-    } catch (e) {
-      console.error(e);
     }
   }
 
@@ -308,21 +329,27 @@
     const prio = document.getElementById('verify-priority').value;
     const reason = document.getElementById('verify-reason').value.trim() || 'Verified by municipal officer';
 
-    const res = await fetch(`/api/v2/municipal/incidents/${inc.id}/verify`, {
+    const res = await fetch('/api/v2/municipal/verification/confirm', {
       method: 'POST',
       credentials: 'include',
-      headers: { ...authHeaders, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ confirmed_defect_type: cat, priority: prio, reason: reason })
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        item_type: inc.item_type || 'citizen_report',
+        id: inc.id,
+        category: cat,
+        priority: prio,
+        reason: reason
+      })
     });
 
     if (res.ok) {
-      alert(`Incident ${inc.reference} verified and moved to verified triage queue!`);
+      alert(`Report ${inc.reference} verified and routed to municipal department!`);
       document.getElementById('verify-reason').value = '';
       currentIndex++;
       renderCurrentItem();
     } else {
-      const err = await res.json();
-      alert('Error: ' + (err.error || 'Failed to verify incident'));
+      const err = await res.json().catch(() => ({}));
+      alert('Error: ' + (err.error || err.message || 'Failed to verify item'));
     }
   });
 
@@ -337,21 +364,39 @@
       return;
     }
 
-    const res = await fetch(`/api/v2/municipal/incidents/${inc.id}/reject`, {
+    const res = await fetch('/api/v2/municipal/verification/reject', {
       method: 'POST',
       credentials: 'include',
-      headers: { ...authHeaders, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reason: reason })
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        item_type: inc.item_type || 'citizen_report',
+        id: inc.id,
+        reason: reason
+      })
     });
 
     if (res.ok) {
-      alert(`Incident ${inc.reference} rejected.`);
+      alert(`Submission ${inc.reference} rejected.`);
       document.getElementById('verify-reason').value = '';
       currentIndex++;
       renderCurrentItem();
     } else {
-      const err = await res.json();
-      alert('Error: ' + (err.error || 'Failed to reject incident'));
+      const err = await res.json().catch(() => ({}));
+      alert('Error: ' + (err.error || err.message || 'Failed to reject item'));
+    }
+  });
+
+  // Prev / Next Controls
+  document.getElementById('btn-prev-item')?.addEventListener('click', () => {
+    if (currentIndex > 0) {
+      currentIndex--;
+      renderCurrentItem();
+    }
+  });
+  document.getElementById('btn-next-item')?.addEventListener('click', () => {
+    if (currentIndex < queueItems.length - 1) {
+      currentIndex++;
+      renderCurrentItem();
     }
   });
 

@@ -239,18 +239,28 @@
 <script src="../static/js/citizen-auth.js"></script>
 <script src="../static/js/nav.js"></script>
 <script>
-  let authHeaders = {};
-  const token = localStorage.getItem('civiclens_token');
-  if (token) {
-    authHeaders['Authorization'] = 'Bearer ' + token;
+  function getAuthToken() {
+    return (typeof CivicAuth !== 'undefined' && CivicAuth.getToken ? CivicAuth.getToken() : null) ||
+           localStorage.getItem('civiclens_auth_token') ||
+           localStorage.getItem('civiclens_token') ||
+           '';
+  }
+
+  function getAuthHeaders() {
+    const headers = {};
+    const t = getAuthToken();
+    if (t) {
+      headers['Authorization'] = 'Bearer ' + t;
+    }
+    return headers;
   }
 
   async function loadMetrics() {
     try {
-      const res = await fetch('/api/v2/municipal/metrics', { credentials: 'include', headers: authHeaders });
+      const res = await fetch('/api/v2/municipal/metrics', { credentials: 'include', headers: getAuthHeaders() });
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
-          window.location.href = '../citizen-login.html?redirect=' + encodeURIComponent(window.location.pathname);
+          window.location.href = './login.html?redirect=' + encodeURIComponent(window.location.pathname);
           return;
         }
         return;
@@ -270,7 +280,7 @@
 
   async function loadDepartments() {
     try {
-      const res = await fetch('/api/v2/municipal/departments', { credentials: 'include', headers: authHeaders });
+      const res = await fetch('/api/v2/municipal/departments', { credentials: 'include', headers: getAuthHeaders() });
       if (!res.ok) return;
       const data = await res.json();
       const select = document.getElementById('filter-department');
@@ -298,7 +308,7 @@
     if (q) url += `&q=${encodeURIComponent(q)}`;
 
     try {
-      const res = await fetch(url, { credentials: 'include', headers: authHeaders });
+      const res = await fetch(url, { credentials: 'include', headers: getAuthHeaders() });
       if (!res.ok) return;
       const data = await res.json();
       const tbody = document.getElementById('incidents-tbody');
@@ -308,7 +318,7 @@
         tbody.innerHTML = `
           <tr>
             <td colspan="9" style="text-align: center; padding: 32px; color: var(--cl-text-muted);">
-              No incidents found matching current triage filters.
+              No civic incidents have been registered yet.
             </td>
           </tr>
         `;

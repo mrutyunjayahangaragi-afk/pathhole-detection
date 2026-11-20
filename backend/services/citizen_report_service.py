@@ -19,13 +19,15 @@ from backend.db.engine import get_session_factory
 from backend.db.session import transactional_session
 from backend.db.models import (
     CitizenReport, ReportItem, EvidenceAsset, ReportEvidence,
-    IncidentObservation, User, DetectionRun, Detection,
+    Incident, IncidentObservation, IncidentStatusHistory, AuditLog,
+    User, DetectionRun, Detection,
     ReportTranslation, AIDescriptionAssistance, LocationRecord
 )
 from backend.services.language_detection_service import LanguageDetectionService
 from backend.services.translation_service import TranslationService
 from backend.services.description_assistance_service import DescriptionAssistanceService
-from backend.services.location_intelligence_service import LocationIntelligenceService
+from backend.services.location_intelligence_service import LocationIntelligenceService, haversine_distance_m
+from backend.services.department_routing_service import DepartmentRoutingService
 from backend.errors import ValidationError, NotFoundError, CivicLensError
 
 ALLOWED_CATEGORIES = {
@@ -255,6 +257,176 @@ class CitizenReportService:
                         created_asset_ids.append(asset.id)
 
             db.commit()
+
+            # 5B. Intelligent Multi-Signal Matching & Department Routing
+            try:
+                now_utc = datetime.now(timezone.utc)
+                routing_svc = DepartmentRoutingService(session_factory=self._session_factory)
+                dept = routing_svc.resolve_department(cat_clean, db=db)
+                dept_id = dept.id if dept else None
+
+                # Search candidate active incidents of the same category
+                active_cands = db.query(Incident).filter(
+                    Incident.category == cat_clean,
+                    ~Incident.status.in_(["resolved", "closed", "rejected"])
+                ).all()
+
+                best_cand = None
+                best_dist = float("inf")
+                is_exact_photo_match = False
+
+                # Check evidence SHA-256 for exact duplicate photo
+                new_sha256_set = set()
+                if evidence_files:
+                    for fi in evidence_files:
+                        rb = fi.get("content_bytes", b"")
+                        if rb:
+                            new_sha256_set.add(hashlib.sha256(rb).hexdigest())
+
+                # Find candidates within search radius (25m)
+                for cand in active_cands:
+                    if cand.latitude is not None and cand.longitude is not None and lat and lon:
+                        dist = haversine_distance_m(lat, lon, cand.latitude, cand.longitude)
+                        if dist <= 25.0:
+                            cand_ev_shas = set(
+                                s[0] for s in db.query(EvidenceAsset.content_sha256)
+                                .join(IncidentObservation, IncidentObservation.evidence_asset_id == EvidenceAsset.id)
+                                .filter(IncidentObservation.incident_id == cand.id)
+                                .all()
+                                if s[0]
+                            )
+                            has_matching_photo = bool(new_sha256_set and (new_sha256_set & cand_ev_shas))
+
+                            if has_matching_photo or dist < best_dist:
+                                best_dist = dist
+                                best_cand = cand
+                                if has_matching_photo:
+                                    is_exact_photo_match = True
+                                    break
+
+                # Decision Rule:
+                # 1. Strong Match (physical duplicate):
+                #    - Exact duplicate photo within 25m, OR
+                #    - Physical distance <= 12m
+                # 2. Uncertain Match:
+                #    - Distance between 12m and 25m (stays pending in Human Verification Queue)
+                # 3. Distinct Incident:
+                #    - Zero candidates within 25m -> Create new canonical Incident routed to department
+                if best_cand and (is_exact_photo_match or best_dist <= 12.0):
+                    item.incident_id = best_cand.id
+                    item.status = "matched"
+                    best_cand.report_count = (best_cand.report_count or 1) + 1
+                    best_cand.updated_at = now_utc
+
+                    for re in db.query(ReportEvidence).filter_by(report_item_id=item.id).all():
+                        obs = IncidentObservation(
+                            id=str(uuid.uuid4()),
+                            incident_id=best_cand.id,
+                            report_item_id=item.id,
+                            evidence_asset_id=re.evidence_asset_id,
+                            observation_type="citizen_report",
+                            verification_status="verified",
+                            observed_at=now_utc
+                        )
+                        db.add(obs)
+
+                    report.status = "submitted"
+                    report.updated_at = now_utc
+
+                    audit = AuditLog(
+                        id=str(uuid.uuid4()),
+                        actor_id=citizen_id,
+                        action="auto_aggregate_incident",
+                        entity_type="incident",
+                        entity_id=best_cand.id,
+                        details=json.dumps({
+                            "report_id": report.id,
+                            "report_item_id": item.id,
+                            "distance_m": round(best_dist, 2),
+                            "exact_photo": is_exact_photo_match,
+                            "new_report_count": best_cand.report_count
+                        }),
+                        created_at=now_utc
+                    )
+                    db.add(audit)
+                    db.commit()
+
+                elif best_cand and (12.0 < best_dist <= 25.0):
+                    # Uncertain Match: Keep pending for Human Verification Queue
+                    item.incident_id = None
+                    item.status = "pending"
+                    report.status = "submitted"
+                    db.commit()
+
+                else:
+                    # Distinct Incident: Create new canonical physical incident
+                    ref_code = f"INC-{now_utc.strftime('%Y%m')}-{uuid.uuid4().hex[:5].upper()}"
+                    new_incident = Incident(
+                        id=str(uuid.uuid4()),
+                        incident_reference=ref_code,
+                        category=cat_clean,
+                        description=desc_clean,
+                        severity=sev_clean,
+                        priority="high" if sev_clean in ("severe", "critical") else "normal",
+                        status="reported",
+                        department_id=dept_id,
+                        latitude=lat,
+                        longitude=lon,
+                        location_accuracy_m=location_accuracy_m,
+                        address=address.strip() if address else None,
+                        report_count=1,
+                        provenance="REAL_USER_DATA",
+                        created_at=now_utc,
+                        updated_at=now_utc
+                    )
+                    db.add(new_incident)
+                    db.flush()
+
+                    item.incident_id = new_incident.id
+                    item.status = "new_incident"
+                    report.status = "submitted"
+
+                    for re in db.query(ReportEvidence).filter_by(report_item_id=item.id).all():
+                        obs = IncidentObservation(
+                            id=str(uuid.uuid4()),
+                            incident_id=new_incident.id,
+                            report_item_id=item.id,
+                            evidence_asset_id=re.evidence_asset_id,
+                            observation_type="citizen_report",
+                            verification_status="verified",
+                            observed_at=now_utc
+                        )
+                        db.add(obs)
+
+                    history = IncidentStatusHistory(
+                        id=str(uuid.uuid4()),
+                        incident_id=new_incident.id,
+                        previous_status="new",
+                        new_status="reported",
+                        changed_by=citizen_id,
+                        reason="Citizen grievance registered and routed to municipal department",
+                        created_at=now_utc
+                    )
+                    db.add(history)
+
+                    audit = AuditLog(
+                        id=str(uuid.uuid4()),
+                        actor_id=citizen_id,
+                        action="create_canonical_incident",
+                        entity_type="incident",
+                        entity_id=new_incident.id,
+                        details=json.dumps({
+                            "category": cat_clean,
+                            "department_id": dept_id,
+                            "report_id": report.id
+                        }),
+                        created_at=now_utc
+                    )
+                    db.add(audit)
+                    db.commit()
+
+            except Exception as match_err:
+                db.rollback()
 
             # 6. Trigger AI Defect Detection if configured
             from backend.config import get_config
@@ -488,6 +660,11 @@ class CitizenReportService:
                     "category": item.category,
                     "description": item.description,
                     "status": item.status,
+                    "incident_id": item.incident_id,
+                    "incident_reference": item.incident.incident_reference if item.incident else None,
+                    "department_id": item.incident.department_id if item.incident else None,
+                    "department_name": item.incident.department.name if item.incident and item.incident.department else None,
+                    "incident_report_count": item.incident.report_count if item.incident else 1,
                 }
                 for item in items
             ],

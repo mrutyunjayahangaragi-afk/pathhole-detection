@@ -7,8 +7,11 @@ consistent JSON error envelopes without exposing internal stack traces,
 paths, or secrets.
 """
 
+import traceback
+import uuid
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Tuple
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request, g
 
 
 class CivicLensError(Exception):
@@ -98,6 +101,51 @@ def register_error_handlers(app: Flask) -> None:
     def handle_internal_error(error) -> Tuple[Any, int]:
         # Log internally, but never expose the stack trace to the client
         app.logger.error(f"Unhandled 500 internal server error: {error}")
+
+        # Record to application_error_events database table
+        try:
+            from backend.db.engine import get_session_factory
+            from backend.db.models import ApplicationErrorEvent
+
+            user_id = None
+            if hasattr(g, "current_user") and g.current_user:
+                user_id = getattr(g.current_user, "id", None)
+
+            # Sanitize request params
+            sanitized_params = {}
+            if request:
+                for k, v in request.args.items():
+                    if any(s in k.lower() for s in ["password", "token", "secret", "auth", "key"]):
+                        sanitized_params[k] = "[REDACTED]"
+                    else:
+                        sanitized_params[k] = str(v)[:200]
+
+            db = get_session_factory()()
+            try:
+                evt = ApplicationErrorEvent(
+                    id=str(uuid.uuid4()),
+                    timestamp=datetime.now(timezone.utc),
+                    endpoint=request.path if request else None,
+                    method=request.method if request else None,
+                    user_id=user_id,
+                    error_code="INTERNAL_SERVER_ERROR",
+                    error_type=error.__class__.__name__ if hasattr(error, "__class__") else "InternalServerError",
+                    error_message=str(error)[:1000],
+                    traceback=traceback.format_exc()[:4000],
+                    sanitized_request_params=sanitized_params,
+                    client_ip=request.remote_addr if request else None,
+                    created_at=datetime.now(timezone.utc)
+                )
+                db.add(evt)
+                db.commit()
+            except Exception as db_err:
+                db.rollback()
+                app.logger.debug(f"Failed to record ApplicationErrorEvent: {db_err}")
+            finally:
+                db.close()
+        except Exception:
+            pass
+
         return jsonify({
             "error": "An internal server error occurred.",
             "error_code": "INTERNAL_SERVER_ERROR"

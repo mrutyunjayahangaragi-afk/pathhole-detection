@@ -56,6 +56,12 @@ class MunicipalDashboardService:
                 Incident.status.in_([IncidentStatus.NEW, IncidentStatus.AWAITING_VERIFICATION])
             ).count()
 
+            # Surface unlinked incoming citizen reports awaiting human verification
+            unlinked_reports_count = db.query(func.count(ReportItem.id)).filter(
+                ReportItem.incident_id.is_(None)
+            ).scalar() or 0
+            awaiting_verification = awaiting_verification + unlinked_reports_count
+
             in_progress = base_query.filter(
                 Incident.status.in_([IncidentStatus.ASSIGNED, IncidentStatus.IN_PROGRESS])
             ).count()
@@ -73,12 +79,16 @@ class MunicipalDashboardService:
             ).count()
 
             # SLA breaches calculation across active incidents
+            # Excludes resolved/closed/rejected, and excludes imported legacy telemetry lacking configured SLA
             active_incidents = base_query.filter(
                 ~Incident.status.in_([IncidentStatus.RESOLVED, IncidentStatus.CLOSED, IncidentStatus.REJECTED])
             ).all()
 
             overdue_sla_count = 0
             for inc in active_incidents:
+                # Exclude imported legacy sensor telemetry from active SLA breach counter
+                if getattr(inc, "provenance", None) == "IMPORTED_LEGACY_DATA":
+                    continue
                 created = inc.created_at
                 if created:
                     if created.tzinfo is None:
@@ -239,7 +249,8 @@ class MunicipalDashboardService:
                     "assigned_officer_name": officer_name,
                     "latitude": inc.latitude,
                     "longitude": inc.longitude,
-                    "reports_count": report_count,
+                    "reports_count": max(report_count, inc.report_count or 1) if report_count > 0 or getattr(inc, "provenance", None) == "REAL_USER_DATA" else (1 if getattr(inc, "provenance", None) == "REAL_USER_DATA" else report_count),
+                    "report_count": max(report_count, inc.report_count or 1) if report_count > 0 or getattr(inc, "provenance", None) == "REAL_USER_DATA" else (1 if getattr(inc, "provenance", None) == "REAL_USER_DATA" else report_count),
                     "age_hours": round(age_hours, 1),
                     "is_sla_breached": is_sla_breached,
                     "created_at": inc.created_at.isoformat() if inc.created_at else None,
@@ -251,6 +262,118 @@ class MunicipalDashboardService:
                 "limit": limit,
                 "offset": offset,
                 "incidents": results
+            }
+        finally:
+            db.close()
+
+    def get_verification_queue(
+        self,
+        category: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0
+    ) -> Dict[str, Any]:
+        """
+        Retrieves a unified multi-source verification queue:
+        1. Unlinked citizen report items awaiting triage
+        2. Incidents with status awaiting_verification or reported
+        Returns structured items for reviewer assessment.
+        """
+        limit = min(max(1, limit), 200)
+        offset = max(0, offset)
+        db: Session = self._session_factory()
+        now = datetime.now(timezone.utc)
+        items_result = []
+
+        try:
+            # 1. Unlinked citizen report items
+            unlinked_query = db.query(ReportItem, CitizenReport).join(
+                CitizenReport, ReportItem.report_id == CitizenReport.id
+            ).filter(ReportItem.incident_id.is_(None))
+
+            if category:
+                unlinked_query = unlinked_query.filter(ReportItem.category == category)
+
+            total_unlinked = unlinked_query.count()
+            unlinked_items = unlinked_query.order_by(CitizenReport.submitted_at.desc()).limit(limit).offset(offset).all()
+
+            for item, rep in unlinked_items:
+                ev = db.query(ReportEvidence).filter_by(report_id=rep.id).first()
+                ev_url = None
+                if ev and ev.evidence_asset:
+                    ev_url = f"/api/v1/evidence/{ev.evidence_asset.id}/file" if ev.evidence_asset else None
+
+                sub_time = rep.submitted_at or rep.created_at or now
+                if sub_time.tzinfo is None:
+                    sub_time = sub_time.replace(tzinfo=timezone.utc)
+                age_hours = (now - sub_time).total_seconds() / 3600.0
+
+                items_result.append({
+                    "id": item.id,
+                    "item_type": "citizen_report",
+                    "report_id": rep.id,
+                    "report_item_id": item.id,
+                    "reference": rep.report_reference or f"CR-{rep.id[:8].upper()}",
+                    "title": rep.title or f"{item.category.replace('_', ' ').capitalize()} defect",
+                    "category": item.category or "pothole",
+                    "description": item.description or rep.description or "No description provided",
+                    "translated_description": rep.translated_description,
+                    "original_language": rep.original_language or "en",
+                    "severity": rep.reported_severity or "minor",
+                    "priority": "normal",
+                    "latitude": rep.latitude,
+                    "longitude": rep.longitude,
+                    "address": rep.address or "Bengaluru Municipal Area",
+                    "reports_count": 1,
+                    "evidence_url": ev_url,
+                    "age_hours": round(age_hours, 1),
+                    "submitted_at": sub_time.isoformat()
+                })
+
+            # 2. Canonical incidents awaiting verification
+            inc_query = db.query(Incident).filter(
+                Incident.status.in_([IncidentStatus.NEW, IncidentStatus.AWAITING_VERIFICATION])
+            )
+            if category:
+                inc_query = inc_query.filter(Incident.category == category)
+
+            total_incidents = inc_query.count()
+            incidents = inc_query.order_by(Incident.created_at.desc()).limit(max(0, limit - len(items_result))).all()
+
+            for inc in incidents:
+                ref_id = f"INC-{inc.id[:8].upper()}"
+                dept_name = inc.department.name if inc.department else "Unassigned"
+                cr_time = inc.created_at or now
+                if cr_time.tzinfo is None:
+                    cr_time = cr_time.replace(tzinfo=timezone.utc)
+                age_hours = (now - cr_time).total_seconds() / 3600.0
+
+                items_result.append({
+                    "id": inc.id,
+                    "item_type": "canonical_incident",
+                    "incident_id": inc.id,
+                    "reference": inc.incident_reference or ref_id,
+                    "title": inc.description or f"{inc.category.replace('_', ' ').capitalize()} defect",
+                    "category": inc.category,
+                    "description": inc.description or "No description provided",
+                    "severity": inc.severity or "minor",
+                    "priority": inc.priority or "normal",
+                    "latitude": inc.latitude,
+                    "longitude": inc.longitude,
+                    "address": inc.address or "Bengaluru Municipal Area",
+                    "reports_count": inc.report_count or 1,
+                    "department_name": dept_name,
+                    "age_hours": round(age_hours, 1),
+                    "submitted_at": cr_time.isoformat()
+                })
+
+            return {
+                "total": total_unlinked + total_incidents,
+                "total_unlinked": total_unlinked,
+                "total_incidents_awaiting": total_incidents,
+                "limit": limit,
+                "offset": offset,
+                "items": items_result,
+                "incidents": items_result  # backward-compatible key for frontend
             }
         finally:
             db.close()

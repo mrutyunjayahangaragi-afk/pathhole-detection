@@ -146,7 +146,15 @@
         </div>
       </div>
 
-      <button type="submit" class="cl-btn cl-btn-primary" id="btn-login-submit" style="width: 100%; font-weight: 600; padding: 10px; margin-top: 8px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin: 12px 0 16px 0; font-size: 13px;">
+        <label style="display: flex; align-items: center; gap: 8px; color: var(--cl-text-muted); cursor: pointer; user-select: none;">
+          <input type="checkbox" id="remember-me" style="accent-color: var(--cl-primary); cursor: pointer;">
+          <span>Remember me</span>
+        </label>
+        <a href="#" id="link-forgot-password" style="color: var(--cl-primary-light); text-decoration: none; font-weight: 500;">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="cl-btn cl-btn-primary" id="btn-login-submit" style="width: 100%; font-weight: 600; padding: 10px; margin-top: 4px;">
         Sign In to Municipal Portal
       </button>
 
@@ -209,8 +217,13 @@
     </form>
   </div>
 
-  <div style="margin-top: 24px; font-size: 11px; color: var(--cl-text-muted); text-align: center;">
-    CivicLens v2.4 &middot; Municipal Officer Portal &middot; <a href="../login.html" style="color: var(--cl-primary-light); text-decoration: none;">Portal Selector</a>
+  <div style="margin-top: 24px; font-size: 13px; color: var(--cl-text-muted); text-align: center; display: flex; flex-direction: column; gap: 8px;">
+    <div>
+      <a href="../index.html" style="color: var(--cl-primary-light); text-decoration: none; font-weight: 500;">&larr; Back to CivicLens Public Portal</a>
+    </div>
+    <div style="font-size: 11px; opacity: 0.7;">
+      CivicLens v2.4 &middot; Municipal Officer Portal &middot; BBMP / Urban Local Bodies
+    </div>
   </div>
 </div>
 
@@ -389,6 +402,18 @@ acceptForm.addEventListener("submit", async (e) => {
 // Supabase Google Login for Official Portal
 document.getElementById("btn-google-login")?.addEventListener("click", () => {
   window.CivicLensSupabase.signInWithGoogle("municipal");
+});
+
+// Forgot Password Handler
+document.getElementById("link-forgot-password")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  const email = document.getElementById("official-email").value.trim();
+  if (!email) {
+    showAlert("Please enter your official email address in the field above first.", "info");
+    document.getElementById("official-email").focus();
+    return;
+  }
+  showAlert(`Password reset request initiated for ${email}. If your official account is registered, instructions have been sent or contact your municipal system administrator.`, "info");
 });
 </script>
 </body>

@@ -81,6 +81,192 @@ def list_incidents():
     return jsonify(data), 200
 
 
+# ============================================================================
+# 2B. Human Verification Queue Endpoints
+# ============================================================================
+
+@municipal_bp.route("/verification/queue", methods=["GET"])
+@role_required(*MUNICIPAL_ROLES)
+def get_verification_queue():
+    """Returns multi-source verification queue containing unlinked citizen complaints and incidents."""
+    category = request.args.get("category")
+    limit = int(request.args.get("limit", 50))
+    offset = int(request.args.get("offset", 0))
+
+    queue_data = dashboard_service.get_verification_queue(
+        category=category,
+        limit=limit,
+        offset=offset
+    )
+    return jsonify(queue_data), 200
+
+
+@municipal_bp.route("/verification/confirm", methods=["POST"])
+@role_required(*MUNICIPAL_ROLES)
+def confirm_verification_item():
+    """
+    Confirms an item in the verification queue.
+    If a citizen report item, converts it into a canonical incident with correct department routing.
+    If a canonical incident, transitions status to verified.
+    """
+    import uuid
+    import json
+    from backend.db.models import IncidentStatusHistory, AuditLog
+
+    data = request.get_json(silent=True) or {}
+    item_type = data.get("item_type", "citizen_report")
+    item_id = data.get("id") or data.get("item_id")
+    category = data.get("category", "pothole")
+    priority = data.get("priority", "normal")
+    reason = (data.get("reason") or "Verified by municipal engineering triage").strip()
+
+    if not item_id:
+        return jsonify({"status": "error", "message": "Item ID is required"}), 400
+
+    user = get_current_user()
+    db = get_session_factory()()
+    now = datetime.now(timezone.utc)
+
+    try:
+        if item_type == "citizen_report":
+            item = db.query(ReportItem).filter_by(id=item_id).first()
+            if not item:
+                return jsonify({"status": "error", "message": "Report item not found"}), 404
+
+            rep = db.query(CitizenReport).filter_by(id=item.report_id).first()
+
+            dept_code_map = {
+                "pothole": "ROAD_MAINT",
+                "road_damage": "ROAD_MAINT",
+                "drainage": "DRAINAGE",
+                "broken_streetlight": "STREETLIGHT",
+                "lighting": "STREETLIGHT",
+                "footpaths": "FOOTPATHS",
+                "sidewalk": "FOOTPATHS",
+                "solid_waste": "SOLID_WASTE",
+                "sanitation": "SOLID_WASTE",
+                "garbage": "SOLID_WASTE",
+                "water_leakage": "BWSSB",
+                "bridge_damage": "PUBLIC_WORKS",
+                "traffic_signal": "TRAFFIC_ENG"
+            }
+            dept_code = dept_code_map.get(category.lower(), "ROAD_MAINT")
+            dept = db.query(Department).filter_by(code=dept_code, is_active=True).first()
+            dept_id = dept.id if dept else None
+
+            new_incident = Incident(
+                id=str(uuid.uuid4()),
+                incident_reference=f"INC-{now.strftime('%Y%m')}-{uuid.uuid4().hex[:5].upper()}",
+                category=category,
+                description=rep.description if rep else item.description,
+                severity=(rep.reported_severity if rep and rep.reported_severity else "minor"),
+                priority=priority,
+                status="verified",
+                department_id=dept_id,
+                latitude=rep.latitude if rep else 0.0,
+                longitude=rep.longitude if rep else 0.0,
+                address=rep.address if rep else "Bengaluru Area",
+                report_count=1,
+                provenance="REAL_USER_DATA",
+                created_at=now,
+                updated_at=now
+            )
+            db.add(new_incident)
+
+            item.incident_id = new_incident.id
+            if rep:
+                rep.status = "acknowledged"
+                rep.updated_at = now
+
+            history = IncidentStatusHistory(
+                id=str(uuid.uuid4()),
+                incident_id=new_incident.id,
+                previous_status="new",
+                new_status="verified",
+                changed_by=user.id,
+                reason=reason,
+                created_at=now
+            )
+            db.add(history)
+
+            audit = AuditLog(
+                id=str(uuid.uuid4()),
+                actor_id=user.id,
+                action="verify_citizen_report",
+                entity_type="incident",
+                entity_id=new_incident.id,
+                details=json.dumps({"report_item_id": item.id, "reason": reason, "category": category}),
+                created_at=now
+            )
+            db.add(audit)
+            db.commit()
+
+            return jsonify({
+                "status": "success",
+                "incident_id": new_incident.id,
+                "incident_reference": new_incident.incident_reference,
+                "message": "Citizen complaint confirmed and routed to municipal department"
+            }), 201
+
+        else:
+            res = state_machine_service.transition_incident(
+                incident_id=item_id,
+                new_status="verified",
+                actor_id=user.id,
+                actor_role=user.role,
+                reason=reason
+            )
+            return jsonify({"status": "success", "transition": res}), 200
+
+    except Exception as e:
+        db.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        db.close()
+
+
+@municipal_bp.route("/verification/reject", methods=["POST"])
+@role_required(*MUNICIPAL_ROLES)
+def reject_verification_item():
+    """Rejects an item from the verification queue with audit reason."""
+    data = request.get_json(silent=True) or {}
+    item_type = data.get("item_type", "citizen_report")
+    item_id = data.get("id") or data.get("item_id")
+    reason = (data.get("reason") or "Rejected during municipal engineering review").strip()
+
+    if not item_id:
+        return jsonify({"status": "error", "message": "Item ID is required"}), 400
+
+    user = get_current_user()
+    db = get_session_factory()()
+    now = datetime.now(timezone.utc)
+
+    try:
+        if item_type == "citizen_report":
+            item = db.query(ReportItem).filter_by(id=item_id).first()
+            if item:
+                rep = db.query(CitizenReport).filter_by(id=item.report_id).first()
+                if rep:
+                    rep.status = "rejected"
+                    rep.updated_at = now
+            db.commit()
+            return jsonify({"status": "success", "message": "Citizen report rejected"}), 200
+        else:
+            res = state_machine_service.transition_incident(
+                incident_id=item_id,
+                new_status="rejected",
+                actor_id=user.id,
+                actor_role=user.role,
+                reason=reason
+            )
+            return jsonify({"status": "success", "transition": res}), 200
+    except Exception as e:
+        db.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        db.close()
+
+
 @municipal_bp.route("/incidents/<incident_id>", methods=["GET"])
 @role_required(*MUNICIPAL_ROLES)
 def get_incident_detail(incident_id: str):
@@ -94,30 +280,32 @@ def get_incident_detail(incident_id: str):
         # Linked Citizen Reports & raw evidence
         reports = db.query(CitizenReport).join(
             ReportItem, ReportItem.report_id == CitizenReport.id
-        ).filter(ReportItem.incident_id == inc.id).all()
+        ).filter(ReportItem.incident_id == inc.id).distinct().all()
         report_list = []
         for r in reports:
             # Evidence photos
             evidence_junctions = db.query(ReportEvidence).filter_by(report_id=r.id).all()
             ev_list = []
             for j in evidence_junctions:
-                ea = db.query(EvidenceAsset).filter_by(id=j.evidence_id).first()
+                ea_id = getattr(j, "evidence_asset_id", None) or getattr(j, "evidence_id", None)
+                ea = db.query(EvidenceAsset).filter_by(id=ea_id).first() if ea_id else None
                 if ea:
                     ev_list.append({
                         "id": ea.id,
                         "media_type": ea.media_type,
                         "file_size": ea.file_size_bytes,
-                        "url": f"/api/v1/evidence/{ea.id}",
+                        "url": f"/api/v1/evidence/{ea.id}/file" if hasattr(ea, "id") else None,
                         "created_at": ea.created_at.isoformat() if ea.created_at else None
                     })
 
             cit_user = db.query(User).filter_by(id=r.citizen_id).first()
             report_list.append({
                 "id": r.id,
-                "reference": f"CR-{r.id[:8].upper()}",
+                "reference": r.report_reference or f"CR-{r.id[:8].upper()}",
                 "citizen_name": cit_user.display_name if cit_user else "Anonymous Citizen",
                 "title": r.title,
                 "description": r.description,
+                "translated_description": r.translated_description,
                 "reported_severity": r.reported_severity,
                 "detected_language": r.detected_language,
                 "address": r.address,
@@ -495,7 +683,7 @@ def update_department(dept_id: str):
 
 
 @municipal_bp.route("/officers", methods=["GET"])
-@role_required(*ADMIN_ROLES)
+@role_required(*MUNICIPAL_ROLES)
 def list_officers():
     """Lists municipal officers with current workload metrics."""
     dept_id = request.args.get("department_id")

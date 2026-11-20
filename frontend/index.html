@@ -51,7 +51,7 @@
             AI-Powered Multilingual Civic Grievance &amp; Infrastructure Triage
           </h1>
           <p class="cl-hero-lead">
-            Transforming automated edge detection and citizen reports into a single, deduplicated source of truth for municipal action.
+            Transforming citizen reports and automated road-defect detection into a single, transparent source of truth for municipal action.
           </p>
           <div class="cl-hero-cta-group">
             <a href="./citizen-report.html" class="cl-btn cl-btn-primary" style="font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
@@ -125,7 +125,7 @@
         </div>
       </div>
 
-      <!-- 4 Real-Time Database Metrics -->
+      <!-- 5 Real-Time Database Metrics -->
       <div class="cl-container" style="padding-left: 0; padding-right: 0; margin-top: var(--cl-space-8);">
         <div class="cl-metrics-row">
           <div class="cl-metric-card">
@@ -142,6 +142,11 @@
             <span class="cl-metric-label">Resolved Defects</span>
             <span class="cl-metric-value" id="counter-resolved" style="color: var(--cl-minor);">--</span>
             <span class="cl-metric-subtext">Completed work orders</span>
+          </div>
+          <div class="cl-metric-card">
+            <span class="cl-metric-label">Pending Verification</span>
+            <span class="cl-metric-value" id="counter-pending" style="color: var(--cl-warning);">--</span>
+            <span class="cl-metric-subtext">Awaiting official review</span>
           </div>
           <div class="cl-metric-card">
             <span class="cl-metric-label">Deduplication Ratio</span>
@@ -369,6 +374,8 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("counter-incidents").textContent = Number(data.total_canonical_incidents || 0).toLocaleString();
         const resolved = (data.status_breakdown && data.status_breakdown.resolved) || 0;
         document.getElementById("counter-resolved").textContent = Number(resolved).toLocaleString();
+        const pending = (data.status_breakdown && (data.status_breakdown.awaiting_verification || (data.status_breakdown.raw && data.status_breakdown.raw.awaiting_verification))) || 0;
+        document.getElementById("counter-pending").textContent = Number(pending).toLocaleString();
         const ratio = data.deduplication_ratio !== undefined ? data.deduplication_ratio.toFixed(2) + "x" : "1.00x";
         document.getElementById("counter-dedup").textContent = ratio;
       }
@@ -377,6 +384,7 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("counter-reports").textContent = "0";
       document.getElementById("counter-incidents").textContent = "0";
       document.getElementById("counter-resolved").textContent = "0";
+      document.getElementById("counter-pending").textContent = "0";
       document.getElementById("counter-dedup").textContent = "1.00x";
     });
 

@@ -386,10 +386,6 @@ class DepartmentManagementService:
 
         db: Session = self._session_factory()
         try:
-            # Check existing email
-            if db.query(User).filter_by(email=email).first():
-                raise ValidationError("An account with this email address already exists.")
-
             # Validate department if provided
             dept = None
             if department_id:
@@ -397,28 +393,47 @@ class DepartmentManagementService:
                 if not dept:
                     raise NotFoundError(f"Active department '{department_id}' not found.")
 
-            user = User(
-                id=str(uuid.uuid4()),
-                display_name=display_name,
-                email=email,
-                role=role,
-                password_hash=generate_password_hash(password),
-                is_active=True,
-                created_at=datetime.now(timezone.utc)
-            )
-            db.add(user)
+            # Check existing email
+            existing_user = db.query(User).filter_by(email=email).first()
+            if existing_user:
+                # Update existing official or elevate citizen to municipal official role
+                existing_user.role = role
+                existing_user.display_name = display_name
+                if password:
+                    existing_user.password_hash = generate_password_hash(password)
+                existing_user.is_active = True
+                user = existing_user
+            else:
+                user = User(
+                    id=str(uuid.uuid4()),
+                    display_name=display_name,
+                    email=email,
+                    role=role,
+                    password_hash=generate_password_hash(password),
+                    is_active=True,
+                    created_at=datetime.now(timezone.utc)
+                )
+                db.add(user)
 
             # Assign membership if department provided
             if dept:
-                membership = DepartmentMembership(
-                    id=str(uuid.uuid4()),
+                existing_mem = db.query(DepartmentMembership).filter_by(
                     user_id=user.id,
-                    department_id=dept.id,
-                    role_in_dept=role_in_dept if role_in_dept in {"officer", "lead", "admin"} else "officer",
-                    is_active=True,
-                    joined_at=datetime.now(timezone.utc)
-                )
-                db.add(membership)
+                    department_id=dept.id
+                ).first()
+                if existing_mem:
+                    existing_mem.is_active = True
+                    existing_mem.role_in_dept = role_in_dept if role_in_dept in {"officer", "lead", "admin"} else "officer"
+                else:
+                    membership = DepartmentMembership(
+                        id=str(uuid.uuid4()),
+                        user_id=user.id,
+                        department_id=dept.id,
+                        role_in_dept=role_in_dept if role_in_dept in {"officer", "lead", "admin"} else "officer",
+                        is_active=True,
+                        joined_at=datetime.now(timezone.utc)
+                    )
+                    db.add(membership)
 
             if actor_id:
                 audit = AuditLog(

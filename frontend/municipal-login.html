@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>CivicLens — Municipal Official &amp; Administration Portal</title>
+<link rel="icon" type="image/png" sizes="32x32" href="./static/images/branding/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./static/images/branding/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./static/images/branding/apple-touch-icon.png">
+<link rel="stylesheet" href="./static/css/civiclens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  .auth-wrapper {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--cl-space-4);
+    background: radial-gradient(circle at top, #1e293b 0%, #0b1120 100%);
+  }
+
+  .auth-card {
+    width: 100%;
+    max-width: 460px;
+    background: #131c31;
+    border: 1px solid #334155;
+    border-top: 4px solid var(--cl-warning);
+    border-radius: var(--cl-radius-lg);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+    padding: var(--cl-space-6);
+  }
+
+  .official-notice-banner {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: var(--cl-radius-md);
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #fde68a;
+    line-height: 1.4;
+    margin-bottom: var(--cl-space-5);
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .password-toggle-btn {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--cl-text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px;
+  }
+
+  .auth-alert {
+    display: none;
+    padding: 12px 14px;
+    border-radius: var(--cl-radius-md);
+    font-size: 12px;
+    margin-bottom: var(--cl-space-4);
+    line-height: 1.4;
+  }
+
+  .auth-alert.error {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid #ef4444;
+    color: #fca5a5;
+  }
+
+  .auth-alert.success {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid #10b981;
+    color: #86efac;
+  }
+
+  .auth-alert.info {
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid #3b82f6;
+    color: #93c5fd;
+  }
+</style>
+</head>
+<body>
+
+<div class="auth-wrapper">
+  <!-- Brand Header with Official CivicLens Identity -->
+  <div style="margin-bottom: var(--cl-space-4); text-align: center;">
+    <a href="./index.html" style="text-decoration: none; display: inline-block;">
+      <picture>
+        <source srcset="./static/images/branding/civiclens-logo.webp" type="image/webp">
+        <img src="./static/images/branding/civiclens-logo.png" 
+             alt="CivicLens — Smart Civic Reporting. Transparent City Improvements." 
+             style="max-width: 290px; width: 100%; height: auto; aspect-ratio: 1024 / 341; display: block; margin: 0 auto;"
+             width="290" height="97">
+      </picture>
+    </a>
+    <div style="font-size: 11px; color: var(--cl-warning); font-family: var(--cl-font-mono); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 8px;">
+      Municipal &amp; Engineering Operations
+    </div>
+  </div>
+
+  <div class="auth-card">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px;">
+      <h2 style="font-family: var(--cl-font-heading); font-size: 18px; margin: 0; text-transform: uppercase;" id="form-heading">
+        Official Sign In
+      </h2>
+      <span class="cl-badge" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; font-size: 10px; font-family: var(--cl-font-mono);" id="badge-portal">
+        RESTRICTED
+      </span>
+    </div>
+
+    <!-- Official Notice -->
+    <div class="official-notice-banner" id="notice-banner">
+      <span style="font-size: 16px;">🛡️</span>
+      <div>
+        <b>Authorized Personnel Only:</b> Accounts are provisioned strictly via administrative invitation. Citizens wishing to report defects must use the <a href="./citizen-login.html" style="color: var(--cl-primary-light); text-decoration: underline;">Citizen Portal</a>.
+      </div>
+    </div>
+
+    <!-- Alert Box -->
+    <div class="auth-alert" id="auth-alert"></div>
+
+    <!-- 1. OFFICIAL SIGN IN FORM -->
+    <form id="official-login-form">
+      <div class="cl-form-group">
+        <label class="cl-label" for="official-email">Official Email Address</label>
+        <input type="email" id="official-email" class="cl-input" placeholder="officer@bbmp.gov.in" required autocomplete="email">
+      </div>
+
+      <div class="cl-form-group">
+        <label class="cl-label" for="official-password">Password</label>
+        <div class="password-input-wrapper">
+          <input type="password" id="official-password" class="cl-input" placeholder="••••••••••••" required autocomplete="current-password" style="width: 100%; padding-right: 40px;">
+          <button type="button" class="password-toggle-btn" id="btn-toggle-pwd" aria-label="Toggle password visibility">👁️</button>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin: 12px 0 16px 0; font-size: 13px;">
+        <label style="display: flex; align-items: center; gap: 8px; color: var(--cl-text-muted); cursor: pointer; user-select: none;">
+          <input type="checkbox" id="remember-me" style="accent-color: var(--cl-primary); cursor: pointer;">
+          <span>Remember me</span>
+        </label>
+        <a href="#" id="link-forgot-password" style="color: var(--cl-primary-light); text-decoration: none; font-weight: 500;">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="cl-btn cl-btn-primary" id="btn-login-submit" style="width: 100%; font-weight: 600; padding: 10px; margin-top: 4px;">
+        Sign In to Municipal Portal
+      </button>
+
+      <div style="display: flex; align-items: center; margin: 16px 0; gap: 8px;">
+        <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.1);"></div>
+        <span style="font-size: 11px; color: var(--cl-text-muted); text-transform: uppercase;">or</span>
+        <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.1);"></div>
+      </div>
+
+      <button type="button" id="btn-google-login" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; background: #ffffff; color: #1f2937; border: 1px solid #e5e7eb; border-radius: var(--cl-radius-md); padding: 10px 16px; font-weight: 500; font-size: 14px; cursor: pointer; transition: background 0.2s;">
+        <svg width="18" height="18" viewBox="0 0 18 18">
+          <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/>
+          <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
+          <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707 0-.59.102-1.167.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/>
+          <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/>
+        </svg>
+        <span>Continue with Google (Authorized Officials)</span>
+      </button>
+
+      <div style="margin-top: 16px; text-align: center; font-size: 12px; color: var(--cl-text-muted);">
+        Received an invitation? <a href="#" id="link-show-invitation" style="color: var(--cl-primary-light); text-decoration: none; font-weight: 600;">Accept Invitation Here &rarr;</a>
+      </div>
+    </form>
+
+    <!-- 2. INVITATION ACCEPTANCE FORM (Hidden by default) -->
+    <form id="invitation-accept-form" style="display: none;">
+      <div class="cl-form-group">
+        <label class="cl-label" for="inv-token">Invitation Token</label>
+        <input type="text" id="inv-token" class="cl-input" placeholder="Paste invitation token..." required style="font-family: var(--cl-font-mono); font-size: 12px;">
+      </div>
+
+      <div id="inv-details-box" style="display: none; background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(37, 99, 235, 0.3); border-radius: 6px; padding: 10px; font-size: 12px; margin-bottom: 14px;">
+        <div>Invited Email: <b id="inv-email-display">—</b></div>
+        <div>Assigned Role: <b id="inv-role-display">—</b></div>
+        <div>Department: <b id="inv-dept-display">—</b></div>
+      </div>
+
+      <div class="cl-form-group">
+        <label class="cl-label" for="inv-name">Your Full Name</label>
+        <input type="text" id="inv-name" class="cl-input" placeholder="e.g. Ward Engineer Rao" required>
+      </div>
+
+      <div class="cl-form-group">
+        <label class="cl-label" for="inv-password">Set Password</label>
+        <input type="password" id="inv-password" class="cl-input" placeholder="Minimum 8 chars (letters + numbers)" required>
+      </div>
+
+      <div class="cl-form-group">
+        <label class="cl-label" for="inv-confirm-password">Confirm Password</label>
+        <input type="password" id="inv-confirm-password" class="cl-input" placeholder="Repeat password" required>
+      </div>
+
+      <button type="submit" class="cl-btn cl-btn-primary" id="btn-accept-submit" style="width: 100%; font-weight: 600; padding: 10px; margin-top: 8px;">
+        Activate Official Account
+      </button>
+
+      <div style="margin-top: 16px; text-align: center; font-size: 12px; color: var(--cl-text-muted);">
+        <a href="#" id="link-show-login" style="color: var(--cl-text); text-decoration: none;">&larr; Back to Official Sign In</a>
+      </div>
+    </form>
+  </div>
+
+  <div style="margin-top: 24px; font-size: 13px; color: var(--cl-text-muted); text-align: center; display: flex; flex-direction: column; gap: 8px;">
+    <div>
+      <a href="./index.html" style="color: var(--cl-primary-light); text-decoration: none; font-weight: 500;">&larr; Back to CivicLens Public Portal</a>
+    </div>
+    <div style="font-size: 11px; opacity: 0.7;">
+      CivicLens v2.4 &middot; Municipal Officer Portal &middot; BBMP / Urban Local Bodies
+    </div>
+  </div>
+</div>
+
+<script src="./static/js/citizen-auth.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./static/js/auth/supabase-client.js"></script>
+<script src="./static/js/auth/session-manager.js"></script>
+<script src="./static/js/auth/role-navigation.js"></script>
+<script>
+const loginForm = document.getElementById("official-login-form");
+const acceptForm = document.getElementById("invitation-accept-form");
+const alertEl = document.getElementById("auth-alert");
+const formHeading = document.getElementById("form-heading");
+const pwdInput = document.getElementById("official-password");
+const togglePwdBtn = document.getElementById("btn-toggle-pwd");
+
+function showAlert(msg, type = "error") {
+  alertEl.textContent = msg;
+  alertEl.className = `auth-alert ${type}`;
+  alertEl.style.display = "block";
+}
+
+function clearAlert() {
+  alertEl.style.display = "none";
+}
+
+// Password toggle
+togglePwdBtn.addEventListener("click", () => {
+  const isPwd = pwdInput.type === "password";
+  pwdInput.type = isPwd ? "text" : "password";
+  togglePwdBtn.textContent = isPwd ? "🙈" : "👁️";
+});
+
+// Mode switcher
+document.getElementById("link-show-invitation").addEventListener("click", (e) => {
+  e.preventDefault();
+  clearAlert();
+  loginForm.style.display = "none";
+  acceptForm.style.display = "block";
+  formHeading.textContent = "Accept Official Invitation";
+});
+
+document.getElementById("link-show-login").addEventListener("click", (e) => {
+  e.preventDefault();
+  clearAlert();
+  acceptForm.style.display = "none";
+  loginForm.style.display = "block";
+  formHeading.textContent = "Official Sign In";
+});
+
+// Check if URL has ?invitation=<token>
+const urlParams = new URLSearchParams(window.location.search);
+const invTokenParam = urlParams.get("invitation");
+if (invTokenParam) {
+  document.getElementById("inv-token").value = invTokenParam;
+  loginForm.style.display = "none";
+  acceptForm.style.display = "block";
+  formHeading.textContent = "Accept Official Invitation";
+  verifyToken(invTokenParam);
+}
+
+async function verifyToken(token) {
+  try {
+    const res = await fetch(`/api/v1/auth/invitations/verify/${encodeURIComponent(token)}`);
+    const data = await res.json();
+    if (res.ok && data.status === "success") {
+      document.getElementById("inv-details-box").style.display = "block";
+      document.getElementById("inv-email-display").textContent = data.invitation.email;
+      document.getElementById("inv-role-display").textContent = data.invitation.intended_role.replace("_", " ").toUpperCase();
+      document.getElementById("inv-dept-display").textContent = data.invitation.department_name || "Central Municipality";
+    } else {
+      showAlert(data.message || "Invitation token is invalid or has expired.", "error");
+    }
+  } catch (err) {
+    showAlert("Failed to verify invitation token.", "error");
+  }
+}
+
+// 1. Submit Official Login
+loginForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  clearAlert();
+  const btn = document.getElementById("btn-login-submit");
+  btn.disabled = true;
+  btn.textContent = "Authenticating...";
+
+  try {
+    const res = await fetch("/api/v1/auth/official-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: document.getElementById("official-email").value.trim(),
+        password: document.getElementById("official-password").value
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      showAlert(data.error || data.message || "Authentication failed.");
+      return;
+    }
+
+    // Save session via CivicAuth
+    CivicAuth.setSession(data.token, data.user);
+    showAlert("Authentication successful! Redirecting to municipal console...", "success");
+
+    setTimeout(() => {
+      // Smart role-based redirects
+      const role = data.user.role;
+      if (role === "municipal_officer") {
+        window.location.href = "./municipal/dashboard.html";
+      } else if (role === "dept_admin" || role === "municipal_admin" || role === "system_admin") {
+        window.location.href = "./municipal/dashboard.html";
+      } else {
+        window.location.href = "../index.html";
+      }
+    }, 600);
+
+  } catch (err) {
+    showAlert("Network communication error. Please check backend server.");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Sign In to Municipal Portal";
+  }
+});
+
+// 2. Submit Accept Invitation
+acceptForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  clearAlert();
+
+  const pwd = document.getElementById("inv-password").value;
+  const confirm = document.getElementById("inv-confirm-password").value;
+  if (pwd !== confirm) {
+    showAlert("Passwords do not match.");
+    return;
+  }
+
+  const btn = document.getElementById("btn-accept-submit");
+  btn.disabled = true;
+  btn.textContent = "Activating Account...";
+
+  try {
+    const res = await fetch("/api/v1/auth/invitations/accept", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: document.getElementById("inv-token").value.trim(),
+        display_name: document.getElementById("inv-name").value.trim(),
+        password: pwd,
+        confirm_password: confirm
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      showAlert(data.error || data.message || "Failed to activate official account.");
+      return;
+    }
+
+    CivicAuth.setSession(data.token, data.user);
+    showAlert("Official account activated! Redirecting to municipal triage...", "success");
+
+    setTimeout(() => {
+      window.location.href = "./municipal/dashboard.html";
+    }, 800);
+
+  } catch (err) {
+    showAlert("Network error during activation.");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Activate Official Account";
+  }
+});
+
+// Supabase Google Login for Official Portal
+document.getElementById("btn-google-login")?.addEventListener("click", () => {
+  window.CivicLensSupabase.signInWithGoogle("municipal");
+});
+
+// Forgot Password Handler
+document.getElementById("link-forgot-password")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  const email = document.getElementById("official-email").value.trim();
+  if (!email) {
+    showAlert("Please enter your official email address in the field above first.", "info");
+    document.getElementById("official-email").focus();
+    return;
+  }
+  showAlert(`Password reset request initiated for ${email}. If your official account is registered, instructions have been sent or contact your municipal system administrator.`, "info");
+});
+</script>
+</body>
+</html>

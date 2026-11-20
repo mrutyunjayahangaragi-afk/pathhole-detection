@@ -15,7 +15,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 from backend.db.engine import get_session_factory
 from backend.db.models import User, Municipality, Department, DepartmentMembership, OfficialInvitation
-from backend.auth import generate_auth_token
+from backend.auth_compat import generate_auth_token
 from backend.errors import ValidationError, NotFoundError, UnauthorizedError, CivicLensError
 
 EMAIL_REGEX = re.compile(r"^[\w\.\+\-]+@(?:[\w\-]+\.)+[a-zA-Z]{2,}$")

@@ -29,8 +29,8 @@ def upload_showcase_media():
 
     file = request.files["file"]
     user = get_current_user()
-    user_id = user.get("id") if user else "anonymous"
-    user_role = user.get("role") if user else "municipal_officer"
+    user_id = getattr(user, "id", "anonymous")
+    user_role = getattr(user, "role", "municipal_officer")
 
     try:
         res = _showcase_service.upload_media_file(file, uploader_id=user_id, uploader_role=user_role)
@@ -63,8 +63,8 @@ def create_showcase_item():
     """Creates a new showcase draft linked to an incident and media asset."""
     data = request.get_json(silent=True) or {}
     user = get_current_user()
-    user_id = user.get("id") if user else "anonymous"
-    user_role = user.get("role") if user else "municipal_officer"
+    user_id = getattr(user, "id", "anonymous")
+    user_role = getattr(user, "role", "municipal_officer")
 
     title = data.get("title", "").strip()
     if not title:
@@ -101,7 +101,9 @@ def create_showcase_item():
 def submit_for_review(item_id: str):
     """Submits a draft item for moderation review."""
     user = get_current_user()
-    res = _showcase_service.update_item_status(item_id, "submit", user.get("id"), user.get("role"))
+    user_id = getattr(user, "id", "anonymous")
+    user_role = getattr(user, "role", "municipal_officer")
+    res = _showcase_service.update_item_status(item_id, "submit", user_id, user_role)
     code = res.pop("code", 200)
     return jsonify(res), code
 
@@ -111,7 +113,9 @@ def submit_for_review(item_id: str):
 def approve_showcase_item(item_id: str):
     """Approves showcase item for publication (Admins only)."""
     user = get_current_user()
-    res = _showcase_service.update_item_status(item_id, "approve", user.get("id"), user.get("role"))
+    user_id = getattr(user, "id", "anonymous")
+    user_role = getattr(user, "role", "dept_admin")
+    res = _showcase_service.update_item_status(item_id, "approve", user_id, user_role)
     code = res.pop("code", 200)
     return jsonify(res), code
 
@@ -122,8 +126,10 @@ def reject_showcase_item(item_id: str):
     """Rejects showcase item with reason (Admins only)."""
     data = request.get_json(silent=True) or {}
     user = get_current_user()
+    user_id = getattr(user, "id", "anonymous")
+    user_role = getattr(user, "role", "dept_admin")
     res = _showcase_service.update_item_status(
-        item_id, "reject", user.get("id"), user.get("role"), reason=data.get("reason")
+        item_id, "reject", user_id, user_role, reason=data.get("reason")
     )
     code = res.pop("code", 200)
     return jsonify(res), code
@@ -134,7 +140,9 @@ def reject_showcase_item(item_id: str):
 def publish_showcase_item(item_id: str):
     """Publishes approved item to the public homepage showcase."""
     user = get_current_user()
-    res = _showcase_service.update_item_status(item_id, "publish", user.get("id"), user.get("role"))
+    user_id = getattr(user, "id", "anonymous")
+    user_role = getattr(user, "role", "municipal_officer")
+    res = _showcase_service.update_item_status(item_id, "publish", user_id, user_role)
     code = res.pop("code", 200)
     return jsonify(res), code
 
@@ -144,7 +152,9 @@ def publish_showcase_item(item_id: str):
 def unpublish_showcase_item(item_id: str):
     """Unpublishes item from the public homepage."""
     user = get_current_user()
-    res = _showcase_service.update_item_status(item_id, "unpublish", user.get("id"), user.get("role"))
+    user_id = getattr(user, "id", "anonymous")
+    user_role = getattr(user, "role", "municipal_officer")
+    res = _showcase_service.update_item_status(item_id, "unpublish", user_id, user_role)
     code = res.pop("code", 200)
     return jsonify(res), code
 
@@ -154,6 +164,8 @@ def unpublish_showcase_item(item_id: str):
 def archive_showcase_item(item_id: str):
     """Archives/deletes showcase item."""
     user = get_current_user()
-    res = _showcase_service.update_item_status(item_id, "archive", user.get("id"), user.get("role"))
+    user_id = getattr(user, "id", "anonymous")
+    user_role = getattr(user, "role", "dept_admin")
+    res = _showcase_service.update_item_status(item_id, "archive", user_id, user_role)
     code = res.pop("code", 200)
     return jsonify(res), code

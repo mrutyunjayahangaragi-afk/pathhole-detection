@@ -669,6 +669,16 @@ document.addEventListener("DOMContentLoaded", function () {
   if (user && user.preferred_language === 'kn') {
     setLanguage('kn');
   }
+
+  // Pre-select category if provided in URL parameter (e.g. ?category=pothole)
+  const urlParams = new URLSearchParams(window.location.search);
+  const paramCat = urlParams.get('category');
+  if (paramCat) {
+    const catSelect = document.getElementById('category-select');
+    if (catSelect) {
+      catSelect.value = paramCat;
+    }
+  }
 });
 
 // Setup Interactive Leaflet Map for Pin Placement

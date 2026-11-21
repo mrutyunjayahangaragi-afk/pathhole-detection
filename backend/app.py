@@ -292,6 +292,10 @@ def create_app(config: Optional[Config] = None) -> Flask:
     # Frontend & Dashboard static file serving
     # ---------------------------------------------------------------------------
     @app.route("/", methods=["GET"])
+    @app.route("/index.html", methods=["GET"])
+    @app.route("/index", methods=["GET"])
+    @app.route("/home", methods=["GET"])
+    @app.route("/home.html", methods=["GET"])
     def serve_index():
         from flask import send_from_directory
         return send_from_directory(os.path.join(_parent, "frontend"), "index.html")

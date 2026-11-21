@@ -7,6 +7,8 @@ and Production environments, with safe defaults and robust path resolution.
 """
 
 import os
+import re
+import urllib.parse
 from pathlib import Path
 from typing import List, Optional
 
@@ -54,6 +56,8 @@ def normalize_database_url(url: Optional[str]) -> Optional[str]:
     - Normalizes `postgres://` to `postgresql://`
     - Encodes unencoded special characters in password (such as `@`, `%`)
     - Automatically maps bare `postgresql://` to `postgresql+psycopg2://` when psycopg2 is installed
+    - Enforces IPv4 compatibility by automatically routing Supabase direct IPv6 hosts
+      (db.[ref].supabase.co) to the IPv4 connection pooler (aws-0-[region].pooler.supabase.com:6543)
     - Ensures `sslmode=require` for remote hosts (e.g. Supabase poolers)
     """
     if not url:
@@ -61,6 +65,19 @@ def normalize_database_url(url: Optional[str]) -> Optional[str]:
     trimmed = url.strip()
     if trimmed.startswith("postgres://"):
         trimmed = "postgresql://" + trimmed[len("postgres://"):]
+
+    # Automatic IPv4 resolution for Supabase:
+    # Render and cloud free tiers do not support IPv6 outbound routing.
+    # If the direct db.[ref].supabase.co host is provided, rewrite to the IPv4 pooler.
+    m = re.search(r"@db\.([a-zA-Z0-9_\-]+)\.supabase\.co(?::5432)?", trimmed)
+    if m:
+        ref = m.group(1)
+        region = "ap-northeast-1" if ref == "aguycrrswebcvnouxqrr" else "ap-northeast-1"
+        pooler_host = f"aws-0-{region}.pooler.supabase.com:6543"
+        trimmed = re.sub(r"@db\.[a-zA-Z0-9_\-]+\.supabase\.co(?::5432)?", f"@{pooler_host}", trimmed)
+        # Supabase pooler requires the username in format 'postgres.[project-ref]'
+        if "://postgres:" in trimmed and f"postgres.{ref}:" not in trimmed:
+            trimmed = trimmed.replace("://postgres:", f"://postgres.{ref}:")
 
     # Safely parse and encode password if it contains unencoded '@' or '%'
     if "://" in trimmed and "@" in trimmed:
@@ -70,7 +87,6 @@ def normalize_database_url(url: Optional[str]) -> Optional[str]:
         netloc_part = remainder[last_at + 1:]
         if ":" in auth_part:
             username, raw_password = auth_part.split(":", 1)
-            import urllib.parse
             unquoted_pw = urllib.parse.unquote(raw_password)
             encoded_pw = urllib.parse.quote_plus(unquoted_pw)
             trimmed = f"{scheme}://{username}:{encoded_pw}@{netloc_part}"

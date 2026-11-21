@@ -81,9 +81,12 @@ def create_app(config: Optional[Config] = None) -> Flask:
             create_all_tables(f"sqlite:///{cfg.DATABASE_PATH}")
             logger.info(f"Connected to SQLite database at '{cfg.DATABASE_PATH}'")
     except Exception as e:
-        logger.error(f"Failed to initialize database: {e}")
-        if not cfg.TESTING and not os.environ.get("PYTEST_CURRENT_TEST") and not os.environ.get("TESTING"):
-            raise
+        logger.error(f"Failed to initialize database during startup: {e}")
+        logger.warning(
+            "Application startup proceeding so health probes and diagnostics remain reachable. "
+            "If using Supabase, ensure DATABASE_URL uses the connection pooler "
+            "(aws-0-[region].pooler.supabase.co:6543) for IPv4 compatibility on cloud hosts."
+        )
 
     # Register centralized error handlers
     register_error_handlers(app)

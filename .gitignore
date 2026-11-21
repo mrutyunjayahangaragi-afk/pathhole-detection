@@ -34,6 +34,11 @@ backups/
 *.backup_*.db
 
 # SQLite databases generated during development and testing
+*.db
+*.sqlite
+*.sqlite3
+backend/*.db
+data/*.db
 *.db-journal
 test_*.db
 /tmp/test_*.db

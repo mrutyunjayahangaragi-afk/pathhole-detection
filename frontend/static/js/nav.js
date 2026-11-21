@@ -222,6 +222,11 @@
           closeDrawer();
         }
       });
+
+      // Synchronize authentication pill in sidebar & header immediately
+      if (window.CivicAuth && typeof window.CivicAuth.updateNavUserPill === 'function') {
+        window.CivicAuth.updateNavUserPill();
+      }
     }
   }
 

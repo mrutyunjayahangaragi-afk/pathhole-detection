@@ -1466,6 +1466,123 @@ body {
   white-space: nowrap;
 }
 
+/* ─── Top Header Authentication Group ────────────────────────────────────── */
+.cl-header-auth-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.cl-btn-header-login {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: var(--cl-radius-full);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  line-height: 1.2;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.cl-btn-header-login:hover {
+  background: rgba(255, 255, 255, 0.24);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.cl-btn-header-register {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  border: 1px solid #60a5fa;
+  color: #ffffff;
+  padding: 6px 16px;
+  border-radius: var(--cl-radius-full);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  line-height: 1.2;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.45);
+  transition: all 0.2s ease;
+}
+
+.cl-btn-header-register:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  border-color: #93c5fd;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.6);
+}
+
+.cl-header-user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 4px 12px;
+  border-radius: var(--cl-radius-full);
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.cl-header-user-badge:hover {
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+
+.cl-header-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.cl-header-username {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cl-btn-header-logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  padding: 4px 10px;
+  border-radius: var(--cl-radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cl-btn-header-logout:hover {
+  background: rgba(239, 68, 68, 0.35);
+  color: #ffffff;
+}
+
 /* ─── Hero Visual & Floating Badges ─────────────────────────────────────── */
 .cl-hero-relative-wrap {
   position: relative;
@@ -1879,6 +1996,9 @@ body {
   }
   .cl-header-meta-group {
     display: none !important;
+  }
+  .cl-header-auth-group {
+    justify-content: flex-end;
   }
   .cl-hero-subtitle-heading {
     font-size: 1.5rem !important;

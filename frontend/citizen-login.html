@@ -210,6 +210,9 @@ tabRegister.addEventListener("click", () => {
 // Check redirect query param
 const urlParams = new URLSearchParams(window.location.search);
 const redirectUrl = urlParams.get("redirect") || "./citizen-dashboard.html";
+if (urlParams.get("tab") === "register" || window.location.hash === "#register") {
+  tabRegister.click();
+}
 
 // Handle Login
 loginForm.addEventListener("submit", async (e) => {
